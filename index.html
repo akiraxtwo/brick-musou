@@ -311,6 +311,21 @@ body.touch #objpanel{top:118px; font-size:12px}
 #padhint{position:fixed; left:16px; bottom:30px; z-index:21; font-size:11.5px; letter-spacing:.12em;
   color:rgba(125,255,176,.62); pointer-events:none}
 
+/* ---------- 戰功一覽 ---------- */
+#achv{background:rgba(4,3,2,.9); backdrop-filter:blur(4px); z-index:50}
+.achpanel{max-width:min(920px,96vw)}
+#achsum{text-align:center; font-size:14px; letter-spacing:.14em; color:var(--gold); margin:-4px 0 12px}
+#achgrid{display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr)); gap:8px; max-height:62vh; overflow:auto; padding:2px 4px}
+.ach{border:1px solid rgba(217,185,110,.22); background:rgba(0,0,0,.35); padding:8px 10px; display:flex; gap:10px; align-items:flex-start}
+.ach b{font-size:20px; line-height:1.1; width:1.3em; text-align:center; flex:0 0 auto}
+.ach .an{font-size:14px; color:var(--gold2); letter-spacing:.06em}
+.ach .ad{font-size:11.5px; line-height:1.5; color:rgba(232,220,192,.7); margin-top:2px}
+.ach .ap{font-size:11px; color:var(--gold); margin-top:3px}
+.ach.lock{opacity:.52} .ach.lock .an{color:rgba(232,220,192,.75)}
+.ach .rw{font-size:11px; color:#9dffc4; margin-top:3px}
+body.touch #achgrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); max-height:58vh}
+.card .cos{font-size:12px; color:#9dffc4; margin:-2px 0 6px; cursor:pointer}
+
 /* ---------- 戰役地圖 ---------- */
 #campaign{background:radial-gradient(ellipse 80% 70% at 50% 50%, rgba(8,6,5,.70) 0%, rgba(8,6,5,.88) 100%); gap:12px; z-index:31}
 .camp-head{text-align:center}
@@ -475,6 +490,16 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
     <h2 class="ptitle" data-t="howto.title">操 作 說 明</h2>
     <div id="howtobody"></div>
     <div class="mhint" data-t="howto.back">Esc / ○ 返回</div>
+  </div>
+</div>
+
+<!-- ===== 戰功一覽 ===== -->
+<div id="achv" class="screen hidden">
+  <div class="panel wide achpanel">
+    <h2 class="ptitle" data-t="ach.title">戰　功</h2>
+    <div id="achsum"></div>
+    <div id="achgrid"></div>
+    <div class="mhint" data-t="ach.hint">Esc / ○ 返回</div>
   </div>
 </div>
 
@@ -944,6 +969,70 @@ const I18N={
   'hud.hint':'<b>WASD</b> Move ・ <b>J</b> Combo ・ <b>K</b> Charge ・ <b>Space</b> Jump ・ <b>H</b> Guard ・ <b>L</b> Musou ・ <b>Shift</b> Sprint ・ <b>Esc</b> Pause',
   'hud.mute':'M Mute','hud.pad':(n)=>`🎮 ${n} connected`,
   'credit':'Brick part geometry © LDraw.org parts library ・ CC BY 4.0 ・ Not affiliated with the LEGO Group',
+  'menu.achv':'Achievements',
+  'ach.title':'ACHIEVEMENTS',
+  'ach.hint':'Esc / ○ Back',
+  'ach.sum':(n,t)=>`${n} / ${t} unlocked`,
+  'ach.reward':(h,c)=>`Reward: ${h} "${c}" outfit`,
+  'ach.costume':(h,c)=>`Outfit unlocked: ${h} "${c}"`,
+  'sel.costumeKey':'C to change',
+  'costume.base':'Original',
+  'costume.white':'White Robe',
+  'costume.gold':'Gold Armor',
+  'costume.black':'Black Armor',
+  'costume.red':'Crimson Armor',
+  'ach.kill100':'Hundred Slain',
+  'achd.kill100':'Slay 100 in one battle',
+  'ach.kill1000':'Thousand Slain',
+  'achd.kill1000':'Slay 1,000 in one battle',
+  'ach.combo100':'100 Combo',
+  'achd.combo100':'Reach a 100-hit combo',
+  'ach.combo500':'500 Combo',
+  'achd.combo500':'Reach a 500-hit combo',
+  'ach.musou150':'One Against a Thousand',
+  'achd.musou150':'Slay 150 with a single Musou',
+  'ach.pguard20':'Iron Wall',
+  'achd.pguard20':'Perform 20 Perfect Guards',
+  'ach.air50':'Juggler',
+  'achd.air50':'Slay 50 airborne enemies',
+  'ach.ride50':'Iron Cavalry',
+  'achd.ride50':'Slay 50 enemies while mounted',
+  'ach.healthy':'Untouched',
+  'achd.healthy':'Clear a battle with 90%+ health',
+  'ach.sishui':'Sishui Breached',
+  'achd.sishui':'Clear the Battle of Sishui Gate',
+  'ach.wine':'Before the Wine Cools',
+  'achd.wine':'Slay Hua Xiong within 60s of his sally',
+  'ach.hulao':'Three Brothers vs Lu Bu',
+  'achd.hulao':'Clear the Battle of Hulao Gate',
+  'ach.lubu':'The Flying General Falls',
+  'achd.lubu':'Defeat Lu Bu',
+  'ach.luoyang':'Through the Flames',
+  'achd.luoyang':'Clear the Pursuit Through Luoyang',
+  'ach.allsub':'Total Victory',
+  'achd.allsub':'Complete every bonus objective in one battle',
+  'ach.chapterS':'Hero of the Coalition',
+  'achd.chapterS':'Earn S rank on all three Chapter I battles',
+  'ach.shura':'Chaos',
+  'achd.shura':'Clear any battle on Chaos difficulty',
+  'ach.surv6':'Endless: Six',
+  'achd.surv6':'Reach wave 6 in Endless Array',
+  'ach.surv12':'Endless: Twelve',
+  'achd.surv12':'Reach wave 12 in Endless Array',
+  'ach.daily1':'Daily Warrior',
+  'achd.daily1':'Finish a Daily Challenge',
+  'ach.daily7':'Seven Days Strong',
+  'achd.daily7':'Keep a 7-day Daily Challenge streak',
+  'ach.brothers':'Oath of the Peach Garden',
+  'achd.brothers':'Clear a battle as Liu Bei, Guan Yu and Zhang Fei',
+  'ach.lubuwin':'Among Men, Lu Bu',
+  'achd.lubuwin':'Clear any battle as Lu Bu',
+  'ach.lv10':'Seasoned',
+  'achd.lv10':'Raise any hero to Lv10',
+  'ach.lv20':'Unstoppable',
+  'achd.lv20':'Raise any hero to Lv20',
+  'ach.wpn10':'Legendary Arms',
+  'achd.wpn10':'Upgrade any weapon to Lv10',
   'cutin.musou':'MUSOU RAGE','musou.lubu':'PEERLESS',
   'ann.levelUp':(n)=>`LEVEL UP ─ Lv ${n}`,'res.level':'Hero Level',
   'sel.locked':'Defeat Lu Bu to unlock','ann.unlockLubu':'LU BU IS NOW PLAYABLE!','ann.unlockLubuSub':'"Peerless under heaven — who dares face me?"',
@@ -1074,6 +1163,70 @@ I18N.zh={
   'hud.hint':'<b>WASD</b>移動 <b>J</b>六段連擊 <b>K</b>蓄力C技(連段第N段後接CN) <b>空白</b>跳躍 <b>H/右鍵</b>格擋 <b>L</b>無雙 <b>Shift</b>疾走 <b>Esc</b>暫停',
   'hud.mute':'M 靜音','hud.pad':(n)=>`🎮 ${n} 已連線`,
   'credit':'積木零件幾何 © LDraw.org 零件庫 ・ CC BY 4.0 ・ 與 LEGO 集團無隸屬關係',
+  'menu.achv':'戰　　功',
+  'ach.title':'戰　功',
+  'ach.hint':'Esc / ○ 返回',
+  'ach.sum':(n,t)=>`已達成 ${n} / ${t}`,
+  'ach.reward':(h,c)=>`獎勵:${h}「${c}」服裝`,
+  'ach.costume':(h,c)=>`解鎖服裝:${h}「${c}」`,
+  'sel.costumeKey':'C 切換',
+  'costume.base':'原裝',
+  'costume.white':'白袍',
+  'costume.gold':'金甲',
+  'costume.black':'黑甲',
+  'costume.red':'赤甲',
+  'ach.kill100':'百人斬',
+  'achd.kill100':'單場擊破 100 人',
+  'ach.kill1000':'千人斬',
+  'achd.kill1000':'單場擊破 1000 人',
+  'ach.combo100':'百連擊',
+  'achd.combo100':'達成 100 連擊',
+  'ach.combo500':'五百連擊',
+  'achd.combo500':'達成 500 連擊',
+  'ach.musou150':'一騎當千',
+  'achd.musou150':'一次無雙擊破 150 人',
+  'ach.pguard20':'鐵壁',
+  'achd.pguard20':'累計完美格擋 20 次',
+  'ach.air50':'浮空追擊',
+  'achd.air50':'累計擊破浮空的敵人 50 名',
+  'ach.ride50':'鐵騎',
+  'achd.ride50':'累計在馬上擊破 50 名敵人',
+  'ach.healthy':'毫髮無傷',
+  'achd.healthy':'體力保持 90% 以上通關',
+  'ach.sishui':'攻破汜水關',
+  'achd.sishui':'通關汜水關之戰',
+  'ach.wine':'溫酒斬華雄',
+  'achd.wine':'華雄出關 60 秒內將其擊破',
+  'ach.hulao':'三英戰呂布',
+  'achd.hulao':'通關虎牢關之戰',
+  'ach.lubu':'飛將落馬',
+  'achd.lubu':'擊破呂布',
+  'ach.luoyang':'火城追擊',
+  'achd.luoyang':'通關洛陽追擊戰',
+  'ach.allsub':'全面戰果',
+  'achd.allsub':'單場達成全部次要目標',
+  'ach.chapterS':'反董卓之首功',
+  'achd.chapterS':'第一章三場戰役皆獲 S 評價',
+  'ach.shura':'修羅',
+  'achd.shura':'以修羅難度通關任一戰役',
+  'ach.surv6':'無盡・六陣',
+  'achd.surv6':'無盡之陣撐到第 6 波',
+  'ach.surv12':'無盡・十二陣',
+  'achd.surv12':'無盡之陣撐到第 12 波',
+  'ach.daily1':'今日一戰',
+  'achd.daily1':'完成一次每日挑戰',
+  'ach.daily7':'七日不輟',
+  'achd.daily7':'每日挑戰連續 7 天',
+  'ach.brothers':'桃園結義',
+  'achd.brothers':'以劉備、關羽、張飛各通關一次',
+  'ach.lubuwin':'人中呂布',
+  'achd.lubuwin':'以呂布通關任一戰役',
+  'ach.lv10':'身經百戰',
+  'achd.lv10':'任一武將達到 Lv10',
+  'ach.lv20':'萬夫莫敵',
+  'achd.lv20':'任一武將達到 Lv20',
+  'ach.wpn10':'神兵',
+  'achd.wpn10':'任一武器強化到 Lv10',
   'cutin.musou':'無雙亂舞','musou.lubu':'天下無雙',
   'ann.levelUp':(n)=>`等級提升 ─ Lv ${n}`,'res.level':'武將等級',
   'sel.locked':'擊破呂布後解鎖','ann.unlockLubu':'呂布 已可操作!','ann.unlockLubuSub':'「天下無雙,誰與爭鋒」',
@@ -1293,6 +1446,70 @@ const LEVELS={
     return up;
   },
 };
+// ---------- 戰功(成就)----------
+const ACH_DEFS=[
+  { id:'kill100',  cat:'battle' }, { id:'kill1000', cat:'battle' }, { id:'combo100', cat:'battle' }, { id:'combo500', cat:'battle' },
+  { id:'musou150', cat:'battle' }, { id:'pguard20', cat:'battle', stat:'pg', n:20 }, { id:'air50', cat:'battle', stat:'air', n:50 },
+  { id:'ride50',   cat:'battle', stat:'ride', n:50 }, { id:'healthy', cat:'battle' },
+  { id:'sishui', cat:'stage' }, { id:'wine', cat:'stage' }, { id:'hulao', cat:'stage' }, { id:'lubu', cat:'stage' },
+  { id:'luoyang', cat:'stage' }, { id:'allsub', cat:'stage' }, { id:'chapterS', cat:'stage' }, { id:'shura', cat:'stage' },
+  { id:'surv6', cat:'mode' }, { id:'surv12', cat:'mode' }, { id:'daily1', cat:'mode' }, { id:'daily7', cat:'mode' },
+  { id:'brothers', cat:'collect' }, { id:'lubuwin', cat:'collect' }, { id:'lv10', cat:'collect' }, { id:'lv20', cat:'collect' },
+  { id:'wpn10', cat:'collect' },
+];
+const ACH={
+  data:null,
+  load(){ if(this.data) return this.data;
+    try{ this.data=JSON.parse(localStorage.getItem('musou.ach')||'{}'); }catch(e){ this.data={}; }
+    this.data.got=this.data.got||{}; this.data.stats=this.data.stats||{}; return this.data; },
+  reload(){ this.data=null; return this.load(); },
+  save(){ try{ localStorage.setItem('musou.ach',JSON.stringify(this.data)); }catch(e){} },
+  has(id){ return !!this.load().got[id]; },
+  grant(id){
+    if(S.attract || this.has(id)) return false;
+    this.load().got[id]=Date.now(); this.save();
+    medal(`🏆 ${T('ach.'+id)}`);
+    const cos=costumeUnlockedBy(id);
+    if(cos) schedule(1.2,()=>announce(T('ach.costume', LN(CHARS[cos.hero],'name'), T('costume.'+cos.c.id)),'ui quick'));
+    return true;
+  },
+  // 累計型統計(完美格擋、擊破浮空敵、騎馬擊破)
+  bump(stat,k=1){
+    if(S.attract) return;
+    const d=this.load(); d.stats[stat]=(d.stats[stat]||0)+k;
+    const def=ACH_DEFS.find(a=>a.stat===stat);
+    if(def && d.stats[stat]>=def.n) this.grant(def.id);
+    this.dirty=true;
+  },
+  flush(){ if(this.dirty){ this.save(); this.dirty=false; } },
+  count(){ return Object.keys(this.load().got).length; },
+};
+
+// ---------- 服裝(由戰功解鎖)----------
+const COSTUMES={
+  liubei:  [ {id:'base'}, {id:'white', req:'brothers', rig:{ cloth:0xF4F4F4, cloth2:0xAA7F2E, cape:0xF4F4F4, pants:0x6D6E6C }} ],
+  guanyu:  [ {id:'base'}, {id:'gold',  req:'wine',     rig:{ cloth:0xAA7F2E, armor:0xF5CD2F, cloth2:0x237841, cape:0x237841 }} ],
+  zhangfei:[ {id:'base'}, {id:'black', req:'kill1000', rig:{ cloth:0x1B1B1B, armor:0x720E0F, cloth2:0xC4281C, cape:0x720E0F }} ],
+  lubu:    [ {id:'base'}, {id:'red',   req:'shura',    rig:{ cloth:0x720E0F, armor:0xAA7F2E, cape:0xC4281C }} ],
+};
+function costumeUnlockedBy(achId){
+  for(const hero in COSTUMES){ const c=COSTUMES[hero].find(x=>x.req===achId); if(c) return {hero,c}; }
+  return null;
+}
+const COSTUME={
+  load(){ try{ return JSON.parse(localStorage.getItem('musou.costume')||'{}'); }catch(e){ return {}; } },
+  list(hero){ return (COSTUMES[hero]||[{id:'base'}]).filter(c=>!c.req || ACH.has(c.req)); },
+  get(hero){ const id=this.load()[hero]; return this.list(hero).find(c=>c.id===id) || {id:'base'}; },
+  cycle(hero){
+    const L=this.list(hero); if(L.length<2) return false;
+    const i=L.findIndex(c=>c.id===this.get(hero).id), nx=L[(i+1)%L.length];
+    const d=this.load(); d[hero]=nx.id; try{ localStorage.setItem('musou.costume',JSON.stringify(d)); }catch(e){}
+    return true;
+  },
+};
+// 武將的建模設定 = 基本 rig + 目前服裝
+function heroRig(id){ const c=COSTUME.get(id); return c.rig? Object.assign({}, CHARS[id].rig, c.rig) : CHARS[id].rig; }
+
 function heroLocked(id){ const C=CHARS[id]; return !!(C && C.lock && !UNLOCK.has(C.lock)); }
 
 // 目前關卡的競技場邊界(loadStage 會覆寫;全域多處直接引用這個物件)
@@ -4079,10 +4296,11 @@ function pickupWeapon(elem){
   const W=WEAPON.get(id);
   player.weapon=W;
   player.elem=ELEMENTS[W.element]||ELEMENTS.none;
-  player.pow=Math.round(CHARS[id].atk*WEAPON.dmgMul(id));
+  player.recalcPow();
   const col=player.elem.color!==null? player.elem.color : CHARS[id].trail;
   player.trailR.setColor(col); if(player.trailL) player.trailL.setColor(col);
-  medal(`${CHARS[id].weapon} ${player.elem.name}・Lv${W.level}`);
+  medal(`${LN(CHARS[id],'weapon')} ${LN(player.elem,'name')}・Lv${W.level}`);
+  if(W.level>=10) ACH.grant('wpn10');
 }
 function updateDrops(dt){
   for(let i=drops.length-1;i>=0;i--){
@@ -4638,7 +4856,7 @@ class Player{
   constructor(charId){
     const C=this.char=CHARS[charId];
     this.id=charId; this.isPlayer=true; this.alive=true; this.side=0;
-    this.rig=makeHuman(C.rig); scene.add(this.rig.root);
+    this.rig=makeHuman(heroRig(charId)); scene.add(this.rig.root);
     this.pos=V3(STAGE.playerStart.x,0,STAGE.playerStart.z); this.yaw=0; this.vel=V3();
     this.maxHp=C.hp; this.hp=C.hp; this.pow=C.atk; this.speed=C.speed;
     this.lvRec=LEVELS.get(charId); this.lvStart=this.lvRec.lv; this.expGain=0;
@@ -4676,6 +4894,7 @@ class Player{
     if(this.pgBuff>0){ this.pgBuff=0; }        // buff 於 dealHit 已消耗
     if(this.air && h.air && this.pos.y<3.4 && this.vy<.4) this.vy=.4;   // 空中命中止跌,可續連
     this.combo++; this.comboT=2.6;
+    if(this.combo===100) ACH.grant('combo100'); else if(this.combo===500) ACH.grant('combo500');
     if(this.combo>this.maxCombo) this.maxCombo=this.combo;
     HUD.combo(this.combo);
     this.gainMusou(1.7);
@@ -4768,11 +4987,16 @@ class Player{
   }
   startMusou(){
     this.state='musou'; this.musT=0; this.musTick=0; this.musFin=false; this.atk=null; this.queued=null;
+    this.musK0=director.kills;
     AUD.musou(); musouFlashFx(); addShake(.4);
     slowmo(.06,.5);
     showCutin(T('musou.'+this.id), `${LN(this.char,'name')} ${LN(this.char,'zi')} ・ ${LN(this.char,'weapon')}`);
     shockRing(this.pos,this.char.musouTint,4.5,.5);
     this.musLight.intensity=46;
+  }
+  // 攻擊力 = 基礎 × 等級 × 武器等級 × 背水(撿武器匣時也走這裡,不會洗掉等級與變異加成)
+  recalcPow(){
+    this.pow=this.char.atk*(this.lvMul? this.lvMul.atk : 1)*WEAPON.dmgMul(this.id)*(S.mut==='last'? 1.3 : 1);
   }
   addExp(n){
     if(S.attract || !this.lvRec) return;
@@ -4782,8 +5006,9 @@ class Player{
     const old=this.lvMul, M=LEVELS.mul(this.lvRec.lv);
     this.maxHp=Math.round(this.maxHp/old.hp*M.hp);
     this.hp=Math.min(this.maxHp, this.hp+this.maxHp*.3);
-    this.pow=this.pow/old.atk*M.atk;
-    this.lvMul=M;
+    this.lvMul=M; this.recalcPow();
+    if(this.lvRec.lv>=10) ACH.grant('lv10');
+    if(this.lvRec.lv>=20) ACH.grant('lv20');
     LEVELS.save(this.id,this.lvRec);
     HUD.setHP(this.hp,this.maxHp); HUD.setName();
     announce(T('ann.levelUp',this.lvRec.lv),'ui quick');
@@ -4803,7 +5028,7 @@ class Player{
           sparks(gp,0xffe89a,20,{speed:7,up:3,life:.5});
           shockRing(this.pos,0xffe89a,2.6,.35);
           S.hitstop=Math.max(S.hitstop,.3); slowmo(.35,.35);
-          this.gainMusou(12); this.pgBuff=2.0;
+          this.gainMusou(12); this.pgBuff=2.0; ACH.bump('pg');
           dmgNum(this.pos,T('fx.perfect'),'mus');
           this.iframes=.35;
           return;
@@ -4910,6 +5135,7 @@ class Player{
         // 終結技:先結算一次大範圍重擊,再把收招動作播完
         if(!this.musFin){
           this.musFin=true;
+          schedule(.3,()=>{ if(director.kills-(this.musK0||0)>=150) ACH.grant('musou150'); });
           for(const e of SIDE1){ if(inHitRange(this,e,D.fin)) dealHit(this,e,D.fin); }
           shockRing(this.pos,this.char.musouTint,D.finRing,.6);
           shockRing(this.pos,0xffffff,D.finRing*.55,.4);
@@ -5724,7 +5950,7 @@ const director={
   reset(){
     this.kills=0; this.time=0; this.spawnT=.5; this.officerIdx=0;
     this.officersSlain=[]; this.bossSpawned=false; this.boss=null;
-    this.wave=1; this.waveT=0;
+    this.wave=1; this.waveT=0; this.a100=0; this.a1000=0;
     this.milestones={};
     this.P=.4; this.krate=0; this.mercyT=0;
     this.tokensUsed=0; this.tokensMax=5; this.rangedUsed=0; this.rangedMax=4; this.retally=0;
@@ -5745,6 +5971,8 @@ const director={
   },
   nextWave(){
     this.wave++; this.waveT=0;
+    if(this.wave>=6) ACH.grant('surv6');
+    if(this.wave>=12) ACH.grant('surv12');
     $('wavenum').textContent=this.wave;
     announce(T('ann.wave',this.wave),'red big', this.wave%6===0?T('ann.waveBoss'):'');
     AUD.gong(true);
@@ -5884,7 +6112,11 @@ const director={
   },
   onKill(e,src){
     if(e.side===0) return;                 // 友軍陣亡不計擊破
-    if(src && src.isPlayer && player) player.addExp(e.isMob? 1 : e.kind==='officer'? 25 : 150);
+    if(src && src.isPlayer && player){
+      player.addExp(e.isMob? 1 : e.kind==='officer'? 25 : 150);
+      if(e.pos.y>.3 || e.state==='launched') ACH.bump('air');
+      if(player.mounted) ACH.bump('ride');
+    }
     if(src && src.noCredit){ e.noCredit=1; }
     const credit=!e.noCredit;
     if(e.isMob){
@@ -5912,6 +6144,7 @@ const director={
       sparks(V3(e.pos.x,1.6,e.pos.z),0xffe08a,40,{speed:9,up:8});
       killCine(e,2.6);
       if(e.def) OBJ.defeated(e.def.id);
+      if(e.def && e.def.id==='lubu') ACH.grant('lubu');
       if(e.def && e.def.id==='lubu' && !S.attract && UNLOCK.grant('lubu')){
         schedule(2.8,()=>announce(T('ann.unlockLubu'),'ui big',T('ann.unlockLubuSub')));
       }
@@ -5919,6 +6152,8 @@ const director={
       else if(!OBJ.list.length){ S.resultTimer=3.4; S.resultWin=true; }   // 沒有目標設定的關卡:擊破 BOSS 即勝利
     }
     HUD.setKills(this.kills);
+    if(this.kills>=100 && !this.a100){ this.a100=1; ACH.grant('kill100'); }
+    if(this.kills>=1000 && !this.a1000){ this.a1000=1; ACH.grant('kill1000'); }
   },
 };
 
@@ -6028,7 +6263,7 @@ const OBJ={
       if(o.kind==='kills')   o.prog=director.kills;
       if(o.prog!==before) dirty=true;
       const done = o.kind==='defeat'? o.hit : o.prog>=o.n;
-      if(done){ this.complete(o); dirty=true; continue; }
+      if(done){ this.complete(o); dirty=true; if(o.id==='wine') ACH.grant('wine'); continue; }
       // 限時目標:時間到仍未擊破 → 失敗(只有次要目標會用到)
       if(o.within && this.spawnT[o.target]!==undefined && director.time-this.spawnT[o.target]>o.within){ o.state='failed'; dirty=true; }
     }
@@ -6194,7 +6429,7 @@ function buildSelectScene(){
     const x=selX(i);
     const ped=new THREE.Mesh(geo('ped',()=>new THREE.CylinderGeometry(1.5,1.7,.18,24)), mat(0x2a222f));
     ped.position.set(x,.09,0); sel.scene.add(ped);
-    const rig=makeHuman(CHARS[id].rig);
+    const rig=makeHuman(heroRig(id));
     rig.root.position.set(x,.18,0);
     sel.scene.add(rig.root);
     sel.rigs.push(rig); sel.ids.push(id);
@@ -6250,13 +6485,14 @@ function buildCards(){
     d.innerHTML=`<span class="key">${i+1}</span><h2>${LN(C,'name')}<small>${LN(C,'zi')}</small></h2>
       <div class="wpn">${LN(C,'epithet')} ・ ${LN(C,'weapon')}</div>
       <div class="wlv" data-for="${id}"></div>
+      ${COSTUME.list(id).length>1? `<div class="cos" data-cos="${id}">👘 ${T('costume.'+COSTUME.get(id).id)} ・ ${T('sel.costumeKey')}</div>` : ''}
       ${(()=>{ const r=LEVELS.get(id), full=r.lv>=LEVELS.MAX, p=full?1:r.exp/LEVELS.need(r.lv);
         return `<div class="clv">Lv ${r.lv}${full?' MAX':''}<span class="xp"><i style="transform:scaleX(${p.toFixed(3)})"></i></span></div>`; })()}
       <div class="desc">${LN(C,'desc')}</div>`+
       Object.entries(C.prof).map(([k,v])=>`<div class="statrow">${T('prof.'+k)}<span class="pips">${
         [1,2,3,4,5].map(n=>`<span class="pip ${n<=v?'on':''}"></span>`).join('')}</span></div>`).join('');
-    d.addEventListener('click',()=>setSelIdx(i));
-    d.addEventListener('dblclick',()=>{ setSelIdx(i); begin(); });
+    d.addEventListener('click',(ev)=>{ if(ev.target.closest('.cos')){ setSelIdx(i); changeCostume(); return; } setSelIdx(i); });
+    d.addEventListener('dblclick',(ev)=>{ if(ev.target.closest('.cos')) return; setSelIdx(i); begin(); });
     wrap.appendChild(d);
   });
 }
@@ -6299,6 +6535,17 @@ function setDiff(id){
   document.querySelectorAll('.dbtn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
   const rec=BEST.get(bestKey(S.pickStage||'hulao', id));
   $('bestline').textContent = rec? T('sel.best',recL(rec)) : T('sel.noRecord');
+}
+// 切換目前選取武將的服裝,並重建選將台上的模型
+function changeCostume(){
+  const id=HERO_ORDER[sel.idx];
+  if(heroLocked(id) || !COSTUME.cycle(id)) { AUD.guard(); return; }
+  AUD.pickup();
+  const old=sel.rigs[sel.idx], pos=old.root.position.clone();
+  sel.scene.remove(old.root); disposeTree(old.root);
+  const rig=makeHuman(heroRig(id)); rig.root.position.copy(pos);
+  sel.scene.add(rig.root); sel.rigs[sel.idx]=rig;
+  buildCards(); refreshWeaponUI(); setSelIdx(sel.idx);
 }
 function begin(){
   AUD.ensure();
@@ -6387,6 +6634,22 @@ const CAMPAIGN={
     toSelect();
   },
 };
+function openAchv(){
+  const d=ACH.reload();
+  $('achsum').textContent=T('ach.sum', ACH.count(), ACH_DEFS.length);
+  $('achgrid').innerHTML=ACH_DEFS.map(a=>{
+    const got=!!d.got[a.id];
+    const prog=a.stat? `<div class="ap">${Math.min(d.stats[a.stat]||0,a.n)} / ${a.n}</div>` : '';
+    const cos=costumeUnlockedBy(a.id);
+    const rw=cos? `<div class="rw">${T('ach.reward', LN(CHARS[cos.hero],'name'), T('costume.'+cos.c.id))}</div>` : '';
+    return `<div class="ach ${got?'':'lock'}"><b>${got?'🏆':'🔒'}</b><div><div class="an">${T('ach.'+a.id)}</div>`+
+           `<div class="ad">${T('achd.'+a.id)}</div>${got?'':prog}${rw}</div></div>`;
+  }).join('');
+  $('title').classList.add('hidden');
+  $('achv').classList.remove('hidden');
+  MENU.cur=null; S.mode='achv';
+}
+function closeAchv(){ $('achv').classList.add('hidden'); $('title').classList.remove('hidden'); MENU.cur=MENUS.title; S.mode='title'; }
 function openCampaign(){
   for(const id of ['hud','results','pause','stagecard','select','settings','howto','title']) $(id).classList.add('hidden');
   MENU.cur=null;
@@ -6466,6 +6729,7 @@ function buildAllMenus(){
       run:()=>DAILY.start() },
     { get lab(){ return T('menu.settings'); }, type:'action', run:()=>openSettings('title') },
     { get lab(){ return T('menu.howto'); }, type:'action', run:()=>openHowto('title') },
+    { get lab(){ return T('menu.achv'); }, type:'action', get hint(){ return `${ACH.count()} / ${ACH_DEFS.length}`; }, run:()=>openAchv() },
     { get lab(){ return T('menu.records'); }, type:'action', hint:'', run:()=>showBest() },
   ]);
   // ---- 設定 ----
@@ -6539,7 +6803,7 @@ function showBest(){
   announce(T('ann.records'),'ui', lines.join('　/　'));
 }
 function toTitle(){
-  for(const id of ['hud','results','pause','stagecard','select','settings','howto','campaign']) $(id).classList.add('hidden');
+  for(const id of ['hud','results','pause','stagecard','select','settings','howto','campaign','achv']) $(id).classList.add('hidden');
   $('title').classList.remove('hidden');
   MENU.cur=MENUS.title;
   S.mode='title';
@@ -6574,6 +6838,7 @@ function closeHowto(){
 // ============================================================
 function cleanupBattle(){
   if(player && player.lvRec && !S.attract) LEVELS.save(player.id, player.lvRec);
+  ACH.flush();
   S.attract=false;
   S.luoyang=null;
   OBJ.list=[]; OBJ.ended=false; OBJ.render();
@@ -6619,7 +6884,7 @@ function cleanupBattle(){
 function allyDefFor(id){
   const C=CHARS[id];
   return { allyId:id, name:C.name, zi:C.zi, en:C.en, hp:900, atk:20, speed:5.4, scale:C.rig.scale,
-           weapon:C.rig.weapon, rig:C.rig };
+           weapon:C.rig.weapon, rig:heroRig(id) };
 }
 function spawnAllies(playerId){
   if(playerId==='lubu') return;              // 呂布單騎出陣
@@ -6668,7 +6933,7 @@ function startBattle(charId, opt={}){
   if(opt.attract){
     // 主選單背景的自動演示:不進開場卡、不顯示 HUD,S.mode 維持 'title'
     S.attract=true;
-    if(!(S.mode==='campaign'||S.mode==='settings'||S.mode==='howto')) S.mode='title';
+    if(!(S.mode==='campaign'||S.mode==='settings'||S.mode==='howto'||S.mode==='achv')) S.mode='title';
     $('hud').classList.add('hidden'); $('stagecard').classList.add('hidden');
     spawnAllies(charId); director.prespawn();
     if(STAGE.onStart) STAGE.onStart();
@@ -6790,10 +7055,23 @@ function showResults(win){
   $('ressub').textContent += isBest? T('res.best') : '';
   if(S.gameMode==='daily'){
     const score=director.kills+(player?player.maxCombo:0)*1.5+(win?400:0);
+    ACH.grant('daily1');
     const d=DAILY.record({ cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, win, score });
     $('ressub').textContent += T('res.daily',S.daily.day,d.streak);
+    if(d.streak>=7) ACH.grant('daily7');
   }
   S.lastWin=win; S.lastRank=rank;
+  if(win && S.gameMode==='story' && player){
+    ACH.grant(STAGE.id);
+    if(DIFF.id==='shura') ACH.grant('shura');
+    if(player.hp/player.maxHp>=.9) ACH.grant('healthy');
+    const opt=OBJ.list.filter(o=>o.optional);
+    if(opt.length && opt.every(o=>o.state==='done')) ACH.grant('allsub');
+    if(player.id==='lubu') ACH.grant('lubuwin');
+    const d=ACH.load(); d.stats.won=d.stats.won||{}; d.stats.won[player.id]=1; ACH.save();
+    if(CHAR_ORDER.every(id=>d.stats.won[id])) ACH.grant('brothers');
+  }
+  ACH.flush();
   if(player && player.lvRec){
     if(win && S.gameMode!=='survival') player.addExp(Math.round(100*({S:2,A:1.5,B:1.2,C:1}[rank]||1)));   // 通關獎勵
     LEVELS.save(player.id, player.lvRec);
@@ -6803,6 +7081,7 @@ function showResults(win){
   let showNext=false;
   if(win && S.gameMode==='story'){
     for(const id of CAMPAIGN.record(STAGE.id, rank)) announce(T('camp.unlockedAnn', T(`stage.${id}.name`)),'ui big');
+    if(CAMPAIGN.stages().every(id=>{ const c=CAMPAIGN.cleared(id); return c && c.rank==='S'; })) ACH.grant('chapterS');
     const nx=CAMPAIGN.next(STAGE.id); showNext=!!(nx && CAMPAIGN.unlocked(nx));
   }
   $('btn-next').classList.toggle('hidden', !showNext);
@@ -6980,8 +7259,11 @@ function tick(rdtRaw){
   PERF.update(rdt);
   updateAnnounce(rdt);
 
-  if(S.mode==='title'||S.mode==='settings'||S.mode==='campaign'){
-    if(S.mode==='campaign') CAMPAIGN.tick(); else menuTick(MENU.cur);
+  if(S.mode==='achv'){
+    if(input.take('Escape')||input.take('MenuBack')||input.take('Enter')||input.take('MenuOK')) closeAchv();
+  }
+  if(S.mode==='title'||S.mode==='settings'||S.mode==='campaign'||S.mode==='achv'){
+    if(S.mode==='campaign') CAMPAIGN.tick(); else if(S.mode!=='achv') menuTick(MENU.cur);
     if(S.attract) ATTRACT.drive(rdt);      // 有攻擊模式就往下走真實戰鬥模擬
     else {
       updateSelect(rdt);
@@ -7009,6 +7291,7 @@ function tick(rdtRaw){
     if(input.take('ArrowRight')||input.take('KeyD')) setSelIdx((sel.idx+1)%NH);
     ['Digit1','Digit2','Digit3','Digit4'].forEach((c,i)=>{ if(i<NH && input.take(c)) setSelIdx(i); });
     if(input.take('Tab')){ const i=DIFF_ORDER.indexOf(DIFF.id); setDiff(DIFF_ORDER[(i+1)%DIFF_ORDER.length]); }
+    if(input.take('KeyC')||input.take('KeyK')) changeCostume();
     if(input.take('Enter')||input.take('NumpadEnter')||input.take('MenuOK')) begin();
     if(input.take('Escape')||input.take('MenuBack')) openCampaign();
     updateSelect(rdt);
@@ -7229,13 +7512,14 @@ const SELFTEST={
       return { 無雙擊破:director.kills-k0 };
     }],
     ['武將等級:擊破得經驗 → 戰鬥中升級 → 能力提升 → 存檔與卡片顯示', ()=>{ const X=SELFTEST;
-      localStorage.removeItem('musou.levels');
+      localStorage.removeItem('musou.levels'); localStorage.removeItem('musou.weapon'); WEAPON.load();
       setDiff('normal'); X.enterPlay('liubei');
       const hp1=player.maxHp, pow1=player.pow;
       X.expect(player.lvRec.lv===1 && $('pname').textContent.includes('Lv1'), 'Lv1 開局或 HUD 等級錯誤');
       player.addExp(LEVELS.need(1)+LEVELS.need(2)+3);
       X.expect(player.lvRec.lv===3, `經驗應升到 Lv3,實為 Lv${player.lvRec.lv}`);
-      X.expect(player.maxHp===Math.round(hp1/1*1.04) && Math.abs(player.pow-pow1*1.03/1)<.01, `Lv3 能力錯誤 hp ${hp1}→${player.maxHp} pow ${pow1.toFixed(1)}→${player.pow.toFixed(1)}`);
+      const powExp=CHARS.liubei.atk*LEVELS.mul(3).atk*WEAPON.dmgMul('liubei');
+      X.expect(player.maxHp===Math.round(hp1*1.04) && Math.abs(player.pow-powExp)<.01, `Lv3 能力錯誤 hp ${hp1}→${player.maxHp} pow ${pow1.toFixed(1)}→${player.pow.toFixed(2)}(應為 ${powExp.toFixed(2)})`);
       X.expect($('pname').textContent.includes('Lv3'), 'HUD 未更新等級');
       X.expect(LEVELS.get('liubei').lv===3, '升級時未寫入存檔');
       // 真實擊破給經驗(非玩家擊破不給)
@@ -7251,6 +7535,47 @@ const SELFTEST={
       toTitle(); X.step(8); toTitle(); X.step(.1);
       X.expect(localStorage.getItem('musou.levels')===before, '攻擊模式改動了等級存檔');
       return { 站立8秒經驗:g1-g0 };
+    }],
+    ['戰功與服裝:真實擊破觸發 → 累計統計 → 一覽畫面 → 解鎖服裝並切換', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.ach'); localStorage.removeItem('musou.costume'); ACH.reload();
+      setDiff('normal'); X.enterPlay('guanyu');
+      // 百人斬:擊破數 99 時真的打倒一名雜兵
+      director.kills=99;
+      const mob=enemies.find(e=>e.alive && e.isMob);
+      mob.hp=1; dealHit(player,mob,{dmg:9,kb:1,up:0,pierce:1,noElem:1}); X.step(.1);
+      X.expect(ACH.has('kill100'), `擊破第 100 人未達成百人斬(kills ${director.kills})`);
+      // 累計型:完美格擋 20 次
+      for(let i=0;i<19;i++) ACH.bump('pg');
+      X.expect(!ACH.has('pguard20'), '19 次不應達成');
+      ACH.bump('pg');
+      X.expect(ACH.has('pguard20'), '第 20 次完美格擋未達成鐵壁');
+      // 溫酒斬華雄 → 解鎖關羽金甲
+      X.expect(COSTUME.list('guanyu').length===1, '未達成前不應有額外服裝');
+      ACH.grant('wine');
+      X.expect(COSTUME.list('guanyu').length===2, '溫酒斬華雄未解鎖關羽金甲');
+      X.expect(JSON.parse(localStorage.getItem('musou.ach')).got.wine, '戰功未寫入存檔');
+      // 一覽畫面
+      toTitle(); openAchv();
+      X.expect(S.mode==='achv' && $('achgrid').children.length===ACH_DEFS.length, '戰功一覽數量錯誤');
+      X.expect($('achgrid').querySelectorAll('.ach:not(.lock)').length===ACH.count(), '已達成的戰功顯示數錯誤');
+      input.pressed.add('Escape'); X.step(1/60);
+      X.expect(S.mode==='title', '戰功畫面 Esc 未返回主選單');
+      // 選將切換服裝 → 出陣模型套用
+      toSelect(); setSelIdx(HERO_ORDER.indexOf('guanyu'));
+      X.expect($('cards').children[HERO_ORDER.indexOf('guanyu')].querySelector('.cos'), '選將卡片未顯示服裝切換');
+      input.pressed.add('KeyC'); X.step(1/60);
+      X.expect(COSTUME.get('guanyu').id==='gold' && heroRig('guanyu').cloth===0xAA7F2E, '切換服裝失敗');
+      return { 已達成:ACH.count() };
+    }],
+    ['撿武器匣不會洗掉等級與背水加成', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.levels'); localStorage.removeItem('musou.weapon'); WEAPON.load();
+      X.enterPlay('zhangfei');
+      player.addExp(LEVELS.need(1)+LEVELS.need(2)+LEVELS.need(3));      // Lv4:攻擊 ×1.045
+      const before=player.pow;
+      pickupWeapon('fire'); X.step(.05);
+      const expect=CHARS.zhangfei.atk*LEVELS.mul(4).atk*WEAPON.dmgMul('zhangfei');
+      X.expect(player.pow>before && Math.abs(player.pow-expect)<.01, `撿武器匣後攻擊力錯誤:${before.toFixed(2)} → ${player.pow.toFixed(2)}(應為 ${expect.toFixed(2)})`);
+      return { 攻擊力:`${before.toFixed(1)}→${player.pow.toFixed(1)}` };
     }],
     ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
       X.enterPlay('guanyu',{survival:true});
@@ -7621,7 +7946,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER,
+  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
