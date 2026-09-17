@@ -120,6 +120,18 @@ body.touch #objpanel{top:118px; font-size:12px}
 #combo .clab{display:block; font-size:18px; letter-spacing:.4em; color:var(--gold2); text-shadow:0 2px 3px #000; padding-left:.4em}
 #combonum.pop{animation:kpop .14s ease-out}
 
+#dlg{position:fixed; left:50%; bottom:112px; transform:translateX(-50%); z-index:22; pointer-events:none;
+  display:flex; align-items:center; gap:12px; max-width:min(640px,86vw); padding:8px 16px 8px 8px;
+  background:linear-gradient(90deg,rgba(8,6,5,.9),rgba(8,6,5,.72)); border:1px solid rgba(217,185,110,.45);
+  animation:dlgIn .25s ease-out}
+@keyframes dlgIn{from{opacity:0; transform:translate(-50%,8px)} to{opacity:1; transform:translate(-50%,0)}}
+#dlgface{width:54px; height:54px; border-radius:50%; border:2px solid var(--gold); flex:0 0 auto; background:#222}
+#dlg b{display:block; font-size:13px; letter-spacing:.2em; color:var(--gold); margin-bottom:2px}
+#dlg span{font-size:17px; line-height:1.45; letter-spacing:.06em; color:var(--paper); text-shadow:0 1px 3px #000}
+body.touch #dlg{bottom:auto; top:64px; max-width:52vw}
+body.touch #dlgface{width:40px; height:40px}
+body.touch #dlg span{font-size:13px}
+html[lang="en"] #dlg span{letter-spacing:.01em}
 #bossbar{position:absolute; bottom:56px; left:50%; transform:translateX(-50%); width:min(680px,72vw); text-align:center}
 #bossname{font-size:22px; letter-spacing:.3em; color:#ffb0a0; text-shadow:0 0 8px #000,0 2px 3px #000; margin-bottom:5px}
 #bossname small{color:var(--gold); font-size:14px; margin-right:10px}
@@ -454,6 +466,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
 </div>
 
 <div id="announce"></div>
+<div id="dlg" class="hidden"><img id="dlgface" alt=""><div><b id="dlgname"></b><span id="dlgtext"></span></div></div>
 <div id="medal"></div>
 <div id="letterbox"><div class="lb top"></div><div class="lb bot"></div></div>
 <div id="cutin" class="hidden">
@@ -661,6 +674,15 @@ function mulberry32(seed){ return function(){ let t=seed+=0x6D2B79F5; t=Math.imu
 // ============================================================
 // 音效引擎(全程序化:戰鼓 BGM + 各式打擊音)
 // ============================================================
+// ---------- 關卡配樂:速度 / 五聲調式 / 鼓型 ----------
+const BGM_THEMES={
+  hulao:{ bpm:96, scale:[220,261.63,293.66,329.63,392,440,523.25,587.33],            // A 羽調
+    drums:{ taiko:[[0,1],[6,.6],[8,.9],[14,.55]], bossTaiko:[4,12], stick:[4,12], bossStick:[2,10] } },
+  sishui:{ bpm:104, scale:[261.63,293.66,329.63,392,440,523.25,587.33,659.25],       // C 宮調(明亮)
+    drums:{ taiko:[[0,.9],[8,.8]], bossTaiko:[4,12,14], stick:[4,12], bossStick:[2,6,10] } },
+  luoyang:{ bpm:118, scale:[196,220,261.63,293.66,329.63,392,440,523.25],            // G 商調,壓低
+    drums:{ taiko:[[0,1],[3,.55],[6,.7],[8,.95],[11,.55],[14,.7]], bossTaiko:[2,10], stick:[2,4,6,10,12,14], bossStick:[1,5,9,13] } },
+};
 const AUD = {
   ctx:null, master:null, sfxG:null, musG:null, noiseBuf:null,
   muted:false, intensity:0, bgmTimer:null, nextStep:0, step:0,
@@ -744,8 +766,9 @@ const AUD = {
     this.osc('sine',f*2,f*2,t,.25,peak*.18,this.musG,.004); },
   schedule(){
     if(!this.ctx || this.muted) { return; }
-    const STEP = 60/96/4; // 96 BPM 十六分音符
-    const PENT=[220,261.63,293.66,329.63,392,440,523.25,587.33]; // A 羽調五聲
+    const TH=this.theme||BGM_THEMES.hulao;
+    const STEP = 60/TH.bpm/4;             // 十六分音符
+    const PENT=TH.scale;
     const PH=[ // 樂句:[step, 音高idx, 力度]
       [[0,4,.22],[2,3,.14],[4,2,.2],[8,1,.18],[11,2,.12],[12,3,.16],[14,4,.12]],
       [[0,2,.2],[3,1,.14],[6,0,.2],[8,2,.16],[10,4,.14],[12,5,.2]],
@@ -755,15 +778,13 @@ const AUD = {
     while(this.nextStep < this.ctx.currentTime + .12){
       const t=this.nextStep, s=this.step%16, bar=Math.floor(this.step/16);
       const boss = this.intensity>0;
-      if(s===0) this.taiko(t,1);
-      if(s===6) this.taiko(t,.6);
-      if(s===8) this.taiko(t,.9);
-      if(s===14) this.taiko(t,.55);
-      if(boss && (s===4||s===12)) this.taiko(t,.75);
-      if(s===4||s===12) this.stick(t);
-      if(boss && (s===2||s===10)) this.stick(t);
+      const D=TH.drums;
+      for(const [ds,v] of D.taiko) if(ds===s) this.taiko(t,v);
+      if(boss) for(const ds of D.bossTaiko) if(ds===s) this.taiko(t,.75);
+      if(D.stick.includes(s)) this.stick(t);
+      if(boss && D.bossStick.includes(s)) this.stick(t);
       if(s===0 && bar%8===0) this.gongSoft(t);
-      if(s===0 && bar%2===0){ this.pluck(t,110,.12); } // 低音撥
+      if(s===0 && bar%2===0){ this.pluck(t,PENT[0]/2,.12); } // 低音撥(隨調式)
       const phrase = PH[(bar + (boss?2:0)) % PH.length];
       for(const [ps,ni,pk] of phrase){
         if(ps===s){ const f = PENT[ni]*(boss?1.0:1.0); this.pluck(t,f,pk*(boss?1.15:1)); }
@@ -1033,6 +1054,34 @@ const I18N={
   'achd.lv20':'Raise any hero to Lv20',
   'ach.wpn10':'Legendary Arms',
   'achd.wpn10':'Upgrade any weapon to Lv10',
+  'dlg.liubei.start.sishui':'Hua Xiong has cut down our champions... Brothers, with me — we break the pass!',
+  'dlg.zhangfei.start.hulao':'Where is that turncoat Lu Bu? I want a word with him!',
+  'dlg.liubei.start.luoyang':'Dong Zhuo has set the city ablaze... we cannot let him escape!',
+  'dlg.lubu.start.sishui.solo':'Hmph. Rabble.',
+  'dlg.lubu.start.hulao.solo':'There can be only one Lu Bu under heaven!',
+  'dlg.lubu.start.luoyang.solo':'Dong Zhuo... your life is mine.',
+  'dlg.huaxiong.spawn':'Name yourself! My blade does not cut down nameless ghosts!',
+  'dlg.huzhen.spawn':'Archers, loose!',
+  'dlg.lisu.spawn':'General Lu, leave the vanguard to me!',
+  'dlg.xurong.spawn':'Go, Chancellor! I will hold the rear!',
+  'dlg.lubu.spawn':'Who under heaven can stand against Lu Bu?!',
+  'dlg.dongzhuo.spawn':'Hmph! Let Luoyang burn!',
+  'dlg.huaxiong.down':'Im... impossible...',
+  'dlg.huzhen.down':'Fall... fall back...',
+  'dlg.lisu.down':'General Lu... forgive me...',
+  'dlg.xurong.down':'Chancellor... I have done all I can...',
+  'dlg.lubu.down':'I... defeated... here?!',
+  'dlg.dongzhuo.down':'Retreat! Retreat!',
+  'dlg.liubei.lowhp':'I cannot fall here...!',
+  'dlg.guanyu.lowhp':'A mere scratch.',
+  'dlg.zhangfei.lowhp':'Ha! Is that all you have?!',
+  'dlg.lubu.lowhp':'You dare wound me?!',
+  'dlg.liubei.win':'This victory belongs to the people.',
+  'dlg.guanyu.win':'The traitor has fallen.',
+  'dlg.zhangfei.win':'Hahaha! Now that was fun!',
+  'dlg.lubu.win':'Boring.',
+  'dlg.any.downed':'Falling back... I\'ll return soon!',
+  'dlg.any.escape':'Hurry! He\'s nearly at the north gate!',
   'cutin.musou':'MUSOU RAGE','musou.lubu':'PEERLESS',
   'ann.levelUp':(n)=>`LEVEL UP ─ Lv ${n}`,'res.level':'Hero Level',
   'sel.locked':'Defeat Lu Bu to unlock','ann.unlockLubu':'LU BU IS NOW PLAYABLE!','ann.unlockLubuSub':'"Peerless under heaven — who dares face me?"',
@@ -1227,6 +1276,34 @@ I18N.zh={
   'achd.lv20':'任一武將達到 Lv20',
   'ach.wpn10':'神兵',
   'achd.wpn10':'任一武器強化到 Lv10',
+  'dlg.liubei.start.sishui':'華雄連斬聯軍數將……二弟、三弟,隨我破關!',
+  'dlg.zhangfei.start.hulao':'三姓家奴呂布在哪?俺老張要會會他!',
+  'dlg.liubei.start.luoyang':'董卓放火焚城……絕不能讓他逃了!',
+  'dlg.lubu.start.sishui.solo':'哼,區區雜兵。',
+  'dlg.lubu.start.hulao.solo':'天下,只能有一個呂布!',
+  'dlg.lubu.start.luoyang.solo':'董卓……你的命,歸我了。',
+  'dlg.huaxiong.spawn':'來將通名!吾刀下不斬無名之鬼!',
+  'dlg.huzhen.spawn':'弓兵聽令,給我放箭!',
+  'dlg.lisu.spawn':'呂將軍,前陣交給末將!',
+  'dlg.xurong.spawn':'相國先走,末將斷後!',
+  'dlg.lubu.spawn':'天下誰人能擋我呂布!',
+  'dlg.dongzhuo.spawn':'哼,洛陽不要也罷!',
+  'dlg.huaxiong.down':'怎……怎麼可能……',
+  'dlg.huzhen.down':'撤、撤退……',
+  'dlg.lisu.down':'呂將軍……末將無能……',
+  'dlg.xurong.down':'相國……末將已盡力……',
+  'dlg.lubu.down':'吾……竟敗於此……!',
+  'dlg.dongzhuo.down':'撤!快撤!',
+  'dlg.liubei.lowhp':'還不能倒下……!',
+  'dlg.guanyu.lowhp':'區區小傷,何足掛齒。',
+  'dlg.zhangfei.lowhp':'痛快!再來啊!',
+  'dlg.lubu.lowhp':'竟敢傷我!',
+  'dlg.liubei.win':'此戰,是天下蒼生的勝利。',
+  'dlg.guanyu.win':'賊將已伏誅。',
+  'dlg.zhangfei.win':'哈哈哈!痛快!',
+  'dlg.lubu.win':'無趣。',
+  'dlg.any.downed':'先退一步……很快就回來!',
+  'dlg.any.escape':'快!他要逃出北門了!',
   'cutin.musou':'無雙亂舞','musou.lubu':'天下無雙',
   'ann.levelUp':(n)=>`等級提升 ─ Lv ${n}`,'res.level':'武將等級',
   'sel.locked':'擊破呂布後解鎖','ann.unlockLubu':'呂布 已可操作!','ann.unlockLubuSub':'「天下無雙,誰與爭鋒」',
@@ -3529,6 +3606,7 @@ function loadStage(id){
   STAGE=st;
   Object.assign(ARENA, st.arena);
   applyEnv(st.env);
+  AUD.theme=BGM_THEMES[st.id]||BGM_THEMES.hulao;
   st.officerList=st.officers.map(o=>Object.assign({}, OFFICER_DEFS[o.id], o));
   st.bossDef=st.boss? Object.assign({}, BOSS_DEFS[st.boss.id], st.boss) : null;
   buildWorld();
@@ -4342,7 +4420,7 @@ const HUD={
     f.id='hpfill';
     f.classList.toggle('low', r<.28);
     $('vignette').classList.toggle('lowhp', r<.28 && S.mode==='play');
-    if(r<.28 && !this.lowShown && S.mode==='play'){ this.lowShown=true; announce(T('ann.danger'),'red quick'); }
+    if(r<.28 && !this.lowShown && S.mode==='play'){ this.lowShown=true; announce(T('ann.danger'),'red quick'); if(player) DLG.say(player.id,'lowhp'); }
     if(r>=.28) this.lowShown=false;
   },
   setMus(v){
@@ -5485,6 +5563,7 @@ class Enemy{
       this.downT=25; this.releaseToken();
       AUD.kill();
       announce(T('ann.allyHurt',LN(this.def||this,'name')),'red quick');
+      DLG.say(this.allyId,'downed');
       sparks(V3(this.pos.x,1.2,this.pos.z),0xffb060,12,{speed:5,up:4});
       morale.add(-8);
       return;
@@ -6032,6 +6111,7 @@ const director={
     const e=new Enemy('officer', pos || V3(E.x+rand(-E.spread,E.spread),0,E.z), def);
     enemies.push(e);
     OBJ.spawned(def.id);
+    DLG.say(def.id,'spawn');
     return e;
   },
   spawnOfficer(){ return this.spawnOfficerDef(STAGE.officerList[this.officerIdx++]); },
@@ -6046,6 +6126,7 @@ const director={
     AUD.intensity=1;
     if(!B.flee) openGate();
     this.boss=new Enemy('boss', pos||V3(STAGE.enemyEntry.x,0,STAGE.enemyEntry.z), B);
+    DLG.say(B.id,'spawn');
     enemies.push(this.boss);
     bossEntranceCine(this.boss);
   },
@@ -6126,7 +6207,7 @@ const director={
     }else if(e.kind==='officer'){
       this.kills+=5; this.krate+=3; baseKill(e);
       this.officersSlain.push(e.name);
-      if(e.def) OBJ.defeated(e.def.id);
+      if(e.def){ OBJ.defeated(e.def.id); DLG.say(e.def.id,'down'); }
       announce(T('ann.officerDown',LN(e.def||e,'name')),'ink');
       if(player) player.gainMusou(45);
       spawnDrop(e.pos,'bun'); spawnDrop(e.pos,'wine');
@@ -6143,7 +6224,7 @@ const director={
       shockRing(e.pos,0xffe0a0,11,.9);
       sparks(V3(e.pos.x,1.6,e.pos.z),0xffe08a,40,{speed:9,up:8});
       killCine(e,2.6);
-      if(e.def) OBJ.defeated(e.def.id);
+      if(e.def){ OBJ.defeated(e.def.id); DLG.say(e.def.id,'down'); }
       if(e.def && e.def.id==='lubu') ACH.grant('lubu');
       if(e.def && e.def.id==='lubu' && !S.attract && UNLOCK.grant('lubu')){
         schedule(2.8,()=>announce(T('ann.unlockLubu'),'ui big',T('ann.unlockLubuSub')));
@@ -6192,6 +6273,7 @@ function luoyangStart(){
 function luoyangTick(dt){
   const L=S.luoyang; if(!L || !player) return;
   const b=director.boss;
+  if(b && b.alive && !L.warned && Math.hypot(STAGE.exit.x-b.pos.x, STAGE.exit.z-b.pos.z)<42){ L.warned=true; DLG.say(player.id,'escape'); }
   if(b && b.alive && (L.esc-=dt)<=0){            // 親衛陸續護駕
     L.esc=rand(6,9);
     for(let i=0;i<3;i++){ const a=rand(TAU);
@@ -6208,6 +6290,44 @@ function luoyangTick(dt){
     fireHazard(player.pos,3,8);
   }
 }
+// ============================================================
+// 對白:頭像 + 名字 + 一句台詞(字幕位置;攻擊模式不播)
+// ============================================================
+const DLG={
+  q:[], cur:null, t:0, faces:new Map(),
+  rigOf(who){ return CHARS[who]? heroRig(who) : (OFFICER_DEFS[who]||BOSS_DEFS[who]||{}).rig; },
+  nameOf(who){ return LN(CHARS[who]||OFFICER_DEFS[who]||BOSS_DEFS[who]||{name:who},'name'); },
+  face(who){
+    if(this.faces.has(who)) return this.faces.get(who);
+    let url='';
+    try{
+      const img=makeLegoFace(this.rigOf(who)).image, c=document.createElement('canvas'); c.width=c.height=96;
+      c.getContext('2d').drawImage(img, 256-66, 40, 132, 132, 0, 0, 96, 96);
+      url=c.toDataURL('image/png');
+    }catch(e){}
+    this.faces.set(who,url); return url;
+  },
+  // key 對應 dlg.<who>.<key>(找不到時用 dlg.any.<key>)
+  say(who,key,...args){
+    if(S.attract) return;
+    let k=`dlg.${who}.${key}`;
+    if(I18N.zh[k]===undefined) k=`dlg.any.${key}`;
+    if(I18N.zh[k]===undefined) return;
+    if(this.q.length>=3) this.q.shift();
+    this.q.push({who,k,args});
+  },
+  update(rdt){
+    if(this.cur && (this.t-=rdt)<=0){ this.cur=null; $('dlg').classList.add('hidden'); }
+    if(!this.cur && this.q.length){
+      const d=this.cur=this.q.shift(); this.t=3.2;
+      $('dlgface').src=this.face(d.who); $('dlgname').textContent=this.nameOf(d.who);
+      $('dlgtext').textContent=T(d.k,...d.args);
+      const el=$('dlg'); el.classList.remove('hidden'); el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+    }
+  },
+  clear(){ this.q.length=0; this.cur=null; $('dlg').classList.add('hidden'); },
+};
+
 // 汜水關:攻陷兩座營寨 → 城門大開,華雄率親衛出關
 function huaxiongSally(){
   openGate();
@@ -6279,7 +6399,7 @@ const OBJ={
       x.state='active';
       if(!x.optional) announce(T('obj.new'),'quick', this.text(x));
     }
-    if(o.final && !this.ended){ this.ended=true; S.resultTimer=3.4; S.resultWin=true; }
+    if(o.final && !this.ended){ this.ended=true; S.resultTimer=3.4; S.resultWin=true; if(player) DLG.say(player.id,'win'); }
   },
   fail(key){
     if(this.ended) return;
@@ -6838,6 +6958,7 @@ function closeHowto(){
 // ============================================================
 function cleanupBattle(){
   if(player && player.lvRec && !S.attract) LEVELS.save(player.id, player.lvRec);
+  DLG.clear();
   ACH.flush();
   S.attract=false;
   S.luoyang=null;
@@ -7258,6 +7379,7 @@ function tick(rdtRaw){
   if(input.take('KeyM')) AUD.toggleMute();
   PERF.update(rdt);
   updateAnnounce(rdt);
+  DLG.update(rdt);
 
   if(S.mode==='achv'){
     if(input.take('Escape')||input.take('MenuBack')||input.take('Enter')||input.take('MenuOK')) closeAchv();
@@ -7313,6 +7435,7 @@ function tick(rdtRaw){
       scEl.classList.add('hidden'); scEl.style.opacity=1;
       S.mode='play';
       announce(T('stage.go'),'');
+    DLG.say(S.currentChar==='lubu'? 'lubu' : (STAGE.id==='hulao'? 'zhangfei' : 'liubei'), `start.${STAGE.id}${S.currentChar==='lubu'?'.solo':''}`);
       spawnAllies(S.currentChar);
       director.prespawn();
       if(STAGE.onStart) STAGE.onStart();
@@ -7576,6 +7699,25 @@ const SELFTEST={
       const expect=CHARS.zhangfei.atk*LEVELS.mul(4).atk*WEAPON.dmgMul('zhangfei');
       X.expect(player.pow>before && Math.abs(player.pow-expect)<.01, `撿武器匣後攻擊力錯誤:${before.toFixed(2)} → ${player.pow.toFixed(2)}(應為 ${expect.toFixed(2)})`);
       return { 攻擊力:`${before.toFixed(1)}→${player.pow.toFixed(1)}` };
+    }],
+    ['對白與配樂:開場 / 敵將登場 / 擊破 / 勝利台詞依序播出,配樂隨關卡切換', ()=>{ const X=SELFTEST;
+      X.enterPlay('guanyu',{stage:'sishui'});
+      X.expect(AUD.theme===BGM_THEMES.sishui, '汜水關配樂未套用');
+      X.step(.1);
+      X.expect(!$('dlg').classList.contains('hidden') && $('dlgname').textContent===DLG.nameOf('liubei'), '開場台詞未由劉備說出');
+      X.expect($('dlgface').src.startsWith('data:image/png'), '對白頭像未產生');
+      X.step(3.4);
+      setBaseSide(bases[0],0,true); setBaseSide(bases[1],0,true); X.step(.2);
+      X.expect($('dlgtext').textContent===T('dlg.huaxiong.spawn'), `華雄登場台詞錯誤:${$('dlgtext').textContent}`);
+      const hx=enemies.find(e=>e.kind==='officer'); X.stepSafe(4);
+      let n=0; while(hx.alive && n<40){ hx.hp=1; dealHit(player,hx,{dmg:9,kb:1,up:0,pierce:1,noElem:1}); X.step(.05); n++; }
+      const seen=new Set(); for(let i=0;i<60;i++){ X.step(.1); if(!$('dlg').classList.contains('hidden')) seen.add($('dlgtext').textContent); }
+      X.expect(seen.has(T('dlg.huaxiong.down')) && seen.has(T('dlg.guanyu.win')), `擊破 / 勝利台詞未播出:${[...seen].join(' / ')}`);
+      toTitle(); X.step(6);
+      X.expect($('dlg').classList.contains('hidden'), '主選單攻擊模式不應播對白');
+      X.enterPlay('zhangfei',{stage:'luoyang'});
+      X.expect(AUD.theme===BGM_THEMES.luoyang, '洛陽配樂未套用');
+      return { 播出:seen.size };
     }],
     ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
       X.enterPlay('guanyu',{survival:true});
@@ -7946,7 +8088,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv,
+  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv, DLG, BGM_THEMES,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
