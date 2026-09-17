@@ -80,6 +80,15 @@ body{
   text-shadow:0 0 6px rgba(255,200,80,.8)}
 #musready.on{opacity:1; animation:musPulse .6s ease-in-out infinite}
 
+#objpanel{position:absolute; top:132px; left:26px; font-size:14.5px; letter-spacing:.08em; line-height:1.8;
+  color:var(--paper); text-shadow:0 1px 3px #000,0 0 10px rgba(0,0,0,.85)}
+#objpanel .o{display:flex; gap:8px; align-items:baseline}
+#objpanel .o i{font-style:normal; color:var(--gold2); width:1.1em; text-align:center}
+#objpanel .o.opt{font-size:13px; color:rgba(232,220,192,.78)}
+#objpanel .o.opt i{color:var(--gold)}
+#objpanel .o.done{opacity:.5}
+#objpanel .o.done span{text-decoration:line-through; text-decoration-color:rgba(217,185,110,.7)}
+body.touch #objpanel{top:118px; font-size:12px}
 #topright{position:absolute; top:22px; right:26px; display:flex; flex-direction:column; align-items:flex-end; gap:10px}
 #minimap{width:152px; height:152px; background:rgba(8,6,4,.72);
   border:1px solid rgba(217,185,110,.5); box-shadow:0 2px 8px rgba(0,0,0,.5)}
@@ -382,6 +391,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
     <div class="barwrap mus"><div class="fill" id="musfill"></div><div id="muslabel" data-t="hud.musou">無雙</div></div>
     <div id="musready" data-t="hud.musouReady">─ 無雙亂舞可發動(L 鍵)─</div>
   </div>
+  <div id="objpanel"></div>
   <div id="topright">
     <canvas id="minimap" width="152" height="152"></canvas>
     <div id="kills"><span id="killnum">0</span><span class="klab" data-t="hud.kills">擊破</span></div>
@@ -471,6 +481,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
       <div class="rrow"><span data-t="res.combo">最大連擊</span><b id="rcombo">0</b></div>
       <div class="rrow"><span data-t="res.offs">討取敵將</span><b id="roffs">─</b></div>
       <div class="rrow"><span data-t="res.time">作戰時間</span><b id="rtime">0:00</b></div>
+      <div class="rrow"><span data-t="res.objs">達成目標</span><b id="robjs">─</b></div>
     </div>
     <div id="rankrow"><span class="rlab" data-t="res.rank">戰功評價</span><span id="rankletter">S</span></div>
     <div class="btnrow">
@@ -889,6 +900,10 @@ const I18N={
   'hud.mute':'M Mute','hud.pad':(n)=>`🎮 ${n} connected`,
   'credit':'Brick part geometry © LDraw.org parts library ・ CC BY 4.0 ・ Not affiliated with the LEGO Group',
   'cutin.musou':'MUSOU RAGE',
+  'obj.defeat':(n)=>`Defeat ${n}`,'obj.capture':(p,n)=>`Capture bases ${p} / ${n}`,'obj.kills':(p,n)=>`Slay ${p} / ${n}`,
+  'obj.done':'OBJECTIVE COMPLETE','obj.subDone':'Bonus objective complete','res.objs':'Objectives',
+  'stage.hulao.chapter':'CHAPTER I 　 THE ALLIED COALITION','stage.hulao.name':'Battle of Hulao Gate',
+  'stage.hulao.sub':'March on the traitor Dong Zhuo ─ the Flying General bars the way','stage.hulao.win':'Lu Bu has fallen ─ a great victory at Hulao Gate',
   'musou.liubei':'TWIN DRAGON RAGE','musou.guanyu':'AZURE DRAGON TIDE','musou.zhangfei':'ROAR OF YAN',
   // --- 戰鬥文字 ---
   'fx.perfect':'PERFECT','fx.guard':'GUARD','fx.musouPlus':'MUSOU+',
@@ -993,6 +1008,10 @@ I18N.zh={
   'hud.mute':'M 靜音','hud.pad':(n)=>`🎮 ${n} 已連線`,
   'credit':'積木零件幾何 © LDraw.org 零件庫 ・ CC BY 4.0 ・ 與 LEGO 集團無隸屬關係',
   'cutin.musou':'無雙亂舞',
+  'obj.defeat':(n)=>`擊破 ${n}`,'obj.capture':(p,n)=>`攻陷據點 ${p} / ${n}`,'obj.kills':(p,n)=>`擊破 ${p} / ${n} 人`,
+  'obj.done':'目標達成','obj.subDone':'次要目標達成','res.objs':'達成目標',
+  'stage.hulao.chapter':'第 一 章 　 反董卓聯合軍','stage.hulao.name':'虎牢關之戰',
+  'stage.hulao.sub':'討伐國賊董卓 ─ 陣前有飛將呂布擋道','stage.hulao.win':'敵將呂布已被擊破 ─ 虎牢關大捷',
   'musou.liubei':'雙龍亂舞','musou.guanyu':'青龍怒濤','musou.zhangfei':'燕人咆哮',
   'fx.perfect':'完美格擋','fx.guard':'擋','fx.musouPlus':'無雙+',
   'combo.10':'快','combo.30':'猛','combo.60':'無雙','combo.120':'天下無雙',
@@ -1148,6 +1167,12 @@ const STAGES = {
     arrowMinZ:34,                        // 城牆箭雨只在靠近城牆時觸發
     officers:[ { id:'huaxiong', at:900, tAt:80 }, { id:'huzhen', at:1900, tAt:175 }, { id:'lisu', at:2900, tAt:275 } ],
     boss:{ id:'lubu', at:4000, tAt:380 },
+    objectives:[
+      { id:'lubu',   kind:'defeat',  target:'lubu', final:true },
+      { id:'huzhen', kind:'defeat',  target:'huzhen', optional:true },
+      { id:'lisu',   kind:'defeat',  target:'lisu',   optional:true },
+      { id:'bases',  kind:'capture', n:4,             optional:true },
+    ],
     bases:[
       { x:-46, z:-18, name:'西寨', en:{name:'West Camp'} }, { x:46, z:-18, name:'東寨', en:{name:'East Camp'} },
       { x:-38, z:38,  name:'西丘', en:{name:'West Hill'} }, { x:38, z:38,  name:'東丘', en:{name:'East Hill'} },
@@ -2601,13 +2626,34 @@ function disposeTree(root){
 function clearWorld(){
   disposeTree(world.props);
   world.props.clear();
-  world.banners.length=0; world.fires.length=0;
+  world.banners.length=0; world.fires.length=0; world.gate=null;
 }
 function buildWorld(){
   clearWorld();
   STAGE.build(world.props, mulberry32(STAGE.seed||42));
 }
 // ---------- 虎牢關 ----------
+// 可開啟的城門:兩扇門各掛在外側鉸鏈上,向外(-z)推開;門後放一塊暗色門洞
+function makeGate(P, x, z, w, h, woodM){
+  const half=w/2, gold=mat(0xc9a437);
+  P.add(mesh(box(w, h, 4.6), mat(0x1B1B1B), x, h/2, z+2.3, false));
+  const mkLeaf=(sx)=>{
+    const hinge=new THREE.Group(); hinge.position.set(x+sx*half, 0, z);
+    const leaf=mesh(box(half, h, 1.2), woodM, -sx*half/2, h/2, 0);
+    hinge.add(leaf);
+    hinge.add(mesh(box(.28, h, .3), gold, -sx*(half-.14), h/2, -.62));        // 門縫金邊
+    for(const y of [h*.25, h*.72]) hinge.add(mesh(box(half*.86, .32, .2), mat(0x3a2a1c), -sx*half/2, y, -.66));   // 橫閂
+    P.add(hinge); return hinge;
+  };
+  world.gate={ L:mkLeaf(-1), R:mkLeaf(1), open:0, target:0 };
+}
+function openGate(){ if(world.gate && world.gate.target<1){ world.gate.target=1; AUD.boom(); addShake(.25); } }
+function updateGate(dt){
+  const G=world.gate; if(!G) return;
+  G.open=damp(G.open, G.target, 1.6, dt);
+  G.L.rotation.y=-G.open*1.72; G.R.rotation.y=G.open*1.72;
+}
+
 // 共用佈景工具組:各關卡以同一個 rng 依序呼叫,擺設可重現
 function propKit(P, rng){
   const mkBanner=(x,z,ch,bg,fg,h=4.2)=>{
@@ -2735,8 +2781,7 @@ function buildHulao(P, rng){
   const mkWall=(x,w)=>{ const m=mesh(box(w,12,5), wallM, x,6,91); m.receiveShadow=true; P.add(m); };
   mkWall(-64,112); mkWall(64,112);
   P.add(mesh(box(16.5,4.5,5), wallM, 0,9.8,91));
-  P.add(mesh(box(15.5,7.8,1.2), woodM, 0,3.9,90.4));
-  P.add(mesh(box(.5,7.8,.6), mat(0xc9a437), 0,3.9,89.9));
+  makeGate(P, 0, 90.4, 15.5, 7.8, woodM);
   for(let x=-70;x<=70;x+=3.2){ P.add(mesh(box(1.6,1.1,.8), stoneM, x,12.6,88.9)); }
   // 城樓
   const tower=(x,w,h,y)=>{
@@ -5265,6 +5310,7 @@ const director={
     announce(T('ann.lubu'),'red big',T('ann.lubuSub'));
     AUD.roar(); AUD.gong(true); addShake(.8);
     AUD.intensity=1;
+    openGate();
     this.boss=new Enemy('boss',V3(STAGE.enemyEntry.x,0,STAGE.enemyEntry.z),STAGE.bossDef);
     enemies.push(this.boss);
     bossEntranceCine(this.boss);
@@ -5339,6 +5385,7 @@ const director={
     }else if(e.kind==='officer'){
       this.kills+=5; this.krate+=3;
       this.officersSlain.push(e.name);
+      if(e.def) OBJ.defeated(e.def.id);
       announce(T('ann.officerDown',LN(e.def||e,'name')),'ink');
       if(player) player.gainMusou(45);
       spawnDrop(e.pos,'bun'); spawnDrop(e.pos,'wine');
@@ -5355,13 +5402,77 @@ const director={
       shockRing(e.pos,0xffe0a0,11,.9);
       sparks(V3(e.pos.x,1.6,e.pos.z),0xffe08a,40,{speed:9,up:8});
       killCine(e,2.6);
+      if(e.def) OBJ.defeated(e.def.id);
       if(S.gameMode==='survival'){ this.boss=null; }
-      else { S.resultTimer=3.4; S.resultWin=true; }
+      else if(!OBJ.list.length){ S.resultTimer=3.4; S.resultWin=true; }   // 沒有目標設定的關卡:擊破 BOSS 即勝利
     }
     HUD.setKills(this.kills);
   },
 };
 
+
+// ============================================================
+// 任務目標
+// 關卡 objectives:{ id, kind:'defeat'|'capture'|'kills', target(敵將/BOSS id), n,
+//                    optional(次要,完成加評價), final(完成即勝利), onDone() }
+// 主角陣亡恆為失敗;其他失敗條件由關卡邏輯呼叫 OBJ.fail(key)
+// ============================================================
+function objName(id){ return LN(OFFICER_DEFS[id]||BOSS_DEFS[id]||{name:id},'name'); }
+const OBJ={
+  list:[], ended:false,
+  start(){
+    this.ended=false;
+    const on = S.gameMode!=='survival';
+    this.list = on? (STAGE.objectives||[]).map(o=>({ ...o, state:'active', prog:0, hit:false })) : [];
+    this.render(true);
+  },
+  text(o){
+    if(o.kind==='defeat')  return T('obj.defeat', objName(o.target));
+    if(o.kind==='capture') return T('obj.capture', Math.min(o.prog,o.n), o.n);
+    if(o.kind==='kills')   return T('obj.kills', Math.min(o.prog,o.n), o.n);
+    return o.id;
+  },
+  // 敵將 / BOSS 被擊破時由導演通知
+  defeated(id){ for(const o of this.list) if(o.kind==='defeat' && o.target===id) o.hit=true; },
+  update(){
+    if(this.ended || !this.list.length) return;
+    let dirty=false;
+    const own=bases.filter(b=>b.side===0).length;
+    for(const o of this.list){
+      if(o.state!=='active') continue;
+      const before=o.prog;
+      if(o.kind==='capture') o.prog=own;
+      if(o.kind==='kills')   o.prog=director.kills;
+      if(o.prog!==before) dirty=true;
+      const done = o.kind==='defeat'? o.hit : o.prog>=o.n;
+      if(done) this.complete(o), dirty=true;
+    }
+    if(dirty) this.render();
+  },
+  complete(o){
+    o.state='done'; o.flash=1;
+    if(o.onDone) o.onDone();
+    if(!o.final) announce(T(o.optional?'obj.subDone':'obj.done'), o.optional?'quick':'', this.text(o));
+    AUD.gong();
+    if(o.final && !this.ended){ this.ended=true; S.resultTimer=3.4; S.resultWin=true; }
+  },
+  fail(key){
+    if(this.ended) return;
+    this.ended=true;
+    announce(T('obj.fail.'+key),'red big');
+    AUD.fanfare(false);
+    S.resultTimer=2.4; S.resultWin=false;
+  },
+  optionalDone(){ return this.list.filter(o=>o.optional && o.state==='done').length; },
+  summary(){ return this.list.length? `${this.list.filter(o=>o.state==='done').length} / ${this.list.length}` : '─'; },
+  render(fresh){
+    const el=$('objpanel'); if(!el) return;
+    if(!this.list.length){ el.innerHTML=''; return; }
+    const sorted=[...this.list].sort((a,b)=>(a.optional?1:0)-(b.optional?1:0));
+    el.innerHTML=sorted.map(o=>`<div class="o ${o.optional?'opt':''} ${o.state==='done'?'done':''} ${fresh?'':''}">`+
+      `<i>${o.state==='done'?'✓':(o.optional?'◇':'◆')}</i><span>${this.text(o)}</span></div>`).join('');
+  },
+};
 
 // ============================================================
 // 攝影機
@@ -5745,6 +5856,7 @@ function closeHowto(){
 // ============================================================
 function cleanupBattle(){
   S.attract=false;
+  OBJ.list=[]; OBJ.ended=false; OBJ.render();
   input.vAx=[0,0]; input.vActive=false; input.vYaw=0;   // 清掉攻擊模式 bot / 觸控殘留的虛擬軸
   if(_rndOrig){ Math.random=_rndOrig; _rndOrig=null; }
   S.gameMode='story'; S.mut=null; S.daily=null;
@@ -5805,6 +5917,12 @@ function startBattle(charId, opt={}){
   loadStage(opt.stage || 'hulao');
   S.stageId=STAGE.id;
   S.dayT=STAGE.env.dusk.start; applyDayT(S.dayT);   // 每場從關卡的起始天色開始(原本會沿用上一場的夜色)
+  if(world.gate){ world.gate.open=world.gate.target=0; updateGate(0); }
+  OBJ.start();
+  // 開場卡文字依關卡
+  for(const [sel,k] of [['.chapter','chapter'],['h1','name'],['.sub','sub']]){
+    const el=$('stagecard').querySelector(sel); el.dataset.t=`stage.${STAGE.id}.${k}`; el.textContent=T(el.dataset.t);
+  }
   S.gameMode = opt.daily? 'daily' : (opt.survival? 'survival' : 'story');
   S.mut = opt.daily? opt.daily.mut.k : null;
   S.daily = opt.daily || null;
@@ -5910,7 +6028,8 @@ function showResults(win){
   $('resmode').textContent=modeLabel();
   $('resword').textContent=win?T('res.win'):T('res.lose');
   $('resword').className=win?'':'lose';
-  $('ressub').textContent=win?T('res.winSub'):T('res.loseSub');
+  $('ressub').textContent=win?T(`stage.${STAGE.id}.win`):T('res.loseSub');
+  $('robjs').textContent=OBJ.summary();
   $('rchar').textContent=`${LN(C,'name')} ${LN(C,'zi')}`;
   $('rkills').textContent=director.kills;
   $('rcombo').textContent=player?player.maxCombo:0;
@@ -5925,7 +6044,8 @@ function showResults(win){
     BEST.put('survival',{ cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, wave:w });
   }
   else if(win){
-    const pts=(director.kills+(player?player.maxCombo:0)*1.5+(player?player.hp/player.maxHp:0)*60-director.time/5)*DIFF.scoreMul;
+    const pts=(director.kills+(player?player.maxCombo:0)*1.5+(player?player.hp/player.maxHp:0)*60-director.time/5
+              + OBJ.optionalDone()*25)*DIFF.scoreMul;          // 每個次要目標 +25
     rank=pts>=190?'S':pts>=150?'A':pts>=110?'B':'C';
   }
   const rl=$('rankletter'); rl.textContent=rank; rl.className=rank==='S'?'S':'';
@@ -5963,7 +6083,7 @@ function captureFrame(){
 function modeLabel(){
   if(S.gameMode==='daily') return T('mode.daily',S.daily.day,LN(S.daily.mut,'n').replace(/\u3000/g,''));
   if(S.gameMode==='survival') return T('mode.survival',director.wave);
-  return T('mode.story');
+  return T(`stage.${STAGE.id}.name`);
 }
 function makeShareCard(win,rank){
   const W=1200,H=630, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
@@ -6186,8 +6306,10 @@ function tick(rdtRaw){
   updateBricks(worldDt); updateStuds(worldDt);
   separation(worldDt);
 
+  updateGate(worldDt);
   if((S.mode==='play'||S.attract)&&player){
     director.update(dt);
+    OBJ.update();
     HUD.setMus(player.musou);
     HUD.setHP(player.hp,player.maxHp);
     let bb=null;
@@ -6343,6 +6465,24 @@ const SELFTEST={
       X.expect(Math.random===before, '離開每日挑戰後亂數未還原');
       X.expect(S.gameMode==='story' && !S.mut, '離開後模式未重設');
       return { 日:c.day, 武將:c.char, 變異:c.mut.k };
+    }],
+    ['任務目標與城門:虎牢關', ()=>{ const X=SELFTEST;
+      setDiff('normal'); X.enterPlay('guanyu');
+      X.expect(OBJ.list.length===4 && $('objpanel').children.length===4, `目標面板應有 4 項,實為 ${$('objpanel').children.length}`);
+      X.expect(world.gate && world.gate.target===0 && world.gate.open===0, '開局城門應關閉');
+      for(const b of bases) setBaseSide(b,0,true);
+      X.step(.1);
+      const ob=OBJ.list.find(o=>o.id==='bases');
+      X.expect(ob.state==='done', `攻陷全部據點後次要目標未達成(${ob.prog}/${ob.n})`);
+      director.time=STAGE.bossDef.tAt; X.stepSafe(3.5);
+      X.expect(director.boss && world.gate.open>.8, `呂布登場後城門未打開:${world.gate.open.toFixed(2)}`);
+      const b=director.boss; let n=0;
+      while(b.alive && n<30){ b.hp=1; dealHit(player,b,{dmg:9,kb:1,up:0,pierce:1,noElem:1}); X.step(.05); n++; }
+      X.stepSafe(5);
+      X.expect(S.mode==='victory', `擊破呂布後應勝利,實為 ${S.mode}`);
+      X.expect($('robjs').textContent==='2 / 4', `達成目標應為 2 / 4,實為 ${$('robjs').textContent}`);
+      X.expect($('ressub').textContent.startsWith(T('stage.hulao.win')), '勝利副標未依關卡');
+      return { 達成:$('robjs').textContent, 城門:+world.gate.open.toFixed(2) };
     }],
     ['勝利流程:擊破呂布 → 結算 → 分享卡', ()=>{ const X=SELFTEST;
       localStorage.removeItem('musou.best'); BEST.load();
@@ -6507,7 +6647,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage,
+  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
