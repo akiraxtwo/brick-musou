@@ -120,6 +120,15 @@ body.touch #objpanel{top:118px; font-size:12px}
 #combo .clab{display:block; font-size:18px; letter-spacing:.4em; color:var(--gold2); text-shadow:0 2px 3px #000; padding-left:.4em}
 #combonum.pop{animation:kpop .14s ease-out}
 
+#tutor{position:fixed; left:50%; top:66px; transform:translateX(-50%); z-index:22; pointer-events:none;
+  display:flex; align-items:center; gap:10px; padding:8px 18px; max-width:min(620px,88vw);
+  background:rgba(20,16,8,.88); border:1px solid rgba(255,214,120,.7); box-shadow:0 0 18px rgba(255,200,90,.25);
+  animation:dlgIn .3s ease-out}
+#tutor i{font-style:normal; font-size:18px}
+#tutor span{font-size:15.5px; letter-spacing:.06em; color:#fff2c8; line-height:1.5}
+#tutor b{color:#ffd66a; font-weight:700; padding:0 2px}
+body.touch #tutor{top:auto; bottom:12px; max-width:44vw}
+body.touch #tutor span{font-size:12px}
 #dlg{position:fixed; left:50%; bottom:112px; transform:translateX(-50%); z-index:22; pointer-events:none;
   display:flex; align-items:center; gap:12px; max-width:min(640px,86vw); padding:8px 16px 8px 8px;
   background:linear-gradient(90deg,rgba(8,6,5,.9),rgba(8,6,5,.72)); border:1px solid rgba(217,185,110,.45);
@@ -323,6 +332,20 @@ html[lang="en"] #dlg span{letter-spacing:.01em}
 #padhint{position:fixed; left:16px; bottom:30px; z-index:21; font-size:11.5px; letter-spacing:.12em;
   color:rgba(125,255,176,.62); pointer-events:none}
 
+/* ---------- 戰前簡報 ---------- */
+#brief{background:rgba(4,3,2,.82); backdrop-filter:blur(3px); z-index:46}
+.briefpanel{max-width:min(860px,96vw)}
+.bchapter{font-size:13px; letter-spacing:.5em; color:var(--gold); text-align:center; margin-bottom:4px}
+.bbody{display:flex; gap:22px; align-items:flex-start; margin:6px 0 14px}
+#bmap{width:min(300px,34vw); height:auto; aspect-ratio:1; border:1px solid rgba(217,185,110,.45); background:#14100c; flex:0 0 auto}
+.bright{flex:1; min-width:0}
+.bflavor{font-size:14.5px; line-height:1.85; color:rgba(232,220,192,.9); letter-spacing:.04em; margin-bottom:14px}
+.bobjs div{font-size:15px; line-height:1.9; color:var(--paper)} .bobjs i{font-style:normal; color:var(--gold2); margin-right:8px}
+.bobjs .opt{font-size:13.5px; color:rgba(232,220,192,.75)}
+.bhero{margin-top:12px; font-size:13px; color:var(--gold); letter-spacing:.1em}
+body.touch .bbody{gap:12px} body.touch #bmap{width:30vw} body.touch .bflavor{font-size:12px; line-height:1.6}
+body.touch .bobjs div{font-size:12.5px; line-height:1.6}
+
 /* ---------- 戰功一覽 ---------- */
 #achv{background:rgba(4,3,2,.9); backdrop-filter:blur(4px); z-index:50}
 .achpanel{max-width:min(920px,96vw)}
@@ -466,6 +489,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
 </div>
 
 <div id="announce"></div>
+<div id="tutor" class="hidden"><i>💡</i><span id="tutortext"></span></div>
 <div id="dlg" class="hidden"><img id="dlgface" alt=""><div><b id="dlgname"></b><span id="dlgtext"></span></div></div>
 <div id="medal"></div>
 <div id="letterbox"><div class="lb top"></div><div class="lb bot"></div></div>
@@ -539,6 +563,26 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
     <div id="bestline"></div>
     <button id="startbtn" class="btn" data-t="sel.start">出　陣</button>
     <div id="selhint" data-t="sel.hint">← → 選武將 ・ Tab 切換難度 ・ Enter 出陣</div>
+  </div>
+</div>
+
+<!-- ===== 戰前簡報 ===== -->
+<div id="brief" class="screen hidden">
+  <div class="panel wide briefpanel">
+    <div class="bchapter" id="bchapter"></div>
+    <h2 class="ptitle" id="bname"></h2>
+    <div class="bbody">
+      <canvas id="bmap" width="300" height="300"></canvas>
+      <div class="bright">
+        <div class="bflavor" id="bflavor"></div>
+        <div class="bobjs" id="bobjs"></div>
+        <div class="bhero" id="bhero"></div>
+      </div>
+    </div>
+    <div class="btnrow">
+      <button class="btn small" id="btn-brief-go" data-t="brief.go">出　陣（Enter）</button>
+      <button class="btn small" id="btn-brief-back" data-t="brief.back">返　回（Esc）</button>
+    </div>
   </div>
 </div>
 
@@ -804,7 +848,7 @@ const AUD = {
 const IS_TOUCH = matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window);
 const SETTINGS={
   d:{ master:.55, bgm:.34, sfx:.9, quality:'auto', camSens:1, camInvert:0,
-      shake:1, rumble:1, dmgnum:1, padDead:.22,
+      shake:1, rumble:1, dmgnum:1, padDead:.22, tutorial:1,
       touchUI:'auto', touchSize:1, touchAlpha:.72,
       lang: (navigator.language||'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en' },
   load(){ try{ Object.assign(this.d, JSON.parse(localStorage.getItem('musou.settings')||'{}')); }catch(e){} },
@@ -1082,6 +1126,45 @@ const I18N={
   'dlg.lubu.win':'Boring.',
   'dlg.any.downed':'Falling back... I\'ll return soon!',
   'dlg.any.escape':'Hurry! He\'s nearly at the north gate!',
+  'set.tutorial':'Tutorial Tips',
+  'set.tutReset':'Show Tutorial Again',
+  'set.tutResetHint':'Replay every tip',
+  'ann.tutReset':'Tutorial tips reset',
+  'brief.go':'Sortie (Enter)',
+  'brief.back':'Back (Esc)',
+  'brief.gate':'Gate',
+  'brief.exit':'North Gate (Dong Zhuo\'s escape)',
+  'brief.you':'You',
+  'stage.sishui.flavor':'AD 190. The eastern lords rise against Dong Zhuo. His general Hua Xiong holds Sishui Gate and has slain several of the coalition\'s champions.',
+  'stage.hulao.flavor':'With Sishui Gate fallen, Dong Zhuo garrisons Hulao Gate and sends his adopted son Lu Bu to meet the coalition. Among men, Lu Bu — none can stand before him.',
+  'stage.luoyang.flavor':'Beaten back, Dong Zhuo puts Luoyang to the torch and drags the Emperor west. The coalition chases him into the burning capital — stop him before the north gate.',
+  'tut.move.kb':'<b>WASD</b> to move, hold <b>Shift</b> to sprint',
+  'tut.move.pad':'<b>Left stick</b> to move, hold <b>L1</b> to sprint',
+  'tut.move.touch':'<b>Drag on the left half</b> to move',
+  'tut.attack.kb':'Tap <b>J</b> for a six-hit combo',
+  'tut.attack.pad':'Tap <b>□</b> for a six-hit combo',
+  'tut.attack.touch':'Tap <b>ATK</b> (hold to repeat)',
+  'tut.charge.kb':'Press <b>K</b> mid-combo: each hit count leads to a different charge attack',
+  'tut.charge.pad':'Press <b>△</b> mid-combo for a charge attack',
+  'tut.charge.touch':'Tap <b>C</b> mid-combo for a charge attack',
+  'tut.guard.kb':'Hold <b>H</b> to guard; guard right as you are hit for a Perfect Guard',
+  'tut.guard.pad':'Hold <b>R1</b> to guard; time it for a Perfect Guard',
+  'tut.guard.touch':'Hold <b>GRD</b> to guard',
+  'tut.musou.kb':'Musou gauge full! Press <b>L</b>',
+  'tut.musou.pad':'Musou gauge full! Press <b>○</b>',
+  'tut.musou.touch':'Musou gauge full! Tap <b>MUSOU</b>',
+  'tut.base.kb':'Slay the defenders near a base to capture it',
+  'tut.base.pad':'Slay the defenders near a base to capture it',
+  'tut.base.touch':'Slay the defenders near a base to capture it',
+  'tut.officer.kb':'An enemy officer! Watch for his signature move warning',
+  'tut.officer.pad':'An enemy officer! Watch for his signature move warning',
+  'tut.officer.touch':'An enemy officer! Watch for his signature move warning',
+  'tut.mount.kb':'Press <b>R</b> near your horse to mount; charge through enemies to trample',
+  'tut.mount.pad':'Press <b>L3</b> near your horse to mount',
+  'tut.mount.touch':'Tap <b>MNT</b> near your horse',
+  'tut.jump.kb':'<b>Space</b> to jump; in the air <b>J</b> slashes, <b>K</b> dives',
+  'tut.jump.pad':'<b>×</b> to jump; in the air <b>□</b> slashes, <b>△</b> dives',
+  'tut.jump.touch':'Tap <b>JMP</b> to jump, then attack in the air',
   'cutin.musou':'MUSOU RAGE','musou.lubu':'PEERLESS',
   'ann.levelUp':(n)=>`LEVEL UP ─ Lv ${n}`,'res.level':'Hero Level',
   'sel.locked':'Defeat Lu Bu to unlock','ann.unlockLubu':'LU BU IS NOW PLAYABLE!','ann.unlockLubuSub':'"Peerless under heaven — who dares face me?"',
@@ -1304,6 +1387,45 @@ I18N.zh={
   'dlg.lubu.win':'無趣。',
   'dlg.any.downed':'先退一步……很快就回來!',
   'dlg.any.escape':'快!他要逃出北門了!',
+  'set.tutorial':'教學提示',
+  'set.tutReset':'重新顯示教學',
+  'set.tutResetHint':'所有提示再出現一次',
+  'ann.tutReset':'教學提示已重置',
+  'brief.go':'出　陣（Enter）',
+  'brief.back':'返　回（Esc）',
+  'brief.gate':'城門',
+  'brief.exit':'北門(董卓的出口)',
+  'brief.you':'我軍',
+  'stage.sishui.flavor':'初平元年,關東諸侯起兵討伐董卓。董卓部將華雄據守汜水關,接連斬殺聯軍數將,聯軍士氣大挫。',
+  'stage.hulao.flavor':'汜水關既破,董卓親率大軍屯駐虎牢關,遣義子呂布出陣迎戰。人中呂布,馬中赤兔——聯軍諸將無人能擋。',
+  'stage.luoyang.flavor':'連戰失利的董卓焚燒洛陽宮室,挾持天子西遷長安。聯軍追入火海中的都城,務必在他逃出北門前截住他。',
+  'tut.move.kb':'<b>WASD</b> 移動,按住 <b>Shift</b> 疾走',
+  'tut.move.pad':'<b>左搖桿</b> 移動,按住 <b>L1</b> 疾走',
+  'tut.move.touch':'<b>左半螢幕拖曳</b> 移動',
+  'tut.attack.kb':'連按 <b>J</b> 打出六段連擊',
+  'tut.attack.pad':'連按 <b>□</b> 打出六段連擊',
+  'tut.attack.touch':'連點 <b>攻</b>(按住會連打)',
+  'tut.charge.kb':'連擊途中按 <b>K</b>:第 N 段後接 C 技,效果各不相同',
+  'tut.charge.pad':'連擊途中按 <b>△</b>:第 N 段後接 C 技',
+  'tut.charge.touch':'連擊途中點 <b>技</b>:第 N 段後接 C 技',
+  'tut.guard.kb':'按住 <b>H</b> 格擋;被打到的瞬間舉盾 = 完美格擋',
+  'tut.guard.pad':'按住 <b>R1</b> 格擋;被打到的瞬間舉盾 = 完美格擋',
+  'tut.guard.touch':'按住 <b>擋</b> 格擋',
+  'tut.musou.kb':'無雙計量滿了!按 <b>L</b> 發動無雙',
+  'tut.musou.pad':'無雙計量滿了!按 <b>○</b> 發動無雙',
+  'tut.musou.touch':'無雙計量滿了!點 <b>無雙</b>',
+  'tut.base.kb':'在據點附近擊破守軍,歸零即攻陷',
+  'tut.base.pad':'在據點附近擊破守軍,歸零即攻陷',
+  'tut.base.touch':'在據點附近擊破守軍,歸零即攻陷',
+  'tut.officer.kb':'敵將出現!留意他的招牌技預警',
+  'tut.officer.pad':'敵將出現!留意他的招牌技預警',
+  'tut.officer.touch':'敵將出現!留意他的招牌技預警',
+  'tut.mount.kb':'靠近坐騎按 <b>R</b> 上馬,高速衝刺可踐踏敵兵',
+  'tut.mount.pad':'靠近坐騎按 <b>L3</b> 上馬',
+  'tut.mount.touch':'靠近坐騎點 <b>馬</b> 上馬',
+  'tut.jump.kb':'<b>空白鍵</b> 跳躍;空中 <b>J</b> 空斬、<b>K</b> 下砸',
+  'tut.jump.pad':'<b>×</b> 跳躍;空中 <b>□</b> 空斬、<b>△</b> 下砸',
+  'tut.jump.touch':'點 <b>跳</b> 跳躍,空中可再攻擊',
   'cutin.musou':'無雙亂舞','musou.lubu':'天下無雙',
   'ann.levelUp':(n)=>`等級提升 ─ Lv ${n}`,'res.level':'武將等級',
   'sel.locked':'擊破呂布後解鎖','ann.unlockLubu':'呂布 已可操作!','ann.unlockLubuSub':'「天下無雙,誰與爭鋒」',
@@ -1642,6 +1764,7 @@ const STAGES = {
     gate:{ x:0, z:90 },
     enemyEntry:{ x:0, z:60, spread:10 },
     exit:{ x:0, z:94 },
+    bossStart:{ x:0, z:-40 },             // 董卓出場位置(簡報地圖與起始距離也用它)
     gateOpen:true,                        // 北門早已為董卓敞開
     prespawnZMax:10,
     arrowMinZ:999,                        // 城中沒有城牆箭雨,改為燃燒瓦礫
@@ -5095,6 +5218,7 @@ class Player{
   }
   takeHit(dmg,src,h){
     if(!this.alive || this.iframes>0 || this.state==='musou' || S.cineLock) return;
+    if(TUTOR.c) TUTOR.c.hurt++;
     if(S.attract) dmg=Math.max(1,Math.round(dmg*.3));   // 攻擊模式:展示不該一直陣亡
     // 格擋 / 完美格擋
     if(this.guarding && !h.unblockable){
@@ -6265,7 +6389,7 @@ function fireHazard(center, n, spread){
 }
 // 洛陽:董卓帶著親衛出現在前方,往北門逃
 function luoyangStart(){
-  const pos=V3(0,0,-40);
+  const pos=V3(STAGE.bossStart.x,0,STAGE.bossStart.z);
   director.spawnBoss(pos);
   for(let i=0;i<8;i++){ const a=i/8*TAU; enemies.push(new Enemy(i%2?'shield':'mob', V3(pos.x+Math.sin(a)*4,0,pos.z+Math.cos(a)*4))); }
   S.luoyang={ esc:6, fire:9, xr:false, fireAnn:false };
@@ -6290,6 +6414,52 @@ function luoyangTick(dt){
     fireHazard(player.pos,3,8);
   }
 }
+// ============================================================
+// 情境式教學:依遊戲狀態一次提示一個操作,每個只提示一次(可在設定關閉 / 重置)
+// 文字依輸入裝置:鍵盤 kb / 手把 pad / 觸控 touch
+// ============================================================
+const TUTOR={
+  DEFS:[
+    { id:'move',    when:c=>c.t>.6,                                          done:c=>c.moved>8 },
+    { id:'attack',  when:c=>c.moved>6,                                       done:c=>c.atkT>1.2 },
+    { id:'charge',  when:c=>c.atkT>2.5,                                      done:c=>player.state==='charge' },
+    // 基礎(移動 → 攻擊)先教;坐騎開場就在旁邊,若不加時間門檻會搶在移動教學之前出現
+    { id:'guard',   when:c=>c.hurt>=1 && c.t>8,                              done:c=>player.guarding },
+    { id:'musou',   when:()=>player.musou>=100,                              done:()=>player.state==='musou' },
+    { id:'base',    when:c=>c.t>10 && !!nearestEnemyBase(20),                done:()=>false },
+    { id:'officer', when:()=>enemies.some(e=>e.alive && e.kind==='officer' && e.side===1), done:()=>false },
+    { id:'mount',   when:c=>c.t>25 && MOUNT.H && MOUNT.H.root.visible && !player.mounted && MOUNT.dist(player.pos)<7, done:()=>player.mounted },
+    { id:'jump',    when:c=>c.t>40,                                          done:()=>player.air },
+  ],
+  cur:null, showT:0, c:null, seen:null,
+  load(){ try{ return JSON.parse(localStorage.getItem('musou.tut')||'{}'); }catch(e){ return {}; } },
+  mark(id){ const d=this.load(); d[id]=1; try{ localStorage.setItem('musou.tut',JSON.stringify(d)); }catch(e){} },
+  reset(){ try{ localStorage.removeItem('musou.tut'); }catch(e){} },
+  start(){ this.c={ t:0, moved:0, atkT:0, hurt:0, last:player? player.pos.clone() : V3() }; this.hide(); this.seen=this.load(); },
+  device(){ return input.padActive? 'pad' : document.body.classList.contains('touch')? 'touch' : 'kb'; },
+  hide(){ this.cur=null; $('tutor').classList.add('hidden'); },
+  update(rdt){
+    if(!SETTINGS.d.tutorial || S.attract || S.mode!=='play' || !player || !player.alive || !this.c) { if(this.cur) this.hide(); return; }
+    const c=this.c;
+    c.t+=rdt;
+    c.moved+=Math.hypot(player.pos.x-c.last.x, player.pos.z-c.last.z); c.last.copy(player.pos);
+    if(player.state==='attack') c.atkT+=rdt;
+    if(this.cur){
+      this.showT-=rdt;
+      if(this.showT<=0 || this.cur.done(c)){ this.mark(this.cur.id); this.seen[this.cur.id]=1; this.hide(); this.cool=1.2; }
+      return;
+    }
+    if((this.cool=(this.cool||0)-rdt)>0 || S.cineLock) return;
+    for(const d of this.DEFS){
+      if(this.seen[d.id] || !d.when(c)) continue;
+      this.cur=d; this.showT=d.id==='move'? 7 : 6.5;
+      $('tutortext').innerHTML=T(`tut.${d.id}.${this.device()}`);
+      const el=$('tutor'); el.classList.remove('hidden'); el.style.animation='none'; void el.offsetWidth; el.style.animation='';
+      break;
+    }
+  },
+};
+
 // ============================================================
 // 對白:頭像 + 名字 + 一句台詞(字幕位置;攻擊模式不播)
 // ============================================================
@@ -6348,6 +6518,8 @@ const OBJ={
     this.ended=false;
     const on = S.gameMode!=='survival';
     this.list = on? (STAGE.objectives||[]).map(o=>({ ...o, state:o.after?'locked':'active', prog:0, hit:false })) : [];
+    for(const o of this.list) if(o.escape && STAGE.bossStart)      // 董卓登場前先顯示起始距離
+      o.prog=Math.round(Math.hypot(STAGE.exit.x-STAGE.bossStart.x, STAGE.exit.z-STAGE.bossStart.z));
     this.spawnT={};
     this.render(true);
   },
@@ -6627,6 +6799,8 @@ function bindButtons(){
   $('btn-sharetxt').addEventListener('click',shareCopyTxt);
   $('btn-sharedl').addEventListener('click',shareDownload);
   $('btn-shareclose').addEventListener('click',closeShare);
+  $('btn-brief-go').addEventListener('click',confirmBrief);
+  $('btn-brief-back').addEventListener('click',()=>{ $('brief').classList.add('hidden'); toSelect(); });
 }
 function buildDiffRow(){
   const row=$('diffrow');
@@ -6671,7 +6845,7 @@ function begin(){
   AUD.ensure();
   const id=HERO_ORDER[sel.idx];
   if(heroLocked(id)){ AUD.guard(); addShake(.05); announce(T('sel.locked'),'ui quick'); return; }
-  startBattle(id, {stage:S.pickStage||'hulao'});
+  startBattle(id, {stage:S.pickStage||'hulao', brief:true});
 }
 // 戰績鍵:虎牢關沿用舊版的「難度」鍵,其他關卡為「關卡:難度」
 function bestKey(stage,diff){ return stage==='hulao'? diff : `${stage}:${diff}`; }
@@ -6754,6 +6928,61 @@ const CAMPAIGN={
     toSelect();
   },
 };
+// 簡報地圖:俯視競技場(北方朝上)
+function drawBriefMap(){
+  const cv=$('bmap'), c=cv.getContext('2d'), W=cv.width, H=cv.height, A=STAGE.arena, pad=22;
+  const s=Math.min((W-2*pad)/(2*A.x), (H-2*pad)/(A.zMax-A.zMin));
+  const X=x=>W/2+x*s, Y=z=>H/2-(z-(A.zMin+A.zMax)/2)*s;
+  c.clearRect(0,0,W,H);
+  c.fillStyle='#1c1712'; c.fillRect(0,0,W,H);
+  c.fillStyle='#2a241c'; c.fillRect(X(-A.x),Y(A.zMax),2*A.x*s,(A.zMax-A.zMin)*s);
+  c.strokeStyle='rgba(217,185,110,.5)'; c.lineWidth=1.5; c.strokeRect(X(-A.x),Y(A.zMax),2*A.x*s,(A.zMax-A.zMin)*s);
+  c.font='12px "Songti TC","Noto Serif TC",serif'; c.textAlign='center';
+  // 北端城門 / 出口
+  const gz=STAGE.exit? STAGE.exit.z : STAGE.gate.z;
+  c.fillStyle='#c44'; c.fillRect(X(-9),Y(gz)-5,18*s/(s||1)*1,6);
+  c.fillStyle='#ff9a8a'; c.fillText(STAGE.exit? T('brief.exit') : T('brief.gate'), X(0), Y(gz)-10);
+  // 據點
+  for(const b of (STAGE.bases||[])){
+    c.beginPath(); c.arc(X(b.x),Y(b.z),8*s/(s||1)*1.1,0,TAU); c.fillStyle='rgba(200,60,50,.55)'; c.fill();
+    c.strokeStyle='#ff8a70'; c.stroke();
+    c.fillStyle='#ffcfc4'; c.fillText(LN(b,'name'), X(b.x), Y(b.z)+22);
+  }
+  // 洛陽:董卓出逃路線
+  if(STAGE.exit){
+    c.strokeStyle='rgba(255,120,90,.8)'; c.setLineDash([5,4]); c.lineWidth=2;
+    const bs=STAGE.bossStart;
+    c.beginPath(); c.moveTo(X(bs.x),Y(bs.z)); c.lineTo(X(STAGE.exit.x),Y(STAGE.exit.z)+10); c.stroke(); c.setLineDash([]);
+    c.fillStyle='#b070d0'; c.beginPath(); c.arc(X(bs.x),Y(bs.z),6,0,TAU); c.fill();
+    c.fillStyle='#e8c8ff'; c.fillText(objName('dongzhuo'), X(bs.x)+26, Y(bs.z)+4);
+  }
+  // 我軍出發點
+  const p=STAGE.playerStart;
+  c.fillStyle='#7dffb0'; c.beginPath(); c.moveTo(X(p.x),Y(p.z)-9); c.lineTo(X(p.x)-7,Y(p.z)+6); c.lineTo(X(p.x)+7,Y(p.z)+6); c.closePath(); c.fill();
+  c.fillStyle='#c8ffe0'; c.fillText(T('brief.you'), X(p.x), Y(p.z)+22);
+}
+function openBrief(){
+  $('bchapter').textContent=T(`stage.${STAGE.id}.chapter`);
+  $('bname').textContent=T(`stage.${STAGE.id}.name`);
+  $('bflavor').textContent=T(`stage.${STAGE.id}.flavor`);
+  $('bobjs').innerHTML=OBJ.list.map(o=>`<div class="${o.optional?'opt':''}"><i>${o.optional?'◇':'◆'}</i>${OBJ.text(o)}</div>`).join('');
+  const C=CHARS[S.currentChar];
+  $('bhero').textContent=`${LN(C,'name')} ${LN(C,'zi')} ・ Lv${player.lvRec.lv} ・ ${LN(DIFF,'label')}`;
+  drawBriefMap();
+  $('stagecard').classList.add('hidden'); $('hud').classList.add('hidden');
+  $('brief').classList.remove('hidden');
+  S.mode='brief';
+}
+function confirmBrief(){
+  if(S.mode!=='brief') return;
+  AUD.ensure(); AUD.pickup();
+  $('brief').classList.add('hidden');
+  const scEl=$('stagecard'); scEl.classList.remove('hidden'); scEl.style.opacity=1;
+  $('hud').classList.remove('hidden');
+  $('hint').classList.remove('dim'); S.hintT=12;
+  S.mode='intro'; S.introT=2.4;
+  AUD.gong();
+}
 function openAchv(){
   const d=ACH.reload();
   $('achsum').textContent=T('ach.sum', ACH.count(), ACH_DEFS.length);
@@ -6869,6 +7098,9 @@ function buildAllMenus(){
     { get lab(){ return T('set.rumble'); }, type:'toggle', get:()=>!!S_.d.rumble, set:v=>S_.set('rumble',v?1:0) },
     { get lab(){ return T('set.deadzone'); }, type:'slider', min:.05, max:.45, step:.02, get:()=>S_.d.padDead, set:v=>S_.set('padDead',v) },
     { get lab(){ return T('set.dmgnum'); }, type:'toggle', get:()=>!!S_.d.dmgnum, set:v=>S_.set('dmgnum',v?1:0) },
+    { get lab(){ return T('set.tutorial'); }, type:'toggle', get:()=>!!S_.d.tutorial, set:v=>S_.set('tutorial',v?1:0) },
+    { get lab(){ return T('set.tutReset'); }, type:'action', get hint(){ return T('set.tutResetHint'); },
+      run:()=>{ TUTOR.reset(); S_.set('tutorial',1); announce(T('ann.tutReset'),'quick ui'); } },
     { get lab(){ return T('set.touchUI'); }, type:'choice', get:()=>S_.d.touchUI, set:v=>S_.set('touchUI',v),
       opts:[{v:'auto',get n(){return T('q.auto')}},{v:'on',get n(){return T('q.on')}},{v:'off',get n(){return T('q.off')}}] },
     { get lab(){ return T('set.touchSize'); }, type:'slider', min:.8, max:1.4, step:.05, get:()=>S_.d.touchSize,  set:v=>S_.set('touchSize',v) },
@@ -6923,7 +7155,7 @@ function showBest(){
   announce(T('ann.records'),'ui', lines.join('　/　'));
 }
 function toTitle(){
-  for(const id of ['hud','results','pause','stagecard','select','settings','howto','campaign','achv']) $(id).classList.add('hidden');
+  for(const id of ['hud','results','pause','stagecard','select','settings','howto','campaign','achv','brief']) $(id).classList.add('hidden');
   $('title').classList.remove('hidden');
   MENU.cur=MENUS.title;
   S.mode='title';
@@ -6958,7 +7190,7 @@ function closeHowto(){
 // ============================================================
 function cleanupBattle(){
   if(player && player.lvRec && !S.attract) LEVELS.save(player.id, player.lvRec);
-  DLG.clear();
+  DLG.clear(); TUTOR.hide(); TUTOR.c=null;
   ACH.flush();
   S.attract=false;
   S.luoyang=null;
@@ -7066,6 +7298,7 @@ function startBattle(charId, opt={}){
   if(opt.daily) announce(T('ann.dailyN',opt.daily.day),'ui', `${LN(opt.daily.mut,'n')} ── ${LN(opt.daily.mut,'d')}`);
   $('wavebox').classList.toggle('hidden', S.gameMode!=='survival');
   $('wavenum').textContent='1';
+  if(opt.brief && S.gameMode==='story'){ openBrief(); return; }
   if(opt.survival) $('stagewho').textContent=T('stage.whoSurv',LN(C,'name'),LN(C,'zi'));
   scEl.classList.remove('hidden'); scEl.style.opacity=1;
   S.mode='intro'; S.introT=2.4;
@@ -7380,6 +7613,7 @@ function tick(rdtRaw){
   PERF.update(rdt);
   updateAnnounce(rdt);
   DLG.update(rdt);
+  TUTOR.update(rdt);
 
   if(S.mode==='achv'){
     if(input.take('Escape')||input.take('MenuBack')||input.take('Enter')||input.take('MenuOK')) closeAchv();
@@ -7398,6 +7632,13 @@ function tick(rdtRaw){
     if(input.take('Escape')||input.take('MenuBack')||input.take('Enter')||input.take('MenuOK')) closeHowto();
     updateSelect(rdt);
     present(sel.scene,sel.cam);
+    input.endFrame();
+    return;
+  }
+  if(S.mode==='brief'){
+    if(input.take('Enter')||input.take('NumpadEnter')||input.take('Space')||input.take('MenuOK')||input.take('KeyJ')) confirmBrief();
+    else if(input.take('Escape')||input.take('MenuBack')){ $('brief').classList.add('hidden'); toSelect(); }
+    present(scene,camera);
     input.endFrame();
     return;
   }
@@ -7435,6 +7676,7 @@ function tick(rdtRaw){
       scEl.classList.add('hidden'); scEl.style.opacity=1;
       S.mode='play';
       announce(T('stage.go'),'');
+    TUTOR.start();
     DLG.say(S.currentChar==='lubu'? 'lubu' : (STAGE.id==='hulao'? 'zhangfei' : 'liubei'), `start.${STAGE.id}${S.currentChar==='lubu'?'.solo':''}`);
       spawnAllies(S.currentChar);
       director.prespawn();
@@ -7624,7 +7866,7 @@ const SELFTEST={
       toSelect(); X.step(.1);
       X.expect(!$('cards').children[li].classList.contains('lock'), '解鎖後卡片仍是鎖定狀態');
       // 呂布單騎出陣 + 天下無雙
-      setSelIdx(li); begin(); X.step(2.6);
+      setSelIdx(li); begin(); X.step(.1); confirmBrief(); X.step(2.6);
       X.expect(S.mode==='play' && player.id==='lubu', `應以呂布出陣:${S.mode} ${player&&player.id}`);
       X.expect(!enemies.some(e=>e.kind==='ally'), '呂布應單騎出陣(不帶友軍)');
       X.stepSafe(12);
@@ -7718,6 +7960,41 @@ const SELFTEST={
       X.enterPlay('zhangfei',{stage:'luoyang'});
       X.expect(AUD.theme===BGM_THEMES.luoyang, '洛陽配樂未套用');
       return { 播出:seen.size };
+    }],
+    ['戰前簡報:選將出陣先看簡報 → Enter 開打;快速出陣 / 重來跳過', ()=>{ const X=SELFTEST;
+      S.pickStage='luoyang'; toSelect(); setSelIdx(0); begin(); X.step(.1);
+      X.expect(S.mode==='brief' && !$('brief').classList.contains('hidden'), `應先進入簡報:${S.mode}`);
+      X.expect($('bname').textContent===T('stage.luoyang.name') && $('bobjs').children.length===OBJ.list.length, '簡報關卡名 / 目標數錯誤');
+      const d=$('bmap').getContext('2d').getImageData(0,0,300,300).data; let lit=0; for(let i=0;i<d.length;i+=4) if(d[i]+d[i+1]+d[i+2]>120) lit++;
+      X.expect(lit>300, '簡報地圖沒有畫出內容');
+      const z0=enemies.length; X.step(2);
+      X.expect(S.mode==='brief' && enemies.length===z0, '簡報中不應開始戰鬥');
+      input.pressed.add('Enter'); X.step(2.6);
+      X.expect(S.mode==='play' && STAGE.id==='luoyang', `Enter 後應開打:${S.mode}`);
+      player.die(); X.step(3); input.pressed.add('KeyR'); X.step(.1);
+      X.expect(S.mode==='intro', `重新出陣不應再看簡報:${S.mode}`);
+      return {};
+    }],
+    ['情境式教學:依裝置顯示提示 → 完成動作即關閉且不再出現', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.tut'); SETTINGS.d.tutorial=1;
+      X.enterPlay('guanyu'); X.step(1);
+      X.expect(!$('tutor').classList.contains('hidden') && $('tutortext').textContent.includes('WASD'), `開場應提示鍵盤移動:${$('tutortext').textContent}`);
+      player.pos.z+=12; X.step(.3);
+      X.expect(TUTOR.load().move, '移動後未記錄已看過移動教學');
+      X.step(1.5);
+      X.expect(TUTOR.cur && TUTOR.cur.id==='attack', `接著應提示攻擊,實為 ${TUTOR.cur&&TUTOR.cur.id}`);
+      // 無雙滿 → 提示無雙;發動即關閉
+      TUTOR.hide(); TUTOR.seen.attack=1; player.musou=100; X.step(1.5);
+      X.expect(TUTOR.cur && TUTOR.cur.id==='musou', `無雙滿時應提示:${TUTOR.cur&&TUTOR.cur.id}`);
+      input.pressed.add('KeyL'); X.step(.2);
+      X.expect(!TUTOR.cur && TUTOR.load().musou, '發動無雙後提示未關閉 / 未記錄');
+      // 新的一場不再提示已看過的
+      X.enterPlay('guanyu'); X.step(1.2);
+      X.expect(!(TUTOR.cur && ['move','musou'].includes(TUTOR.cur.id)), '看過的教學不應再出現');
+      // 關閉教學提示
+      SETTINGS.d.tutorial=0; localStorage.removeItem('musou.tut'); X.enterPlay('guanyu'); X.step(1.2);
+      X.expect($('tutor').classList.contains('hidden'), '關閉教學後仍顯示提示');
+      return {};
     }],
     ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
       X.enterPlay('guanyu',{survival:true});
@@ -7905,7 +8182,7 @@ const SELFTEST={
       input.pressed.add('Escape'); X.step(1/60);
       X.expect(S.mode==='campaign', `選將 Esc 應回戰役,實為 ${S.mode}`);
       // 出陣汜水關 → 敗北 → R 重新出陣仍是汜水關
-      CAMPAIGN.confirm(); input.pressed.add('Enter'); X.step(2.7);
+      CAMPAIGN.confirm(); input.pressed.add('Enter'); X.step(.1); input.pressed.add('Enter'); X.step(2.7);
       X.expect(S.mode==='play' && STAGE.id==='sishui', `應在汜水關開打:${S.mode} ${STAGE.id}`);
       player.die(); X.step(3);
       input.pressed.add('KeyR'); X.step(2.7);
@@ -8088,7 +8365,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv, DLG, BGM_THEMES,
+  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv, DLG, BGM_THEMES, TUTOR, openBrief, confirmBrief,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
