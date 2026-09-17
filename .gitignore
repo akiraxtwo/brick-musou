@@ -4,3 +4,6 @@
 clips/
 *.mp4
 x_article.md
+
+# 除錯截圖
+assets/debug_*
