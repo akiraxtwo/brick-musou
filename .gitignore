@@ -1,0 +1,6 @@
+.vercel
+.DS_Store
+# 錄影素材與文章草稿不進版本庫(檔案大 / 非遊戲本體)
+clips/
+*.mp4
+x_article.md

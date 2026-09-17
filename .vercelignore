@@ -1,0 +1,8 @@
+# 只排除不該公開的東西,其餘(index.html + assets/)照常部署
+.claude
+.vercel
+clips
+*.mp4
+x_article.md
+README.md
+.DS_Store
