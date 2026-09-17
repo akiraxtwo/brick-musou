@@ -1153,6 +1153,17 @@ const STAGES = {
       { x:-38, z:38,  name:'西丘', en:{name:'West Hill'} }, { x:38, z:38,  name:'東丘', en:{name:'East Hill'} },
     ],
     legion:{ zFrom:-66, zSpan:128, xInner:104 },
+    env:{   // 黃昏 → 入夜(呂布登場直接入夜)
+      sky:{ top:0x2a1c4e, mid:0x8c4468, hor:0xff9a4d, low:0x6e3a34 },
+      sunBall:{ color:0xffd9a0, glow:0xff9a50, pos:[-280,26,-210] },
+      sun:{ day:0xffc584, night:0x6a6ab0, iDay:3.05, iNight:1.75 },
+      hemi:{ day:0x9a7ab8, night:0x3a3a6e, ground:0x5a4630, iDay:.85, iNight:.72 },
+      ambient:.30,
+      fog:{ day:0xC49A6C, night:0x4a4470, near:95, far:330 },
+      skyDark:.42,
+      dusk:{ start:0, perSec:1/320, cap:.45, boss:.82 },
+      ground:{ base:'#C2A878', avenue:'#B9B5AC', plate:'#8C7A5E', wear:'90,74,48' },
+    },
     build:(P,rng)=>buildHulao(P,rng),
   },
 };
@@ -1225,15 +1236,15 @@ function makeBannerTexture(ch, bg='#7a1f1f', fg='#e8cf8a'){
   const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace; return t;
 }
 // 地面貼圖
-function makeGroundTexture(){
+function makeGroundTexture(G={}){
   const N=1024, cv=document.createElement('canvas'); cv.width=cv.height=N;
   const c=cv.getContext('2d'), rng=mulberry32(7);
-  // 樂高底板底色(沙棕)
-  c.fillStyle='#C2A878'; c.fillRect(0,0,N,N);
+  // 樂高底板底色
+  c.fillStyle=G.base||'#C2A878'; c.fillRect(0,0,N,N);
   // 中央大道(淺灰板)
-  c.fillStyle='#B9B5AC'; c.fillRect(N*.40,0,N*.20,N);
+  if(G.avenue!==null){ c.fillStyle=G.avenue||'#B9B5AC'; c.fillRect(N*.40,0,N*.20,N); }
   // 城門前深色板
-  c.fillStyle='#8C7A5E'; c.fillRect(N*.30,N*.86,N*.40,N*.14);
+  if(G.plate!==null){ c.fillStyle=G.plate||'#8C7A5E'; c.fillRect(N*.30,N*.86,N*.40,N*.14); }
   // 底板分格線
   c.strokeStyle='rgba(0,0,0,.07)'; c.lineWidth=1.5;
   const CELL=N/128;
@@ -1254,7 +1265,7 @@ function makeGroundTexture(){
   // 使用痕跡
   for(let i=0;i<380;i++){
     const x=rng()*N, y=rng()*N;
-    c.fillStyle=`rgba(90,74,48,${.02+rng()*.045})`;
+    c.fillStyle=`rgba(${G.wear||'90,74,48'},${.02+rng()*.045})`;
     c.beginPath(); c.arc(x,y,3+rng()*14,0,TAU); c.fill();
   }
   const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace;
@@ -2466,7 +2477,7 @@ const BOSS_MOVES = {
 const $=id=>document.getElementById(id);
 const S = { mode:'boot', timeScale:1, slowT:0, slowScale:1, hitstop:0, time:0, noRender:false, cineLock:false, dayT:0, attract:false, gameMode:'story', mut:null };
 
-let hemiLight=null, skyMesh=null;
+let hemiLight=null, skyMesh=null, sunBall=null, sunGlow=null, paintSky=null;
 const canvas=$('c');
 const renderer=new THREE.WebGLRenderer({ canvas, antialias:true });
 const PR_CAP = IS_TOUCH? [1,1.2,1.4] : [1,1.35,1.75];   // 觸控裝置壓低解析度換幀數
@@ -2543,13 +2554,15 @@ sun.shadow.camera.near=5; sun.shadow.camera.far=200;
 sun.shadow.bias=-0.0006;
 scene.add(sun); scene.add(sun.target);
 hemiLight=new THREE.HemisphereLight(0x9a7ab8, 0x5a4630, .85); scene.add(hemiLight);
-scene.add(new THREE.AmbientLight(0xfff0dd,.30));
+const ambLight=new THREE.AmbientLight(0xfff0dd,.30); scene.add(ambLight);
 
 // 天空穹頂(漸層頂點色)
 {
   const g=new THREE.SphereGeometry(430,24,14);
   const pos=g.attributes.position, colors=new Float32Array(pos.count*3);
-  const cTop=new THREE.Color(0x2a1c4e), cMid=new THREE.Color(0x8c4468), cHor=new THREE.Color(0xff9a4d), cLow=new THREE.Color(0x6e3a34);
+  g.setAttribute('color', new THREE.BufferAttribute(colors,3));
+  paintSky=(sk)=>{
+  const cTop=new THREE.Color(sk.top), cMid=new THREE.Color(sk.mid), cHor=new THREE.Color(sk.hor), cLow=new THREE.Color(sk.low);
   const tmp=new THREE.Color();
   for(let i=0;i<pos.count;i++){
     const y=pos.getY(i)/430;
@@ -2560,15 +2573,14 @@ scene.add(new THREE.AmbientLight(0xfff0dd,.30));
     else if(y>=.5) tmp.copy(cMid).lerp(cTop,Math.min((y-.5)/.5,1));
     colors[i*3]=tmp.r; colors[i*3+1]=tmp.g; colors[i*3+2]=tmp.b;
   }
-  g.setAttribute('color', new THREE.BufferAttribute(colors,3));
+  g.attributes.color.needsUpdate=true;
+  };
   const sky=new THREE.Mesh(g,new THREE.MeshBasicMaterial({ vertexColors:true, side:THREE.BackSide, fog:false, depthWrite:false }));
   sky.renderOrder=-10; scene.add(sky); skyMesh=sky;
-  const sunBall=new THREE.Mesh(new THREE.SphereGeometry(26,16,12), new THREE.MeshBasicMaterial({ color:0xffd9a0, fog:false }));
-  sunBall.material.color.multiplyScalar(1.9);
-  sunBall.position.set(-280,26,-210); scene.add(sunBall);
-  const glow=new THREE.Mesh(new THREE.SphereGeometry(40,16,12), new THREE.MeshBasicMaterial({ color:0xff9a50, transparent:true, opacity:.35, fog:false }));
-  glow.material.color.multiplyScalar(1.5);
-  glow.position.copy(sunBall.position); scene.add(glow);
+  sunBall=new THREE.Mesh(new THREE.SphereGeometry(26,16,12), new THREE.MeshBasicMaterial({ color:0xffd9a0, fog:false }));
+  scene.add(sunBall);
+  sunGlow=new THREE.Mesh(new THREE.SphereGeometry(40,16,12), new THREE.MeshBasicMaterial({ color:0xff9a50, transparent:true, opacity:.35, fog:false }));
+  scene.add(sunGlow);
 }
 
 // ============================================================
@@ -2596,9 +2608,95 @@ function buildWorld(){
   STAGE.build(world.props, mulberry32(STAGE.seed||42));
 }
 // ---------- 虎牢關 ----------
+// 共用佈景工具組:各關卡以同一個 rng 依序呼叫,擺設可重現
+function propKit(P, rng){
+  const mkBanner=(x,z,ch,bg,fg,h=4.2)=>{
+    const g=new THREE.Group();
+    g.add(mesh(geo('bpole',()=>new THREE.CylinderGeometry(.05,.06,4.6,6)), mat(0x4a382a), 0,2.3,0));
+    g.add(mesh(box(1.5,.06,.06), mat(0x4a382a), .55,4.35,0));
+    const cloth=new THREE.Mesh(geo('bcloth',()=>{const b=new THREE.BoxGeometry(1.3,2.1,.04); b.translate(.65,-1.05,0); return b;}),
+      new THREE.MeshLambertMaterial({ map:makeBannerTexture(ch,bg,fg) }));
+    cloth.position.set(.0,4.32,0); cloth.castShadow=true; g.add(cloth);
+    g.position.set(x,0,z); P.add(g);
+    world.banners.push({cloth, phase:rng()*TAU});
+  };
+  const mkFire=(x,z)=>{
+    const g=new THREE.Group();
+    g.add(mesh(geo('fbowl',()=>new THREE.CylinderGeometry(.75,.5,.55,10)), mat(0x33281e), 0,1.15,0));
+    for(let i=0;i<3;i++){ const leg=mesh(box(.09,1.0,.09), mat(0x241c14), Math.sin(i*TAU/3)*.4,.5,Math.cos(i*TAU/3)*.4); leg.rotation.z=Math.sin(i*TAU/3)*.18; leg.rotation.x=-Math.cos(i*TAU/3)*.18; g.add(leg); }
+    const light=new THREE.PointLight(0xff8a3a, 30, 16, 1.8); light.position.set(0,2.1,0); g.add(light);
+    g.position.set(x,0,z); P.add(g);
+    world.fires.push({pos:V3(x,1.75,z), light, phase:rng()*TAU});
+  };
+  const tentM=mat(0xDEC69C), tent2M=mat(0x0D69AB), palM=mat(0x583927);
+  const mkTent=(x,z,s=1)=>{
+    const g=new THREE.Group();
+    const roof=mesh(geo('tent',()=>new THREE.ConeGeometry(2.1,2.0,4)), tentM, 0,1.9,0);
+    roof.rotation.y=Math.PI/4; g.add(roof);
+    g.add(mesh(geo('tentb',()=>new THREE.CylinderGeometry(1.55,1.75,1.0,4)), tent2M, 0,.5,0).rotateY(Math.PI/4));
+    g.add(mesh(box(.07,3.4,.07), palM, 0,1.7,0));
+    g.position.set(x,0,z); g.scale.setScalar(s); g.rotation.y=rng()*.6-.3;
+    P.add(g);
+  };
+  const mkAbatis=(x,z,ry)=>{
+    const g=new THREE.Group();
+    for(const o2 of [-.5,.5]){
+      const a=mesh(box(.13,2.3,.13), palM, o2,.9,0); a.rotation.x=.62; g.add(a);
+      const b=mesh(box(.13,2.3,.13), palM, o2,.9,0); b.rotation.x=-.62; g.add(b);
+    }
+    g.add(mesh(box(2.4,.12,.12), palM, 0,1.1,0));
+    g.position.set(x,0,z); g.rotation.y=ry; P.add(g);
+  };
+  const mkWatch=(x,z)=>{
+    const g=new THREE.Group();
+    for(const sx of [-1,1]) for(const sz of [-1,1]){
+      const l=mesh(box(.2,5.4,.2), palM, sx*.85,2.7,sz*.85); l.rotation.z=-sx*.05; l.rotation.x=-sz*.05; g.add(l);
+    }
+    g.add(mesh(box(2.4,.2,2.4), palM, 0,5.4,0));
+    g.add(mesh(box(2.6,.7,.14), palM, 0,5.85,1.2)); g.add(mesh(box(2.6,.7,.14), palM, 0,5.85,-1.2));
+    g.add(mesh(box(.14,.7,2.6), palM, 1.2,5.85,0)); g.add(mesh(box(.14,.7,2.6), palM, -1.2,5.85,0));
+    const roof=mesh(geo('wroof',()=>new THREE.ConeGeometry(2.2,1.3,4)), mat(0x5a4432), 0,6.8,0);
+    roof.rotation.y=Math.PI/4; g.add(roof);
+    g.position.set(x,0,z); P.add(g);
+  };
+  // 樹與岩(排除區由關卡決定;預設為虎牢關的中央大道)
+  const scatter=({ nTree=14, nRock=12,
+      exclTree=(x,z)=>Math.abs(x)<26 && z>-60,
+      exclRock=(x,z)=>Math.abs(x)<22 && z>-60 }={})=>{
+    // 樹與岩
+    const trunkM=mat(0x583927), leafM=mat(0x237841), leaf2M=mat(0x184632);
+    for(let i=0;i<nTree;i++){
+      let x,z; do{ x=-88+rng()*176; z=-86+rng()*156; }while(exclTree(x,z));   // 用場景種子:每次載入位置一致
+      const g=new THREE.Group(); const s=.8+rng()*.7;
+      const lm = rng()<.5?leafM:leaf2M;
+      g.add(mesh(geo('trunk',()=>new THREE.CylinderGeometry(.20,.24,2.0,8)), trunkM, 0,1.0,0));
+      // 樂高圓盤樹:三層堆疊圓柱
+      g.add(mesh(geo('ldisc1',()=>new THREE.CylinderGeometry(1.55,1.55,.55,12)), lm, 0,2.3,0));
+      g.add(mesh(geo('ldisc2',()=>new THREE.CylinderGeometry(1.18,1.18,.52,12)), lm, 0,2.95,0));
+      g.add(mesh(geo('ldisc3',()=>new THREE.CylinderGeometry(.72,.72,.48,12)), lm, 0,3.55,0));
+      g.add(mesh(geo('ldstud',()=>studGeo(.20,.13)), lm, 0,3.85,0));
+      g.position.set(x,0,z); g.scale.setScalar(s); g.rotation.y=rng()*TAU; P.add(g);
+    }
+    const rockM=mat(0x9BA19D);
+    for(let i=0;i<nRock;i++){
+      let x,z; do{ x=-90+rng()*180; z=-88+rng()*163; }while(exclRock(x,z));
+      const g2=new THREE.Group(); g2.position.set(x,0,z); g2.rotation.y=rng()*TAU;
+      const nb=1+((rng()*3)|0);
+      for(let k=0;k<nb;k++){
+        const w=.7+rng()*.8, h=.42+rng()*.3;
+        const bm=mesh(box(w,h,w*.86), rockM, rng()*.5-.25, h/2+k*h*.92, rng()*.5-.25);
+        bm.rotation.y=rng()*.5; bm.receiveShadow=true; g2.add(bm);
+        g2.add(mesh(geo('rstud',()=>studGeo(.13,.09)), rockM, bm.position.x, h+k*h*.92+.04, bm.position.z, false));
+      }
+      P.add(g2);
+    }
+  };
+  return { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, tentM, tent2M, palM };
+}
 function buildHulao(P, rng){
+  const { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, palM }=propKit(P,rng);
   // 地面
-  const gtex=makeGroundTexture();
+  const gtex=makeGroundTexture(STAGE.env.ground);
   gtex.wrapS=gtex.wrapT=THREE.RepeatWrapping; gtex.repeat.set(3.4,3.4);
   const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400),
     new THREE.MeshLambertMaterial({ map:gtex }));
@@ -2633,65 +2731,16 @@ function buildHulao(P, rng){
     P.add(im);
   }
   // 旗幟
-  const mkBanner=(x,z,ch,bg,fg,h=4.2)=>{
-    const g=new THREE.Group();
-    g.add(mesh(geo('bpole',()=>new THREE.CylinderGeometry(.05,.06,4.6,6)), mat(0x4a382a), 0,2.3,0));
-    g.add(mesh(box(1.5,.06,.06), mat(0x4a382a), .55,4.35,0));
-    const cloth=new THREE.Mesh(geo('bcloth',()=>{const b=new THREE.BoxGeometry(1.3,2.1,.04); b.translate(.65,-1.05,0); return b;}),
-      new THREE.MeshLambertMaterial({ map:makeBannerTexture(ch,bg,fg) }));
-    cloth.position.set(.0,4.32,0); cloth.castShadow=true; g.add(cloth);
-    g.position.set(x,0,z); P.add(g);
-    world.banners.push({cloth, phase:rng()*TAU});
-  };
   mkBanner(-7.5,86,'呂','#3a2c3e','#e8cf8a'); mkBanner(9,86,'董','#7a1f1f','#e8cf8a');
   mkBanner(-22,80,'董','#7a1f1f','#e8cf8a'); mkBanner(24,78,'呂','#3a2c3e','#e8cf8a');
   mkBanner(-7,-80,'劉','#1f4a2e','#e8cf8a'); mkBanner(8,-82,'漢','#1f4a2e','#e8cf8a');
   // 火盆
-  const mkFire=(x,z)=>{
-    const g=new THREE.Group();
-    g.add(mesh(geo('fbowl',()=>new THREE.CylinderGeometry(.75,.5,.55,10)), mat(0x33281e), 0,1.15,0));
-    for(let i=0;i<3;i++){ const leg=mesh(box(.09,1.0,.09), mat(0x241c14), Math.sin(i*TAU/3)*.4,.5,Math.cos(i*TAU/3)*.4); leg.rotation.z=Math.sin(i*TAU/3)*.18; leg.rotation.x=-Math.cos(i*TAU/3)*.18; g.add(leg); }
-    const light=new THREE.PointLight(0xff8a3a, 30, 16, 1.8); light.position.set(0,2.1,0); g.add(light);
-    g.position.set(x,0,z); P.add(g);
-    world.fires.push({pos:V3(x,1.75,z), light, phase:rng()*TAU});
-  };
   mkFire(-11,83); mkFire(12.5,83); mkFire(-9,-76); mkFire(9.5,-76);
   // 聯軍營寨(南側)
-  const tentM=mat(0xDEC69C), tent2M=mat(0x0D69AB), palM=mat(0x583927);
-  const mkTent=(x,z,s=1)=>{
-    const g=new THREE.Group();
-    const roof=mesh(geo('tent',()=>new THREE.ConeGeometry(2.1,2.0,4)), tentM, 0,1.9,0);
-    roof.rotation.y=Math.PI/4; g.add(roof);
-    g.add(mesh(geo('tentb',()=>new THREE.CylinderGeometry(1.55,1.75,1.0,4)), tent2M, 0,.5,0).rotateY(Math.PI/4));
-    g.add(mesh(box(.07,3.4,.07), palM, 0,1.7,0));
-    g.position.set(x,0,z); g.scale.setScalar(s); g.rotation.y=rng()*.6-.3;
-    P.add(g);
-  };
   mkTent(-20,-80,1.2); mkTent(-14,-86,.95); mkTent(16,-82,1.1); mkTent(23,-87,.9); mkTent(-30,-84,1);
   // 拒馬
-  const mkAbatis=(x,z,ry)=>{
-    const g=new THREE.Group();
-    for(const o2 of [-.5,.5]){
-      const a=mesh(box(.13,2.3,.13), palM, o2,.9,0); a.rotation.x=.62; g.add(a);
-      const b=mesh(box(.13,2.3,.13), palM, o2,.9,0); b.rotation.x=-.62; g.add(b);
-    }
-    g.add(mesh(box(2.4,.12,.12), palM, 0,1.1,0));
-    g.position.set(x,0,z); g.rotation.y=ry; P.add(g);
-  };
   for(let i=0;i<9;i++) mkAbatis(-42+i*11, -70+rng()*4, rng()*.3-.15);
   // 箭樓
-  const mkWatch=(x,z)=>{
-    const g=new THREE.Group();
-    for(const sx of [-1,1]) for(const sz of [-1,1]){
-      const l=mesh(box(.2,5.4,.2), palM, sx*.85,2.7,sz*.85); l.rotation.z=-sx*.05; l.rotation.x=-sz*.05; g.add(l);
-    }
-    g.add(mesh(box(2.4,.2,2.4), palM, 0,5.4,0));
-    g.add(mesh(box(2.6,.7,.14), palM, 0,5.85,1.2)); g.add(mesh(box(2.6,.7,.14), palM, 0,5.85,-1.2));
-    g.add(mesh(box(.14,.7,2.6), palM, 1.2,5.85,0)); g.add(mesh(box(.14,.7,2.6), palM, -1.2,5.85,0));
-    const roof=mesh(geo('wroof',()=>new THREE.ConeGeometry(2.2,1.3,4)), mat(0x5a4432), 0,6.8,0);
-    roof.rotation.y=Math.PI/4; g.add(roof);
-    g.position.set(x,0,z); P.add(g);
-  };
   mkWatch(-34,-74); mkWatch(31,-76);
   // 遠山
   const mm1=mat(0x6D6E6C), mm2=mat(0x583927);
@@ -2701,33 +2750,7 @@ function buildHulao(P, rng){
     const m=mesh(geo(`mt${i%4}`,()=>new THREE.ConeGeometry(34+(i%4)*9, 1, 7)), rng()<.5?mm1:mm2, Math.sin(a)*r, h/2-2, Math.cos(a)*r, false);
     m.scale.y=h; m.rotation.y=rng()*TAU; P.add(m);
   }
-  // 樹與岩
-  const trunkM=mat(0x583927), leafM=mat(0x237841), leaf2M=mat(0x184632);
-  for(let i=0;i<14;i++){
-    let x,z; do{ x=-88+rng()*176; z=-86+rng()*156; }while(Math.abs(x)<26 && z>-60);   // 用場景種子:每次載入位置一致
-    const g=new THREE.Group(); const s=.8+rng()*.7;
-    const lm = rng()<.5?leafM:leaf2M;
-    g.add(mesh(geo('trunk',()=>new THREE.CylinderGeometry(.20,.24,2.0,8)), trunkM, 0,1.0,0));
-    // 樂高圓盤樹:三層堆疊圓柱
-    g.add(mesh(geo('ldisc1',()=>new THREE.CylinderGeometry(1.55,1.55,.55,12)), lm, 0,2.3,0));
-    g.add(mesh(geo('ldisc2',()=>new THREE.CylinderGeometry(1.18,1.18,.52,12)), lm, 0,2.95,0));
-    g.add(mesh(geo('ldisc3',()=>new THREE.CylinderGeometry(.72,.72,.48,12)), lm, 0,3.55,0));
-    g.add(mesh(geo('ldstud',()=>studGeo(.20,.13)), lm, 0,3.85,0));
-    g.position.set(x,0,z); g.scale.setScalar(s); g.rotation.y=rng()*TAU; P.add(g);
-  }
-  const rockM=mat(0x9BA19D);
-  for(let i=0;i<12;i++){
-    let x,z; do{ x=-90+rng()*180; z=-88+rng()*163; }while(Math.abs(x)<22 && z>-60);
-    const g2=new THREE.Group(); g2.position.set(x,0,z); g2.rotation.y=rng()*TAU;
-    const nb=1+((rng()*3)|0);
-    for(let k=0;k<nb;k++){
-      const w=.7+rng()*.8, h=.42+rng()*.3;
-      const bm=mesh(box(w,h,w*.86), rockM, rng()*.5-.25, h/2+k*h*.92, rng()*.5-.25);
-      bm.rotation.y=rng()*.5; bm.receiveShadow=true; g2.add(bm);
-      g2.add(mesh(geo('rstud',()=>studGeo(.13,.09)), rockM, bm.position.x, h+k*h*.92+.04, bm.position.z, false));
-    }
-    P.add(g2);
-  }
+  scatter();
 }
 // ============================================================
 // 背景軍團(InstancedMesh,純視覺)
@@ -2886,6 +2909,7 @@ function loadStage(id){
   if(STAGE===st) return false;
   STAGE=st;
   Object.assign(ARENA, st.arena);
+  applyEnv(st.env);
   st.officerList=st.officers.map(o=>Object.assign({}, OFFICER_DEFS[o.id], o));
   st.bossDef=st.boss? Object.assign({}, BOSS_DEFS[st.boss.id], st.boss) : null;
   buildWorld();
@@ -2895,19 +2919,36 @@ function loadStage(id){
 }
 
 // ---------- 黃昏 → 入夜 ----------
-const DUSK={ sun:new THREE.Color(0xffc584), night:new THREE.Color(0x6a6ab0),
-  hemiS:new THREE.Color(0x9a7ab8), hemiN:new THREE.Color(0x3a3a6e),
-  fogS:new THREE.Color(0xC49A6C), fogN:new THREE.Color(0x4a4470) };
-function updateDayNight(rdt){
-  if(S.mode!=='play'){ return; }
-  const target = director.bossSpawned? .82 : Math.min(director.time/320,.45);
-  S.dayT=damp(S.dayT,target,.5,rdt);
-  const t=S.dayT;
+const DUSK={ sun:new THREE.Color(), night:new THREE.Color(), hemiS:new THREE.Color(), hemiN:new THREE.Color(),
+  fogS:new THREE.Color(), fogN:new THREE.Color(), iSun:[3.05,1.75], iHemi:[.85,.72], skyDark:.42 };
+// 套用關卡環境:天空、太陽、半球光、環境光、霧、日夜端點
+function applyEnv(E){
+  paintSky(E.sky);
+  sunBall.visible=sunGlow.visible=E.sunBall.show!==false;
+  sunBall.material.color.set(E.sunBall.color).multiplyScalar(1.9);
+  sunGlow.material.color.set(E.sunBall.glow).multiplyScalar(1.5);
+  sunBall.position.set(...E.sunBall.pos); sunGlow.position.copy(sunBall.position);
+  DUSK.sun.set(E.sun.day); DUSK.night.set(E.sun.night); DUSK.iSun=[E.sun.iDay,E.sun.iNight];
+  DUSK.hemiS.set(E.hemi.day); DUSK.hemiN.set(E.hemi.night); DUSK.iHemi=[E.hemi.iDay,E.hemi.iNight];
+  hemiLight.groundColor.set(E.hemi.ground);
+  ambLight.intensity=E.ambient;
+  DUSK.fogS.set(E.fog.day); DUSK.fogN.set(E.fog.night);
+  scene.fog.near=E.fog.near; scene.fog.far=E.fog.far;
+  DUSK.skyDark=E.skyDark;
+}
+function applyDayT(t){
   sun.color.copy(DUSK.sun).lerp(DUSK.night,t);
-  sun.intensity=lerp(3.05,1.75,t);
-  if(hemiLight){ hemiLight.color.copy(DUSK.hemiS).lerp(DUSK.hemiN,t); hemiLight.intensity=lerp(.85,.72,t); }
+  sun.intensity=lerp(DUSK.iSun[0],DUSK.iSun[1],t);
+  hemiLight.color.copy(DUSK.hemiS).lerp(DUSK.hemiN,t); hemiLight.intensity=lerp(DUSK.iHemi[0],DUSK.iHemi[1],t);
   scene.fog.color.copy(DUSK.fogS).lerp(DUSK.fogN,t);
-  if(skyMesh) skyMesh.material.color.setScalar(lerp(1,.42,t));
+  skyMesh.material.color.setScalar(lerp(1,DUSK.skyDark,t));
+}
+function updateDayNight(rdt){
+  if(!(S.mode==='play'||S.attract)) return;
+  const C=STAGE.env.dusk;
+  const target = director.bossSpawned? C.boss : Math.min(C.start + director.time*C.perSec, C.cap);
+  S.dayT=damp(S.dayT,target,.5,rdt);
+  applyDayT(S.dayT);
 }
 
 // ============================================================
@@ -5740,6 +5781,7 @@ function startBattle(charId, opt={}){
   cleanupBattle();
   loadStage(opt.stage || 'hulao');
   S.stageId=STAGE.id;
+  S.dayT=STAGE.env.dusk.start; applyDayT(S.dayT);   // 每場從關卡的起始天色開始(原本會沿用上一場的夜色)
   S.gameMode = opt.daily? 'daily' : (opt.survival? 'survival' : 'story');
   S.mut = opt.daily? opt.daily.mut.k : null;
   S.daily = opt.daily || null;
