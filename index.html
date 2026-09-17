@@ -64,6 +64,8 @@ body{
 #pname{font-size:30px; letter-spacing:.18em; color:var(--gold2);
   text-shadow:0 0 8px rgba(0,0,0,.9),0 2px 3px #000}
 #pname small{font-size:16px; color:var(--gold); margin-left:8px; letter-spacing:.1em}
+#pname .plv{font-style:normal; font-size:14px; color:#fff2c8; margin-left:10px; letter-spacing:.06em;
+  padding:1px 6px; border:1px solid rgba(217,185,110,.55); vertical-align:middle}
 .barwrap{position:relative; width:330px; height:15px; margin-top:7px;
   background:rgba(0,0,0,.66); border:1px solid rgba(217,185,110,.5);
   box-shadow:0 1px 4px rgba(0,0,0,.6)}
@@ -161,6 +163,9 @@ body.touch #objpanel{top:118px; font-size:12px}
   background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 #selbottom{position:absolute; bottom:4vh; left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:18px}
 #cards{display:flex; gap:16px; justify-content:center}
+.card .clv{font-size:12px; color:#fff2c8; letter-spacing:.08em; margin:2px 0 6px; display:flex; align-items:center; gap:8px}
+.card .clv .xp{flex:1; height:4px; background:rgba(0,0,0,.55); border:1px solid rgba(217,185,110,.35); position:relative}
+.card .clv .xp i{position:absolute; inset:0; background:linear-gradient(90deg,#c89a3e,#f6e2a4); transform-origin:left center}
 .card.lock{opacity:.62}
 .card.lock h2{color:rgba(232,220,192,.55)}
 .card{width:min(230px,23vw); padding:16px 18px 14px; cursor:pointer; text-align:left;
@@ -520,6 +525,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
       <div class="rrow"><span data-t="res.offs">討取敵將</span><b id="roffs">─</b></div>
       <div class="rrow"><span data-t="res.time">作戰時間</span><b id="rtime">0:00</b></div>
       <div class="rrow"><span data-t="res.objs">達成目標</span><b id="robjs">─</b></div>
+      <div class="rrow"><span data-t="res.level">武將等級</span><b id="rlevel">─</b></div>
     </div>
     <div id="rankrow"><span class="rlab" data-t="res.rank">戰功評價</span><span id="rankletter">S</span></div>
     <div class="btnrow">
@@ -939,6 +945,7 @@ const I18N={
   'hud.mute':'M Mute','hud.pad':(n)=>`🎮 ${n} connected`,
   'credit':'Brick part geometry © LDraw.org parts library ・ CC BY 4.0 ・ Not affiliated with the LEGO Group',
   'cutin.musou':'MUSOU RAGE','musou.lubu':'PEERLESS',
+  'ann.levelUp':(n)=>`LEVEL UP ─ Lv ${n}`,'res.level':'Hero Level',
   'sel.locked':'Defeat Lu Bu to unlock','ann.unlockLubu':'LU BU IS NOW PLAYABLE!','ann.unlockLubuSub':'"Peerless under heaven — who dares face me?"',
   'obj.defeat':(n)=>`Defeat ${n}`,'obj.capture':(p,n)=>`Capture bases ${p} / ${n}`,'obj.kills':(p,n)=>`Slay ${p} / ${n}`,
   'obj.done':'OBJECTIVE COMPLETE','obj.subDone':'Bonus objective complete','res.objs':'Objectives',
@@ -1068,6 +1075,7 @@ I18N.zh={
   'hud.mute':'M 靜音','hud.pad':(n)=>`🎮 ${n} 已連線`,
   'credit':'積木零件幾何 © LDraw.org 零件庫 ・ CC BY 4.0 ・ 與 LEGO 集團無隸屬關係',
   'cutin.musou':'無雙亂舞','musou.lubu':'天下無雙',
+  'ann.levelUp':(n)=>`等級提升 ─ Lv ${n}`,'res.level':'武將等級',
   'sel.locked':'擊破呂布後解鎖','ann.unlockLubu':'呂布 已可操作!','ann.unlockLubuSub':'「天下無雙,誰與爭鋒」',
   'obj.defeat':(n)=>`擊破 ${n}`,'obj.capture':(p,n)=>`攻陷據點 ${p} / ${n}`,'obj.kills':(p,n)=>`擊破 ${p} / ${n} 人`,
   'obj.done':'目標達成','obj.subDone':'次要目標達成','res.objs':'達成目標',
@@ -1265,6 +1273,24 @@ const UNLOCK={
     const d=this.load(); d[k]=Date.now();
     try{ localStorage.setItem('musou.unlocks',JSON.stringify(d)); }catch(e){}
     return true;
+  },
+};
+// ---------- 武將等級 ----------
+// 經驗:雜兵 1 / 敵將 25 / BOSS 150 / 通關依評價加發;每級 體力 +2%、攻擊 +1.5%、無雙回復 +1%
+const LEVELS={
+  MAX:20,
+  load(){ try{ return JSON.parse(localStorage.getItem('musou.levels')||'{}'); }catch(e){ return {}; } },
+  get(id){ const r=this.load()[id]; return r? {lv:r.lv, exp:r.exp} : {lv:1, exp:0}; },
+  save(id,rec){ const d=this.load(); d[id]={lv:rec.lv, exp:rec.exp}; try{ localStorage.setItem('musou.levels',JSON.stringify(d)); }catch(e){} },
+  need(lv){ return 80+45*lv; },
+  mul(lv){ const k=lv-1; return { hp:1+.02*k, atk:1+.015*k, mus:1+.01*k }; },
+  // 在記錄上加經驗,回傳升了幾級(不寫存檔)
+  add(rec,n){
+    if(rec.lv>=this.MAX) return 0;
+    rec.exp+=n; let up=0;
+    while(rec.lv<this.MAX && rec.exp>=this.need(rec.lv)){ rec.exp-=this.need(rec.lv); rec.lv++; up++; }
+    if(rec.lv>=this.MAX) rec.exp=0;
+    return up;
   },
 };
 function heroLocked(id){ const C=CHARS[id]; return !!(C && C.lock && !UNLOCK.has(C.lock)); }
@@ -4086,6 +4112,11 @@ function updateDrops(dt){
 // HUD / 小地圖 / 告知
 // ============================================================
 const HUD={
+  setName(){
+    if(!player) return;
+    const C=player.char;
+    $('pname').innerHTML=`${LN(C,'name')}<small>${LN(C,'zi')}</small><em class="plv">Lv${player.lvRec? player.lvRec.lv : 1}</em>`;
+  },
   lowShown:false,
   setHP(v,max){
     const f=$('hpfill'); const r=clamp(v/max,0,1);
@@ -4610,6 +4641,9 @@ class Player{
     this.rig=makeHuman(C.rig); scene.add(this.rig.root);
     this.pos=V3(STAGE.playerStart.x,0,STAGE.playerStart.z); this.yaw=0; this.vel=V3();
     this.maxHp=C.hp; this.hp=C.hp; this.pow=C.atk; this.speed=C.speed;
+    this.lvRec=LEVELS.get(charId); this.lvStart=this.lvRec.lv; this.expGain=0;
+    { const M=LEVELS.mul(this.lvRec.lv); this.lvMul=M;
+      this.maxHp=Math.round(this.maxHp*M.hp); this.hp=this.maxHp; this.pow=this.pow*M.atk; }
     if(S.mut==='last'){ this.maxHp=Math.round(this.maxHp*.6); this.hp=this.maxHp; this.pow*=1.3; }   // 背水
     this.atk=null;
     this.radius=.55*C.rig.scale; this.reachScale=1;
@@ -4635,6 +4669,7 @@ class Player{
     this.attackedThisSwing=false;
   }
   gainMusou(x){ if(S.mut==='blood') x*=1.7;   // 血氣方剛
+    x*=this.lvMul? this.lvMul.mus : 1;
     if(this.state!=='musou') this.musou=clamp(this.musou+x,0,100); }
   heal(x){ if(this.alive) this.hp=clamp(this.hp+x,0,this.maxHp); }
   onLandedHit(h){
@@ -4738,6 +4773,22 @@ class Player{
     showCutin(T('musou.'+this.id), `${LN(this.char,'name')} ${LN(this.char,'zi')} ・ ${LN(this.char,'weapon')}`);
     shockRing(this.pos,this.char.musouTint,4.5,.5);
     this.musLight.intensity=46;
+  }
+  addExp(n){
+    if(S.attract || !this.lvRec) return;
+    this.expGain+=n;
+    const up=LEVELS.add(this.lvRec,n);
+    if(!up) return;
+    const old=this.lvMul, M=LEVELS.mul(this.lvRec.lv);
+    this.maxHp=Math.round(this.maxHp/old.hp*M.hp);
+    this.hp=Math.min(this.maxHp, this.hp+this.maxHp*.3);
+    this.pow=this.pow/old.atk*M.atk;
+    this.lvMul=M;
+    LEVELS.save(this.id,this.lvRec);
+    HUD.setHP(this.hp,this.maxHp); HUD.setName();
+    announce(T('ann.levelUp',this.lvRec.lv),'ui quick');
+    sparks(V3(this.pos.x,1.6,this.pos.z),0xffe08a,24,{speed:5,up:6,life:.7});
+    shockRing(this.pos,0xffe08a,3.2,.45); AUD.pickup(true);
   }
   takeHit(dmg,src,h){
     if(!this.alive || this.iframes>0 || this.state==='musou' || S.cineLock) return;
@@ -5833,6 +5884,7 @@ const director={
   },
   onKill(e,src){
     if(e.side===0) return;                 // 友軍陣亡不計擊破
+    if(src && src.isPlayer && player) player.addExp(e.isMob? 1 : e.kind==='officer'? 25 : 150);
     if(src && src.noCredit){ e.noCredit=1; }
     const credit=!e.noCredit;
     if(e.isMob){
@@ -6198,6 +6250,8 @@ function buildCards(){
     d.innerHTML=`<span class="key">${i+1}</span><h2>${LN(C,'name')}<small>${LN(C,'zi')}</small></h2>
       <div class="wpn">${LN(C,'epithet')} ・ ${LN(C,'weapon')}</div>
       <div class="wlv" data-for="${id}"></div>
+      ${(()=>{ const r=LEVELS.get(id), full=r.lv>=LEVELS.MAX, p=full?1:r.exp/LEVELS.need(r.lv);
+        return `<div class="clv">Lv ${r.lv}${full?' MAX':''}<span class="xp"><i style="transform:scaleX(${p.toFixed(3)})"></i></span></div>`; })()}
       <div class="desc">${LN(C,'desc')}</div>`+
       Object.entries(C.prof).map(([k,v])=>`<div class="statrow">${T('prof.'+k)}<span class="pips">${
         [1,2,3,4,5].map(n=>`<span class="pip ${n<=v?'on':''}"></span>`).join('')}</span></div>`).join('');
@@ -6519,6 +6573,7 @@ function closeHowto(){
 // 遊戲狀態
 // ============================================================
 function cleanupBattle(){
+  if(player && player.lvRec && !S.attract) LEVELS.save(player.id, player.lvRec);
   S.attract=false;
   S.luoyang=null;
   OBJ.list=[]; OBJ.ended=false; OBJ.render();
@@ -6606,7 +6661,7 @@ function startBattle(charId, opt={}){
   $('pause').classList.add('hidden');
   if(!opt.attract) $('title').classList.add('hidden');
   const C=CHARS[charId];
-  $('pname').innerHTML=`${LN(C,'name')}<small>${LN(C,'zi')}</small>`;
+  HUD.setName();
   $('stagewho').textContent=T('stage.who',LN(C,'name'),LN(C,'zi'));
   MOUNT.reset(player.pos);
   HUD.setHP(player.hp,player.maxHp); HUD.setMus(0); HUD.setKills(0);
@@ -6739,6 +6794,12 @@ function showResults(win){
     $('ressub').textContent += T('res.daily',S.daily.day,d.streak);
   }
   S.lastWin=win; S.lastRank=rank;
+  if(player && player.lvRec){
+    if(win && S.gameMode!=='survival') player.addExp(Math.round(100*({S:2,A:1.5,B:1.2,C:1}[rank]||1)));   // 通關獎勵
+    LEVELS.save(player.id, player.lvRec);
+    const lv0=player.lvStart, lv1=player.lvRec.lv;
+    $('rlevel').textContent = (lv1>lv0? `Lv ${lv0} → ${lv1}` : `Lv ${lv1}`) + `(+${player.expGain} EXP)`;
+  }
   let showNext=false;
   if(win && S.gameMode==='story'){
     for(const id of CAMPAIGN.record(STAGE.id, rank)) announce(T('camp.unlockedAnn', T(`stage.${id}.name`)),'ui big');
@@ -7166,6 +7227,30 @@ const SELFTEST={
       let t=0; while(player.state==='musou' && t<10){ X.step(.25); t+=.25; }
       X.expect(player.musFin, '天下無雙終結技未觸發');
       return { 無雙擊破:director.kills-k0 };
+    }],
+    ['武將等級:擊破得經驗 → 戰鬥中升級 → 能力提升 → 存檔與卡片顯示', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.levels');
+      setDiff('normal'); X.enterPlay('liubei');
+      const hp1=player.maxHp, pow1=player.pow;
+      X.expect(player.lvRec.lv===1 && $('pname').textContent.includes('Lv1'), 'Lv1 開局或 HUD 等級錯誤');
+      player.addExp(LEVELS.need(1)+LEVELS.need(2)+3);
+      X.expect(player.lvRec.lv===3, `經驗應升到 Lv3,實為 Lv${player.lvRec.lv}`);
+      X.expect(player.maxHp===Math.round(hp1/1*1.04) && Math.abs(player.pow-pow1*1.03/1)<.01, `Lv3 能力錯誤 hp ${hp1}→${player.maxHp} pow ${pow1.toFixed(1)}→${player.pow.toFixed(1)}`);
+      X.expect($('pname').textContent.includes('Lv3'), 'HUD 未更新等級');
+      X.expect(LEVELS.get('liubei').lv===3, '升級時未寫入存檔');
+      // 真實擊破給經驗(非玩家擊破不給)
+      const g0=player.expGain; X.stepSafe(8);
+      const g1=player.expGain;
+      // 新的一場以 Lv3 能力開局
+      toSelect(); X.step(.1);
+      X.expect($('cards').children[0].textContent.includes('Lv 3'), '選將卡片未顯示等級');
+      X.enterPlay('liubei');
+      X.expect(player.lvRec.lv===3 && player.maxHp===Math.round(CHARS.liubei.hp*1.04), `新一場未套用 Lv3(maxHp ${player.maxHp})`);
+      // 攻擊模式(bot 會大量擊破)不給經驗,也不寫存檔
+      const before=localStorage.getItem('musou.levels');
+      toTitle(); X.step(8); toTitle(); X.step(.1);
+      X.expect(localStorage.getItem('musou.levels')===before, '攻擊模式改動了等級存檔');
+      return { 站立8秒經驗:g1-g0 };
     }],
     ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
       X.enterPlay('guanyu',{survival:true});
