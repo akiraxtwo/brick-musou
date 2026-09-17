@@ -361,6 +361,38 @@ body.touch .bobjs div{font-size:12.5px; line-height:1.6}
 body.touch #achgrid{grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); max-height:58vh}
 .card .cos{font-size:12px; color:#9dffc4; margin:-2px 0 6px; cursor:pointer}
 
+/* ---------- 排行榜 ---------- */
+#board{background:rgba(4,3,2,.9); backdrop-filter:blur(4px); z-index:50}
+.lbpanel{max-width:min(760px,96vw)}
+#lbtabs,#lbdiffs{display:flex; flex-wrap:wrap; justify-content:center; gap:6px; margin:-4px 0 8px}
+#lbtabs span,#lbdiffs span{cursor:pointer; padding:4px 12px; border:1px solid rgba(217,185,110,.28); font-size:14px; letter-spacing:.08em; color:rgba(232,220,192,.72)}
+#lbdiffs span{font-size:12.5px; padding:2px 10px}
+#lbtabs span.on,#lbdiffs span.on{border-color:var(--gold2); color:var(--gold2); background:rgba(217,185,110,.12)}
+#lbdiffs.hidden{display:none}
+#lbbody{min-height:220px; max-height:56vh; overflow:auto}
+#lbbody table{width:100%; border-collapse:collapse; font-size:14px}
+#lbbody td{padding:5px 8px; border-bottom:1px solid rgba(217,185,110,.12); white-space:nowrap}
+#lbbody td.n{max-width:11em; overflow:hidden; text-overflow:ellipsis}
+#lbbody td.r{color:var(--gold); width:2.6em; text-align:right}
+#lbbody td.s{color:var(--gold2); text-align:right}
+#lbbody td.d{color:rgba(232,220,192,.62); font-size:12.5px; text-align:right}
+#lbbody tr.me td{background:rgba(157,255,196,.08)} #lbbody tr.me td.n{color:#9dffc4}
+#lbbody tr.gap td{border:0; text-align:center; color:rgba(232,220,192,.4); padding:2px}
+.lbnote{text-align:center; padding:60px 10px; color:rgba(232,220,192,.7); letter-spacing:.08em; line-height:1.9}
+#lbsub{display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:8px; margin:4px 0 10px}
+#lbsub.hidden{display:none}
+#lbnick{width:11em; font:inherit; font-size:15px; padding:6px 10px; background:rgba(0,0,0,.45); color:var(--paper); border:1px solid rgba(217,185,110,.45); outline:none}
+#lbnick:focus{border-color:var(--gold2)}
+#lbmsg{flex-basis:100%; text-align:center; font-size:13px; min-height:1.4em; color:var(--gold); letter-spacing:.06em}
+#lbmsg.ok{color:#9dffc4} #lbmsg.err{color:#ff9a8a}
+body.touch #lbbody td{padding:4px 5px; font-size:12.5px} body.touch #lbbody td.d{display:none}
+@media (max-height:520px){
+  #board .panel{padding:10px 22px 8px} #board .ptitle{font-size:22px; margin:0 0 8px}
+  #lbtabs span{font-size:12px; padding:2px 8px} #lbdiffs{margin:-2px 0 4px}
+  #lbbody{min-height:0; max-height:calc(100vh - 150px)} #lbbody td{padding:2px 6px; font-size:12.5px}
+  #board .mhint{font-size:11px; margin-top:4px}
+}
+
 /* ---------- 戰役地圖 ---------- */
 #campaign{background:radial-gradient(ellipse 80% 70% at 50% 50%, rgba(8,6,5,.70) 0%, rgba(8,6,5,.88) 100%); gap:12px; z-index:31}
 .camp-head{text-align:center}
@@ -430,6 +462,28 @@ body.touch #combo{transform:scale(.82); transform-origin:right bottom}
   .pip{width:13px; height:6px}
   .btn{font-size:16px; padding:9px 26px 9px calc(26px + .42em)}
   #selhint{font-size:11px}
+}
+/* 結算面板:視窗不夠高時壓縮(多了排行榜登錄列) */
+#results{overflow:auto; justify-content:safe center}
+@media (max-height:900px){
+  #results .panel{padding:24px 44px 20px}
+  #resword{font-size:clamp(48px,8vh,72px)}
+  #ressub{font-size:14px}
+  #resrows{margin:12px auto 2px}
+  .rrow{padding:3px 4px; font-size:15px}
+  #rankrow{margin:6px 0 2px} #rankletter{font-size:48px}
+  #results .btnrow{margin-top:12px}
+}
+@media (max-height:520px){   /* 手機橫向 */
+  #results .panel{padding:10px 22px 10px}
+  #resmode{font-size:12px}
+  #resword{font-size:34px; line-height:1.05} #ressub{font-size:12px; margin-top:0; letter-spacing:.12em}
+  #resrows{display:grid; grid-template-columns:1fr 1fr; column-gap:22px; width:min(640px,100%); margin:6px auto 0}
+  #results .rrow{padding:1px 4px; font-size:12.5px; letter-spacing:.06em}
+  #rankrow{margin:2px 0} #rankletter{font-size:30px} #rankrow .rlab{font-size:12px}
+  #lbsub{margin:2px 0; gap:6px} #lbnick{font-size:13px; padding:3px 8px} #lbmsg{min-height:0; font-size:12px}
+  #results .btnrow{margin-top:6px; flex-wrap:wrap; gap:6px 8px}
+  #results .btn.small{font-size:13px; padding:5px 14px 5px calc(14px + .42em)}
 }
 /* 英文排版:中文用的寬字距套在拉丁字母上會散掉 */
 html[lang="en"] .tlogo, html[lang="en"] .tsub, html[lang="en"] .ptitle,
@@ -540,6 +594,17 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
   </div>
 </div>
 
+<!-- ===== 排行榜 ===== -->
+<div id="board" class="screen hidden">
+  <div class="panel wide lbpanel">
+    <h2 class="ptitle" data-t="lb.title">排 行 榜</h2>
+    <div id="lbtabs"></div>
+    <div id="lbdiffs"></div>
+    <div id="lbbody"></div>
+    <div class="mhint" data-t="lb.hint">← → 切換榜單 ・ Tab 切換難度 ・ Esc 返回</div>
+  </div>
+</div>
+
 <!-- ===== 戰役地圖 ===== -->
 <div id="campaign" class="screen hidden">
   <div class="camp-head">
@@ -610,6 +675,11 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
       <div class="rrow"><span data-t="res.level">武將等級</span><b id="rlevel">─</b></div>
     </div>
     <div id="rankrow"><span class="rlab" data-t="res.rank">戰功評價</span><span id="rankletter">S</span></div>
+    <div id="lbsub" class="hidden">
+      <input id="lbnick" maxlength="12" autocomplete="off" spellcheck="false" data-tp="lb.nickPh" placeholder="暱稱(1–12 字)">
+      <button class="btn small" id="btn-lb" data-t="lb.submit">登錄排行榜</button>
+      <div id="lbmsg"></div>
+    </div>
     <div class="btnrow">
       <button class="btn small hidden" id="btn-next" data-t="res.next">下一戰（N）</button>
       <button class="btn small" id="btn-share" data-t="res.share">分享戰績（S）</button>
@@ -899,6 +969,11 @@ const input = {
     });
     window.addEventListener('gamepaddisconnected',()=>{ this.padIdx=-1; this.padName=''; updatePadHint(); });
     window.addEventListener('keydown',e=>{
+      if(e.target && e.target.tagName==='INPUT'){   // 輸入暱稱時:按鍵不進遊戲(避免 R 重打、S 分享)
+        if(e.code==='Enter'||e.code==='NumpadEnter'){ e.preventDefault(); if(e.target.id==='lbnick') NET.submit(); }
+        else if(e.code==='Escape') e.target.blur();
+        return;
+      }
       if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Tab'].includes(e.code)) e.preventDefault();
       AUD.ensure();
       if(!e.repeat){ this.pressed.add(e.code); }
@@ -1035,6 +1110,15 @@ const I18N={
   'hud.mute':'M Mute','hud.pad':(n)=>`🎮 ${n} connected`,
   'credit':'Brick part geometry © LDraw.org parts library ・ CC BY 4.0 ・ Not affiliated with the LEGO Group',
   'menu.achv':'Achievements',
+  'menu.board':'Leaderboard', 'lb.title':'LEADERBOARD', 'lb.hint':'← → Board ・ Tab Difficulty ・ Esc Back',
+  'lb.daily':'Daily', 'lb.surv':'Endless', 'lb.nickPh':'Nickname (1–12)', 'lb.submit':'Submit Score',
+  'lb.off':'Leaderboards are not open yet.', 'lb.offHint':'Coming soon', 'lb.loading':'Loading…',
+  'lb.err':'Connection failed. Try again later.', 'lb.empty':'No entries yet — be the first!',
+  'lb.total':(n)=>`${n} players`, 'lb.dayN':(d)=>`Day ${d}`,
+  'lb.needNick':'Enter a nickname first', 'lb.sending':'Submitting…',
+  'lb.rankN':(r)=>`Ranked #${r}!`, 'lb.notBetter':(r)=>`Not above your best (currently #${r})`,
+  'lb.bad':'Score rejected by server check', 'lb.rate':'Too many submissions — wait a minute',
+  'lb.surv.s':(w)=>`Wave ${w}`, 'lb.stage.d':(g,t)=>`${g||'─'} ・ ${t}`, 'lb.daily.d':(k)=>`${k} KOs`,
   'ach.title':'ACHIEVEMENTS',
   'ach.hint':'Esc / ○ Back',
   'ach.sum':(n,t)=>`${n} / ${t} unlocked`,
@@ -1296,6 +1380,15 @@ I18N.zh={
   'hud.mute':'M 靜音','hud.pad':(n)=>`🎮 ${n} 已連線`,
   'credit':'積木零件幾何 © LDraw.org 零件庫 ・ CC BY 4.0 ・ 與 LEGO 集團無隸屬關係',
   'menu.achv':'戰　　功',
+  'menu.board':'排 行 榜', 'lb.title':'排 行 榜', 'lb.hint':'← → 切換榜單 ・ Tab 切換難度 ・ Esc 返回',
+  'lb.daily':'每日挑戰', 'lb.surv':'無盡之陣', 'lb.nickPh':'暱稱(1–12 字)', 'lb.submit':'登錄排行榜',
+  'lb.off':'排行榜尚未開放', 'lb.offHint':'尚未開放', 'lb.loading':'讀取中…',
+  'lb.err':'連線失敗,請稍後再試', 'lb.empty':'尚無紀錄 ── 搶下第一名!',
+  'lb.total':(n)=>`共 ${n} 人`, 'lb.dayN':(d)=>`第 ${d} 日`,
+  'lb.needNick':'請先輸入暱稱', 'lb.sending':'登錄中…',
+  'lb.rankN':(r)=>`已登錄 ── 第 ${r} 名!`, 'lb.notBetter':(r)=>`未超越你的最佳紀錄(目前第 ${r} 名)`,
+  'lb.bad':'成績未通過伺服器檢查', 'lb.rate':'登錄太頻繁,請一分鐘後再試',
+  'lb.surv.s':(w)=>`第 ${w} 陣`, 'lb.stage.d':(g,t)=>`${g||'─'} ・ ${t}`, 'lb.daily.d':(k)=>`${k} 擊破`,
   'ach.title':'戰　功',
   'ach.hint':'Esc / ○ 返回',
   'ach.sum':(n,t)=>`已達成 ${n} / ${t}`,
@@ -1502,6 +1595,7 @@ function applyLang(){
   document.title = LANG.cur==='en'? 'Brick Warriors ・ Battle of Hulao Gate' : '積木無雙・虎牢關之戰';
   for(const el of document.querySelectorAll('[data-t]'))  el.textContent = T(el.dataset.t);
   for(const el of document.querySelectorAll('[data-th]')) el.innerHTML   = T(el.dataset.th);
+  for(const el of document.querySelectorAll('[data-tp]')) el.placeholder = T(el.dataset.tp);
   if(typeof MENUS!=='undefined') for(const k in MENUS) if(MENUS[k] && MENUS[k].el) renderMenu(MENUS[k]);
   if(typeof buildHowto==='function') buildHowto();
   if(typeof buildCards==='function'){ buildCards(); buildDiffRow(); refreshWeaponUI(); }
@@ -6794,6 +6888,7 @@ function bindButtons(){
   $('btn-next').addEventListener('click',()=>goNextStage());
   $('btn-back').addEventListener('click',toSelect);
   $('btn-share').addEventListener('click',()=>openShare(S.lastWin,S.lastRank));
+  $('btn-lb').addEventListener('click',()=>NET.submit());
   $('btn-sharenow').addEventListener('click',shareNow);
   $('btn-sharecopy').addEventListener('click',shareCopyImg);
   $('btn-sharetxt').addEventListener('click',shareCopyTxt);
@@ -7010,6 +7105,147 @@ function openCampaign(){
 }
 
 // ============================================================
+// 線上:排行榜 + 自製埋點(同網域 /api/*;沒有資料庫時整組自動隱藏為「尚未開放」)
+// ============================================================
+const NET={
+  state:'unknown',      // 'on' | 'off' | 'unknown'
+  quiet:false,          // 自我測試期間不送埋點
+  run:null, q:[], res:null,
+  live(){ return /^https?:$/.test(location.protocol); },
+  cid(){
+    let c=null; try{ c=localStorage.getItem('musou.cid'); }catch(e){}
+    if(!/^[a-z0-9]{8,24}$/.test(c||'')){
+      const a=new Uint32Array(3); crypto.getRandomValues(a);
+      c=Array.from(a,x=>x.toString(36)).join('').slice(0,20).padEnd(10,'0');
+      try{ localStorage.setItem('musou.cid',c); }catch(e){}
+    }
+    return c;
+  },
+  nick(){ try{ return localStorage.getItem('musou.nick')||''; }catch(e){ return ''; } },
+  async api(path, body){
+    if(!this.live()) return { status:0, data:null };
+    const ctl=new AbortController(), to=setTimeout(()=>ctl.abort(),7000);
+    try{
+      const r=await fetch(path, body? { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body), signal:ctl.signal }
+                                    : { signal:ctl.signal, cache:'no-store' });
+      let data=null; try{ data=await r.json(); }catch(e){}
+      if(r.status===503 && data && data.enabled===false) this.state='off';
+      else if(r.status<500) this.state='on';
+      return { status:r.status, data };
+    }catch(e){ return { status:0, data:null }; }
+    finally{ clearTimeout(to); }
+  },
+  async probe(){ const r=await this.api('/api/score'); if(r.status===0 && this.state==='unknown') this.state='off'; return this.state; },
+
+  // ---- 埋點 ----
+  track(ev){ if(this.quiet || !this.live()) return; this.q.push(ev); if(this.q.length>=12) this.flush(); },
+  flush(beacon){
+    if(!this.q.length) return;
+    const body=JSON.stringify({ events:this.q.splice(0,40) });
+    try{
+      if(beacon && navigator.sendBeacon) navigator.sendBeacon('/api/event', new Blob([body],{type:'application/json'}));
+      else fetch('/api/event',{ method:'POST', headers:{'Content-Type':'application/json'}, body, keepalive:true }).catch(()=>{});
+    }catch(e){}
+  },
+  runInfo(){ return { mode:S.gameMode, stage:S.gameMode==='survival'? 'x' : STAGE.id, diff:DIFF.id, hero:S.currentChar }; },
+  begin(){ if(S.attract) return; this.run=this.runInfo(); this.track(Object.assign({n:'start'},this.run)); },
+  quit(){ if(!this.run) return; this.track(Object.assign({n:'quit'},this.run)); this.run=null; this.flush(); },
+  finish(win, rank, pts){
+    const t=Math.floor(director.time), kills=director.kills, combo=player?player.maxCombo:0;
+    if(this.run){
+      this.track(Object.assign({n:'end', win:!!win, t, grade:rank, wave:director.wave},this.run));
+      this.run=null; this.flush();
+    }
+    // 可登錄的成績
+    let board=null, score=0;
+    if(S.gameMode==='survival'){ board='surv'; score=director.wave*10000+Math.min(kills,9999); }
+    else if(S.gameMode==='daily'){ board='daily:'+S.daily.day; score=Math.round(kills+combo*1.5+(win?400:0)); }
+    else if(win && pts!=null){ board=`stage:${STAGE.id}:${DIFF.id}`; score=Math.max(0,Math.round(pts*10)); }
+    this.res = board && t>=15 && player? { board, score, hero:S.currentChar, kills, combo, time:t, rank, wave:S.gameMode==='survival'? director.wave : 0 } : null;
+    $('lbsub').classList.toggle('hidden', !(this.res && this.state==='on'));
+    $('btn-lb').disabled=false;
+    $('lbnick').value=this.nick();
+    this.msg('');
+  },
+  msg(t,cls=''){ const m=$('lbmsg'); m.textContent=t; m.className=cls; },
+  async submit(){
+    if(!this.res || $('btn-lb').disabled) return;
+    const nick=$('lbnick').value.trim();
+    if(!nick){ this.msg(T('lb.needNick'),'err'); $('lbnick').focus(); return; }
+    try{ localStorage.setItem('musou.nick',nick); }catch(e){}
+    $('btn-lb').disabled=true; this.msg(T('lb.sending'));
+    const res=this.res;
+    const r=await this.api('/api/score', Object.assign({ cid:this.cid(), nick }, res));
+    if(res!==this.res) return;          // 等待期間已開新的一場
+    const d=r.data||{};
+    if(r.status===200 && d.ok){ this.msg(d.improved? T('lb.rankN',d.rank) : T('lb.notBetter',d.rank),'ok'); $('lbnick').blur(); return d; }
+    $('btn-lb').disabled = r.status===422;
+    this.msg(r.status===503? T('lb.off') : r.status===422? T('lb.bad') : r.status===429? T('lb.rate') : T('lb.err'),'err');
+    return d;
+  },
+};
+addEventListener('pagehide',()=>{ if(NET.run && (S.mode==='play'||S.mode==='pause')) NET.track(Object.assign({n:'quit'},NET.run)); NET.run=null; NET.flush(true); });
+addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') NET.flush(true); });
+
+const BOARD={
+  TABS:['daily','surv','sishui','hulao','luoyang'],
+  tab:0, diff:'normal', seq:0, data:null,
+  key(){ const t=this.TABS[this.tab]; return t==='daily'? 'daily:'+DAILY.idx() : t==='surv'? 'surv' : `stage:${t}:${this.diff}`; },
+  label(t){ return t==='daily'? T('lb.daily') : t==='surv'? T('lb.surv') : T(`stage.${t}.name`); },
+  open(){
+    this.diff=BEST.lastDiff();
+    $('title').classList.add('hidden'); $('board').classList.remove('hidden');
+    MENU.cur=null; S.mode='board';
+    this.load();
+  },
+  close(){ $('board').classList.add('hidden'); $('title').classList.remove('hidden'); MENU.cur=MENUS.title; S.mode='title'; renderMenu(MENUS.title); },
+  setTab(i){ this.tab=(i+this.TABS.length)%this.TABS.length; this.load(); },
+  setDiff(id){ this.diff=id; this.load(); },
+  tick(){
+    if(input.take('Escape')||input.take('MenuBack')){ this.close(); return; }
+    if(input.take('ArrowLeft')||input.take('KeyA')) this.setTab(this.tab-1);
+    if(input.take('ArrowRight')||input.take('KeyD')) this.setTab(this.tab+1);
+    if(input.take('Tab')||input.take('ArrowDown')||input.take('KeyS')){ const i=DIFF_ORDER.indexOf(this.diff); this.setDiff(DIFF_ORDER[(i+1)%3]); }
+    if(input.take('ArrowUp')||input.take('KeyW')){ const i=DIFF_ORDER.indexOf(this.diff); this.setDiff(DIFF_ORDER[(i+2)%3]); }
+  },
+  head(){
+    const t=this.TABS[this.tab];
+    $('lbtabs').innerHTML=this.TABS.map((x,i)=>`<span data-i="${i}" class="${i===this.tab?'on':''}">${this.label(x)}</span>`).join('');
+    $('lbdiffs').classList.toggle('hidden', t==='daily'||t==='surv');
+    $('lbdiffs').innerHTML=DIFF_ORDER.map(d=>`<span data-d="${d}" class="${d===this.diff?'on':''}">${LN(DIFFS[d],'label')}</span>`).join('');
+    $('lbtabs').querySelectorAll('span').forEach(el=>el.onclick=()=>this.setTab(+el.dataset.i));
+    $('lbdiffs').querySelectorAll('span').forEach(el=>el.onclick=()=>this.setDiff(el.dataset.d));
+  },
+  async load(){
+    this.head();
+    const seq=++this.seq, body=$('lbbody');
+    body.innerHTML=`<div class="lbnote">${T('lb.loading')}</div>`;
+    const r=await NET.api(`/api/score?board=${encodeURIComponent(this.key())}&cid=${NET.cid()}`);
+    if(seq!==this.seq) return;
+    this.data=r.data;
+    if(r.status===503 || (r.status===0 && NET.state!=='on')){ body.innerHTML=`<div class="lbnote">${T('lb.off')}</div>`; return; }
+    if(r.status!==200 || !r.data){ body.innerHTML=`<div class="lbnote">${T('lb.err')}</div>`; return; }
+    body.innerHTML=this.table(r.data);
+  },
+  table(d){
+    if(!d.rows.length) return `<div class="lbnote">${T('lb.empty')}</div>`;
+    const t=this.TABS[this.tab];
+    const esc=x=>String(x==null?'':x).replace(/[&<>"']/g,c=>'&#'+c.charCodeAt(0)+';');
+    const tm=s=>`${Math.floor((s||0)/60)}:${String((s||0)%60).padStart(2,'0')}`;
+    const row=x=>{
+      const hero=CHARS[x.hero]? LN(CHARS[x.hero],'name') : '─';
+      const score= t==='surv'? T('lb.surv.s',Math.floor(x.score/10000)) : x.score;
+      const det= t==='surv'||t==='daily'? T('lb.daily.d',x.kills) : T('lb.stage.d',x.grade,tm(x.time));
+      return `<tr class="${x.me?'me':''}"><td class="r">${x.rank}</td><td class="n">${esc(x.nick)}</td><td>${esc(hero)}</td><td class="d">${esc(det)}</td><td class="s">${score}</td></tr>`;
+    };
+    let h=`<table>${d.rows.map(row).join('')}`;
+    if(d.mine && d.mine.rank>d.rows.length) h+=`<tr class="gap"><td colspan="5">⋯</td></tr>`+row(Object.assign({me:true},d.mine));
+    h+=`</table><div class="mhint" style="margin-top:8px">${t==='daily'? T('lb.dayN',DAILY.idx())+' ・ ' : ''}${T('lb.total',d.total)}</div>`;
+    return h;
+  },
+};
+
+// ============================================================
 // 每日挑戰:以日期為種子,全世界同一天打同一場
 // ============================================================
 const DAILY={
@@ -7029,7 +7265,7 @@ const DAILY={
     const i=this.idx(), r=mulberry32(i*7919);
     r(); r();
     const char=CHAR_ORDER[Math.floor(r()*CHAR_ORDER.length)];
-    const dr=r(); const diff = dr<.2?'easy' : dr<.7?'normal' : 'hard';
+    const dr=r(); const diff = dr<.2?'easy' : dr<.7?'normal' : 'shura';
     const mut=this.MUTS[Math.floor(r()*this.MUTS.length)];
     return { day:i, char, diff, mut };
   },
@@ -7079,6 +7315,7 @@ function buildAllMenus(){
     { get lab(){ return T('menu.settings'); }, type:'action', run:()=>openSettings('title') },
     { get lab(){ return T('menu.howto'); }, type:'action', run:()=>openHowto('title') },
     { get lab(){ return T('menu.achv'); }, type:'action', get hint(){ return `${ACH.count()} / ${ACH_DEFS.length}`; }, run:()=>openAchv() },
+    { get lab(){ return T('menu.board'); }, type:'action', get hint(){ return NET.state==='off'? T('lb.offHint') : ''; }, run:()=>BOARD.open() },
     { get lab(){ return T('menu.records'); }, type:'action', hint:'', run:()=>showBest() },
   ]);
   // ---- 設定 ----
@@ -7155,7 +7392,7 @@ function showBest(){
   announce(T('ann.records'),'ui', lines.join('　/　'));
 }
 function toTitle(){
-  for(const id of ['hud','results','pause','stagecard','select','settings','howto','campaign','achv','brief']) $(id).classList.add('hidden');
+  for(const id of ['hud','results','pause','stagecard','select','settings','howto','campaign','achv','brief','board']) $(id).classList.add('hidden');
   $('title').classList.remove('hidden');
   MENU.cur=MENUS.title;
   S.mode='title';
@@ -7189,6 +7426,7 @@ function closeHowto(){
 // 遊戲狀態
 // ============================================================
 function cleanupBattle(){
+  NET.quit();
   if(player && player.lvRec && !S.attract) LEVELS.save(player.id, player.lvRec);
   DLG.clear(); TUTOR.hide(); TUTOR.c=null;
   ACH.flush();
@@ -7286,7 +7524,7 @@ function startBattle(charId, opt={}){
   if(opt.attract){
     // 主選單背景的自動演示:不進開場卡、不顯示 HUD,S.mode 維持 'title'
     S.attract=true;
-    if(!(S.mode==='campaign'||S.mode==='settings'||S.mode==='howto'||S.mode==='achv')) S.mode='title';
+    if(!(S.mode==='campaign'||S.mode==='settings'||S.mode==='howto'||S.mode==='achv'||S.mode==='board')) S.mode='title';
     $('hud').classList.add('hidden'); $('stagecard').classList.add('hidden');
     spawnAllies(charId); director.prespawn();
     if(STAGE.onStart) STAGE.onStart();
@@ -7392,7 +7630,7 @@ function showResults(win){
   $('roffs').textContent=director.officersSlain.length?director.officersSlain.join('、'):'─';
   const t=Math.floor(director.time);
   $('rtime').textContent=`${Math.floor(t/60)}:${String(t%60).padStart(2,'0')}`;
-  let rank='─';
+  let rank='─', pts=null;
   if(S.gameMode==='survival'){
     const w=director.wave;
     rank = w>=12?'S' : w>=8?'A' : w>=5?'B' : 'C';
@@ -7400,7 +7638,7 @@ function showResults(win){
     BEST.put('survival',{ cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, wave:w });
   }
   else if(win){
-    const pts=(director.kills+(player?player.maxCombo:0)*1.5+(player?player.hp/player.maxHp:0)*60-director.time/5
+    pts=(director.kills+(player?player.maxCombo:0)*1.5+(player?player.hp/player.maxHp:0)*60-director.time/5
               + OBJ.optionalDone()*25)*DIFF.scoreMul;          // 每個次要目標 +25
     rank=pts>=190?'S':pts>=150?'A':pts>=110?'B':'C';
   }
@@ -7415,6 +7653,7 @@ function showResults(win){
     if(d.streak>=7) ACH.grant('daily7');
   }
   S.lastWin=win; S.lastRank=rank;
+  NET.finish(win, rank, S.gameMode==='story'&&win? pts : null);
   if(win && S.gameMode==='story' && player){
     ACH.grant(STAGE.id);
     if(DIFF.id==='shura') ACH.grant('shura');
@@ -7618,8 +7857,9 @@ function tick(rdtRaw){
   if(S.mode==='achv'){
     if(input.take('Escape')||input.take('MenuBack')||input.take('Enter')||input.take('MenuOK')) closeAchv();
   }
-  if(S.mode==='title'||S.mode==='settings'||S.mode==='campaign'||S.mode==='achv'){
-    if(S.mode==='campaign') CAMPAIGN.tick(); else if(S.mode!=='achv') menuTick(MENU.cur);
+  if(S.mode==='board') BOARD.tick();
+  if(S.mode==='title'||S.mode==='settings'||S.mode==='campaign'||S.mode==='achv'||S.mode==='board'){
+    if(S.mode==='campaign') CAMPAIGN.tick(); else if(S.mode!=='achv'&&S.mode!=='board') menuTick(MENU.cur);
     if(S.attract) ATTRACT.drive(rdt);      // 有攻擊模式就往下走真實戰鬥模擬
     else {
       updateSelect(rdt);
@@ -7675,6 +7915,7 @@ function tick(rdtRaw){
     if(S.introT<=0||input.take('Enter')){
       scEl.classList.add('hidden'); scEl.style.opacity=1;
       S.mode='play';
+      NET.begin();
       announce(T('stage.go'),'');
     TUTOR.start();
     DLG.say(S.currentChar==='lubu'? 'lubu' : (STAGE.id==='hulao'? 'zhangfei' : 'liubei'), `start.${STAGE.id}${S.currentChar==='lubu'?'.solo':''}`);
@@ -7931,6 +8172,80 @@ const SELFTEST={
       input.pressed.add('KeyC'); X.step(1/60);
       X.expect(COSTUME.get('guanyu').id==='gold' && heroRig('guanyu').cloth===0xAA7F2E, '切換服裝失敗');
       return { 已達成:ACH.count() };
+    }],
+    ['線上排行榜與埋點', async ()=>{ const X=SELFTEST;
+      const local=/^(localhost|127\.0\.0\.1)$/.test(location.hostname);
+      const post=(u,b)=>fetch(u,{method:'POST',headers:{'Content-Type':'application/json'},body:b===undefined?undefined:JSON.stringify(b)});
+      if(local) await post('/__mock?reset=1');
+      const st=await NET.probe();
+      X.expect(st==='on'||st==='off', `探測結果異常:${st}`);
+      // 結算頁:無盡之陣敗北 → 有可登錄成績
+      X.enterPlay('guanyu',{survival:true});
+      director.time=130; director.kills=260; director.wave=4; player.maxCombo=80;
+      player.hp=0; showResults(false);
+      X.expect(NET.res && NET.res.board==='surv' && NET.res.score===40260, `無盡之陣成績錯誤:${JSON.stringify(NET.res)}`);
+      X.expect($('lbsub').classList.contains('hidden')===(st!=='on'), `登錄列顯示狀態錯誤(${st})`);
+      // 暱稱欄打字不能觸發 R 重打
+      const nk=$('lbnick'); nk.value='';
+      nk.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyR',key:'r',bubbles:true}));
+      X.step(1/60);
+      X.expect(S.mode==='defeat', `在暱稱欄按 R 觸發了重打:${S.mode}`);
+      // 排行榜畫面
+      toTitle(); BOARD.tab=1; BOARD.open();
+      X.expect(S.mode==='board', '排行榜畫面未開啟');
+      await BOARD.load();
+      const txt=$('lbbody').textContent;
+      if(st==='off'){
+        X.expect(txt.includes(T('lb.off')), `未開放時應顯示「尚未開放」:${txt}`);
+        input.pressed.add('Escape'); X.step(1/60);
+        X.expect(S.mode==='title', '排行榜 Esc 未返回');
+        return { 狀態:'尚未開放' };
+      }
+      X.expect(!txt.includes(T('lb.err')), `排行榜讀取失敗:${txt}`);
+      input.pressed.add('ArrowRight'); X.step(1/60);
+      X.expect(BOARD.tab===2 && !$('lbdiffs').classList.contains('hidden'), '切換到關卡榜失敗');
+      input.pressed.add('Escape'); X.step(1/60);
+      X.expect(S.mode==='title', '排行榜 Esc 未返回');
+      // 伺服器合理性檢查(不寫入)
+      const bad=await post('/api/score',{board:'surv',cid:NET.cid(),nick:'SELFTEST',hero:'guanyu',score:1,kills:99999,combo:0,time:60,wave:1});
+      X.expect(bad.status===422, `異常擊破數應被拒(422),實為 ${bad.status}`);
+      if(!local) return { 狀態:'已開放(正式站只讀)' };
+      // 本機模擬資料庫:實際登錄、改名、讀回
+      X.enterPlay('liubei',{survival:true});
+      director.time=130; director.kills=260; director.wave=4; player.hp=0; showResults(false);
+      $('lbnick').value='測試員';
+      const d1=await NET.submit();
+      X.expect(d1 && d1.ok && d1.rank===1 && $('lbmsg').className==='ok', `登錄失敗:${JSON.stringify(d1)} ${$('lbmsg').textContent}`);
+      X.expect(localStorage.getItem('musou.nick')==='測試員', '暱稱未記住');
+      NET.res.score=100; $('btn-lb').disabled=false; $('lbnick').value='Tester2';
+      const d2=await NET.submit();
+      X.expect(d2 && d2.ok && !d2.improved, `較低分數不應覆蓋:${JSON.stringify(d2)}`);
+      const g=await (await fetch(`/api/score?board=surv&cid=${NET.cid()}`)).json();
+      X.expect(g.total===1 && g.rows[0].nick==='Tester2' && g.rows[0].me && g.rows[0].score===40260, `讀回錯誤:${JSON.stringify(g)}`);
+      // 埋點:開打 → 結算 → 統計可見
+      NET.quiet=false;
+      try{
+        X.enterPlay('zhangfei',{stage:'sishui'});
+        X.expect(NET.run && NET.run.stage==='sishui', '開打未記錄');
+        director.time=200; showResults(true);
+        await new Promise(r=>setTimeout(r,300));
+        X.enterPlay('zhangfei',{stage:'sishui'}); toTitle();   // 中途離開
+        await new Promise(r=>setTimeout(r,300));
+      }finally{ NET.quiet=true; }
+      const sv=await (await fetch('/api/stats?days=1')).json();
+      const k=`story:sishui:${DIFF.id}`;
+      X.expect(sv.derived[k] && sv.derived[k].plays===1 && sv.derived[k].quits===1 && sv.raw[`start:${k}`]===2, `統計錯誤:${JSON.stringify(sv.derived)}`);
+      // 模擬「未設定資料庫」
+      await post('/__mock?on=0');
+      try{
+        X.expect(await NET.probe()==='off', '關閉資料庫後應為 off');
+        X.enterPlay('liubei',{survival:true}); director.time=130; player.hp=0; showResults(false);
+        X.expect($('lbsub').classList.contains('hidden'), '未開放時不應顯示登錄列');
+        toTitle(); BOARD.open(); await BOARD.load();
+        X.expect($('lbbody').textContent.includes(T('lb.off')), '未開放時排行榜應顯示尚未開放');
+        BOARD.close();
+      }finally{ await post('/__mock?on=1'); await NET.probe(); }
+      return { 名次:d1.rank, 統計:sv.derived[k] };
     }],
     ['撿武器匣不會洗掉等級與背水加成', ()=>{ const X=SELFTEST;
       localStorage.removeItem('musou.levels'); localStorage.removeItem('musou.weapon'); WEAPON.load();
@@ -8300,6 +8615,7 @@ const SELFTEST={
     const onErr=e=>errs.push(String((e && e.message) || e));
     addEventListener('error',onErr);
     const results=[];
+    const netQuiet=NET.quiet; NET.quiet=true; NET.run=null;
     const panel=opt.overlay? SELFTEST.panel() : null;
     try{
       for(const [name,fn] of this.cases){
@@ -8308,7 +8624,7 @@ const SELFTEST={
         Math.random=mulberry32(this.hash(name));
         const t1=performance.now();
         let row;
-        try{ const d=fn(); row={ 測試:name, 結果:'✅', 毫秒:Math.round(performance.now()-t1), 細節:d? JSON.stringify(d) : '' }; }
+        try{ const d=await fn(); row={ 測試:name, 結果:'✅', 毫秒:Math.round(performance.now()-t1), 細節:d? JSON.stringify(d) : '' }; }
         catch(e){ row={ 測試:name, 結果:'❌', 毫秒:Math.round(performance.now()-t1), 細節:String((e && e.message) || e) }; }
         finally{ Math.random=rnd; }
         results.push(row);
@@ -8318,6 +8634,7 @@ const SELFTEST={
       results.push({ 測試:'主控台無錯誤', 結果: errs.length? '❌':'✅', 毫秒:0, 細節: errs.slice(0,3).join(' | ') });
     }finally{
       console.error=oe; removeEventListener('error',onErr);
+      NET.quiet=netQuiet; NET.run=null; NET.q.length=0;
       Math.random=rnd;
       delete navigator.getGamepads;
       for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k && k.startsWith('musou.')) localStorage.removeItem(k); }
@@ -8365,10 +8682,15 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv, DLG, BGM_THEMES, TUTOR, openBrief, confirmBrief,
+  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv, DLG, BGM_THEMES, TUTOR, openBrief, confirmBrief, NET, BOARD,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
+if(!/[?&]selftest\b/.test(location.search)){
+  NET.probe();
+  NET.track({ n:'session', lang:LANG, touch:IS_TOUCH, pad:!!(navigator.getGamepads && Array.from(navigator.getGamepads()).some(g=>g&&g.connected)) });
+  setTimeout(()=>NET.flush(),4000);
+}
 if(/[?&]selftest\b/.test(location.search)) setTimeout(()=>SELFTEST.run({overlay:true}),400);
 </script>
 </body>
