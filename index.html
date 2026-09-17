@@ -2691,10 +2691,39 @@ function propKit(P, rng){
       P.add(g2);
     }
   };
-  return { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, tentM, tent2M, palM };
+  // 遠山:每座由 4~6 層錯開的板子堆成,寬面朝向競技場中心;奇偶層深淺交錯(積木堆疊感)
+  // 全部依「顏色 × 奇偶層」合併,不論幾座山都只有少數 draw call
+  const mountains=({ n=15, rMin=205, rSpan=80, hMin=34, hSpan=52, colors=[0x6D6E6C,0x583927] }={})=>{
+    const buckets=new Map();
+    const put=(hex,g)=>{ if(!buckets.has(hex)) buckets.set(hex,[]); buckets.get(hex).push(g); };
+    const shade=(hex,k)=>{ const c=new THREE.Color(hex).multiplyScalar(k); return c.getHex(); };
+    for(let i=0;i<n;i++){
+      const a=i/n*TAU + rng()*.3;
+      const r=rMin+rng()*rSpan, h=hMin+rng()*hSpan;
+      const base=colors[(rng()*colors.length)|0];
+      const W=58+rng()*56, D=30+rng()*22;
+      const layers=4+((rng()*3)|0), lh=h/layers;
+      let x0=0;
+      for(let k=0;k<layers;k++){
+        const f=1-k/layers;
+        x0+=(rng()-.5)*W*.14;                      // 每層左右錯開 → 不對稱的階梯輪廓
+        const g=new THREE.BoxGeometry(W*(.24+.76*f), lh*1.02, D*(.34+.66*f));
+        g.translate(x0, lh*(k+.5)-3, 0);
+        g.rotateY(a);                               // 寬面沿切線方向
+        g.translate(Math.sin(a)*r, 0, Math.cos(a)*r);
+        put(k&1? shade(base,.84) : base, g);
+      }
+    }
+    for(const [hex,arr] of buckets){
+      const merged=mergeGeometries(arr); arr.forEach(g=>g.dispose());
+      const m=new THREE.Mesh(merged, mat(hex)); m.castShadow=false; m.receiveShadow=false;
+      P.add(m);
+    }
+  };
+  return { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, mountains, tentM, tent2M, palM };
 }
 function buildHulao(P, rng){
-  const { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, palM }=propKit(P,rng);
+  const { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, mountains, palM }=propKit(P,rng);
   // 地面
   const gtex=makeGroundTexture(STAGE.env.ground);
   gtex.wrapS=gtex.wrapT=THREE.RepeatWrapping; gtex.repeat.set(3.4,3.4);
@@ -2742,14 +2771,8 @@ function buildHulao(P, rng){
   for(let i=0;i<9;i++) mkAbatis(-42+i*11, -70+rng()*4, rng()*.3-.15);
   // 箭樓
   mkWatch(-34,-74); mkWatch(31,-76);
-  // 遠山
-  const mm1=mat(0x6D6E6C), mm2=mat(0x583927);
-  for(let i=0;i<15;i++){
-    const a=i/15*TAU + rng()*.3;
-    const r=205+rng()*80, h=34+rng()*52;
-    const m=mesh(geo(`mt${i%4}`,()=>new THREE.ConeGeometry(34+(i%4)*9, 1, 7)), rng()<.5?mm1:mm2, Math.sin(a)*r, h/2-2, Math.cos(a)*r, false);
-    m.scale.y=h; m.rotation.y=rng()*TAU; P.add(m);
-  }
+  // 遠山:階梯積木山
+  mountains();
   scatter();
 }
 // ============================================================
