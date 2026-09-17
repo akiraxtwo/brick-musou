@@ -160,8 +160,10 @@ body.touch #objpanel{top:118px; font-size:12px}
 #seltitle .subline{width:min(520px,60vw); height:1px; margin:16px auto 0;
   background:linear-gradient(90deg,transparent,var(--gold),transparent)}
 #selbottom{position:absolute; bottom:4vh; left:0; right:0; display:flex; flex-direction:column; align-items:center; gap:18px}
-#cards{display:flex; gap:22px; justify-content:center}
-.card{width:min(250px,28vw); padding:16px 18px 14px; cursor:pointer; text-align:left;
+#cards{display:flex; gap:16px; justify-content:center}
+.card.lock{opacity:.62}
+.card.lock h2{color:rgba(232,220,192,.55)}
+.card{width:min(230px,23vw); padding:16px 18px 14px; cursor:pointer; text-align:left;
   background:rgba(10,8,6,.74); border:1px solid rgba(217,185,110,.35);
   box-shadow:0 4px 14px rgba(0,0,0,.5); transition:all .18s ease; position:relative}
 .card:hover{border-color:rgba(217,185,110,.8); transform:translateY(-4px)}
@@ -936,7 +938,8 @@ const I18N={
   'hud.hint':'<b>WASD</b> Move ・ <b>J</b> Combo ・ <b>K</b> Charge ・ <b>Space</b> Jump ・ <b>H</b> Guard ・ <b>L</b> Musou ・ <b>Shift</b> Sprint ・ <b>Esc</b> Pause',
   'hud.mute':'M Mute','hud.pad':(n)=>`🎮 ${n} connected`,
   'credit':'Brick part geometry © LDraw.org parts library ・ CC BY 4.0 ・ Not affiliated with the LEGO Group',
-  'cutin.musou':'MUSOU RAGE',
+  'cutin.musou':'MUSOU RAGE','musou.lubu':'PEERLESS',
+  'sel.locked':'Defeat Lu Bu to unlock','ann.unlockLubu':'LU BU IS NOW PLAYABLE!','ann.unlockLubuSub':'"Peerless under heaven — who dares face me?"',
   'obj.defeat':(n)=>`Defeat ${n}`,'obj.capture':(p,n)=>`Capture bases ${p} / ${n}`,'obj.kills':(p,n)=>`Slay ${p} / ${n}`,
   'obj.done':'OBJECTIVE COMPLETE','obj.subDone':'Bonus objective complete','res.objs':'Objectives',
   'camp.chapter':'CHAPTER I','camp.title':'The Allied Coalition','camp.hint':'← → Choose battle ・ Enter Sortie ・ Esc Back',
@@ -1064,7 +1067,8 @@ I18N.zh={
   'hud.hint':'<b>WASD</b>移動 <b>J</b>六段連擊 <b>K</b>蓄力C技(連段第N段後接CN) <b>空白</b>跳躍 <b>H/右鍵</b>格擋 <b>L</b>無雙 <b>Shift</b>疾走 <b>Esc</b>暫停',
   'hud.mute':'M 靜音','hud.pad':(n)=>`🎮 ${n} 已連線`,
   'credit':'積木零件幾何 © LDraw.org 零件庫 ・ CC BY 4.0 ・ 與 LEGO 集團無隸屬關係',
-  'cutin.musou':'無雙亂舞',
+  'cutin.musou':'無雙亂舞','musou.lubu':'天下無雙',
+  'sel.locked':'擊破呂布後解鎖','ann.unlockLubu':'呂布 已可操作!','ann.unlockLubuSub':'「天下無雙,誰與爭鋒」',
   'obj.defeat':(n)=>`擊破 ${n}`,'obj.capture':(p,n)=>`攻陷據點 ${p} / ${n}`,'obj.kills':(p,n)=>`擊破 ${p} / ${n} 人`,
   'obj.done':'目標達成','obj.subDone':'次要目標達成','res.objs':'達成目標',
   'camp.chapter':'第 一 章','camp.title':'反董卓聯合軍','camp.hint':'← → 選擇戰場 ・ Enter 出陣 ・ Esc 返回',
@@ -1236,6 +1240,35 @@ const BOSS_DEFS = {
     cloth:0x1B1B1B, cloth2:0xAA7F2E, armor:0xC4281C, pants:0x1B1B1B, boots:0x1B1B1B, cape:0x720E0F, pads:true },
  },
 };
+// ---------- 可操作的呂布(擊破呂布後解鎖)----------
+CHARS.lubu={
+  id:'lubu', name:'呂布', zi:'奉先', epithet:'飛將', weapon:'方天畫戟',
+  desc:'人中呂布,馬中赤兔。方天畫戟所向,千軍辟易——天下無雙的飛將。',
+  en:{ name:'Lu Bu', zi:'Fengxian', epithet:'The Flying General', weapon:'Sky Piercer',
+       desc:'Among men, Lu Bu; among horses, Red Hare. Where his Sky Piercer points, whole armies scatter.' },
+  hp:720, atk:36, speed:6.2, prof:{pow:5,spd:3,vit:5,rng:5},
+  trail:0xff5a3a, musouTint:0xff6a4a,
+  rig:Object.assign({}, BOSS_DEFS.lubu.rig, { scale:1.18, weapon:'halberd', ldraw:true }),
+  lock:'lubu',
+};
+// 可選武將(CHAR_ORDER 只放三兄弟:友軍、每日挑戰、主選單背景都用它)
+const HERO_ORDER=['liubei','guanyu','zhangfei','lubu'];
+const UNLOCK={
+  load(){ try{ return JSON.parse(localStorage.getItem('musou.unlocks')||'{}'); }catch(e){ return {}; } },
+  has(k){
+    if(this.load()[k]) return true;
+    if(k==='lubu' && typeof CAMPAIGN!=='undefined' && CAMPAIGN.cleared('hulao')) return true;   // 舊版通關虎牢關 = 擊破過呂布
+    return false;
+  },
+  grant(k){
+    if(this.has(k)) return false;
+    const d=this.load(); d[k]=Date.now();
+    try{ localStorage.setItem('musou.unlocks',JSON.stringify(d)); }catch(e){}
+    return true;
+  },
+};
+function heroLocked(id){ const C=CHARS[id]; return !!(C && C.lock && !UNLOCK.has(C.lock)); }
+
 // 目前關卡的競技場邊界(loadStage 會覆寫;全域多處直接引用這個物件)
 const ARENA = { x:94, zMin:-90, zMax:86 };
 
@@ -2505,7 +2538,7 @@ const AIR_MOVES={
 function buildHeroMoves(id){
   const C=CHARS[id];
   const w=C.rig.weapon;
-  const long = (w==='guandao'||w==='snakespear');
+  const long = (w==='guandao'||w==='snakespear'||w==='halberd');
   const dual = !!C.rig.dual;
   const RG = long? 3.55 : 2.80;              // 基礎範圍
   const SP = long? 1.0 : .82;                // 出招時長係數
@@ -2575,7 +2608,7 @@ function buildHeroMoves(id){
     events:[{t:.2,sfx:'whoosh',big:1},{t:.58,sfx:'whoosh',big:1},{t:.72,fx:'dustS'}], trail:tr(.2,.9)});
   // C6 大範圍爆發
   Cs[6]=mkAtk({dur:1.1*SP, cancel:.9,
-    pose: id==='zhangfei'? pSlamJump() : pSpin(2),
+    pose: (id==='zhangfei'||id==='lubu')? pSlamJump() : pSpin(2),
     lunge:lungeFn(.12,.5,4),
     hits:[{t0:.5,t1:.72,range:RG*1.5,arc:TAU,dmg:2.6,kb:13,up:1.2,shake:.7,pierce:1}],
     events:[{t:.2,sfx:'whoosh',big:1},{t:.5,sfx:'boom'},{t:.5,fx:'burst'}], trail:tr(.16,.9)});
@@ -4536,6 +4569,24 @@ const MUSOU_DEF={
     fin:{range:9,arc:TAU,dmg:6.5,kb:16,up:1.2,shake:1,pierce:1}, finRing:11, finDur:.55,
     finPose(R,u){ pSmash()(R,u); },
   },
+  lubu:{ dur:3.6, tick:.1, trail:'R', speed:4.2,
+    // 天下無雙:方天畫戟旋風(可移動),每 0.9 秒一次震地把周圍打上天
+    move(self,dt,ix,iy){
+      if(!(ix||iy)) return;
+      const f=cam.yaw, mx=Math.sin(f)*iy-Math.cos(f)*ix, mz=Math.cos(f)*iy+Math.sin(f)*ix, L=Math.hypot(mx,mz)||1;
+      moveEntity(self, mx/L*this.speed*dt, mz/L*this.speed*dt);
+    },
+    hit(self){ return (self.musT%.9)<.1? {range:6.4,arc:TAU,dmg:1.6,kb:9,up:1.1,pierce:1,shake:.3}
+                                        : {range:4.4,arc:TAU,dmg:.75,kb:4,up:.2,pierce:1}; },
+    fx(self){
+      if((self.musT%.9)<.1){ shockRing(self.pos,self.char.musouTint,6.6,.4); dust(self.pos,8,1.6); AUD.boom(); }
+      else sparks(V3(self.pos.x,1.2,self.pos.z),self.char.musouTint,2,{speed:6,up:1.5,grav:2,life:.3});
+    },
+    pose(R,t){ const u=(t/.42)%1; pSpin(1)(R,u); R.armR.rotation.x=-1.05; R.armR.rotation.z=.85; R.weaponR.rotation.x=1.9;
+               R.body.position.y=Math.abs(Math.sin(t*7))*.28; },
+    fin:{range:12,arc:TAU,dmg:8,kb:18,up:1.7,shake:1.2,pierce:1}, finRing:14, finDur:.65,
+    finPose(R,u){ pSmash()(R,u); R.body.position.y=kf(u,[[0,0],[.3,1.25],[.55,-.1],[1,0]]); },
+  },
   zhangfei:{ dur:3.4, tick:.32, trail:'R', speed:0,
     // 燕人咆哮:原地連續戳地,每一下都是逐漸擴大的震波,把整片敵人打上天
     move(){},
@@ -5809,6 +5860,9 @@ const director={
       sparks(V3(e.pos.x,1.6,e.pos.z),0xffe08a,40,{speed:9,up:8});
       killCine(e,2.6);
       if(e.def) OBJ.defeated(e.def.id);
+      if(e.def && e.def.id==='lubu' && !S.attract && UNLOCK.grant('lubu')){
+        schedule(2.8,()=>announce(T('ann.unlockLubu'),'ui big',T('ann.unlockLubuSub')));
+      }
       if(S.gameMode==='survival'){ this.boss=null; }
       else if(!OBJ.list.length){ S.resultTimer=3.4; S.resultWin=true; }   // 沒有目標設定的關卡:擊破 BOSS 即勝利
     }
@@ -6058,7 +6112,20 @@ function updateCamera(dt,rdt){
 // ============================================================
 // 選將畫面
 // ============================================================
-const sel={ scene:new THREE.Scene(), cam:new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.1,120), rigs:[], idx:1, t:0, ring:null, lights:[] };
+const sel={ scene:new THREE.Scene(), cam:new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.1,120), rigs:[], ids:[], idx:1, t:0, ring:null, lights:[] };
+const selX=i=>(i-(HERO_ORDER.length-1)/2)*2.95;
+const SIL_MAT=new THREE.MeshBasicMaterial({ color:0x0b0910 });
+// 未解鎖的武將顯示成剪影
+function refreshSelectLocks(){
+  sel.rigs.forEach((R,i)=>{
+    const locked=heroLocked(sel.ids[i]);
+    for(const m of R.meshes){
+      if(locked){ if(!m.userData.selOM) m.userData.selOM=m.material; m.material=SIL_MAT; }
+      else if(m.userData.selOM){ m.material=m.userData.selOM; m.userData.selOM=null; }
+    }
+    if(R.cloths) for(const c of R.cloths) if(c.mesh){ c.mesh.visible=!locked; }
+  });
+}
 function buildSelectScene(){
   sel.scene.background=new THREE.Color(0x120e16);
   sel.scene.fog=new THREE.Fog(0x120e16,11,30);
@@ -6071,15 +6138,16 @@ function buildSelectScene(){
     const L=new THREE.PointLight(0xff8a3a,26,17,1.8); L.position.set(fx,2.4,2.5);
     sel.scene.add(L); sel.lights.push(L);
   }
-  CHAR_ORDER.forEach((id,i)=>{
-    const x=(i-1)*3.15;
-    const ped=new THREE.Mesh(geo('ped',()=>new THREE.CylinderGeometry(1.65,1.85,.18,24)), mat(0x2a222f));
+  HERO_ORDER.forEach((id,i)=>{
+    const x=selX(i);
+    const ped=new THREE.Mesh(geo('ped',()=>new THREE.CylinderGeometry(1.5,1.7,.18,24)), mat(0x2a222f));
     ped.position.set(x,.09,0); sel.scene.add(ped);
     const rig=makeHuman(CHARS[id].rig);
     rig.root.position.set(x,.18,0);
     sel.scene.add(rig.root);
-    sel.rigs.push(rig);
+    sel.rigs.push(rig); sel.ids.push(id);
   });
+  refreshSelectLocks();
   sel.ring=new THREE.Mesh(geo('selring',()=>{const r=new THREE.RingGeometry(1.5,1.72,40); r.rotateX(-Math.PI/2); return r;}),
     new THREE.MeshBasicMaterial({color:0xd9b96e, transparent:true, opacity:.8, blending:THREE.AdditiveBlending, depthWrite:false}));
   sel.ring.position.y=.2; sel.scene.add(sel.ring);
@@ -6096,14 +6164,17 @@ function updateSelect(rdt){
     R.root.position.z=damp(R.root.position.z,chosen?1.25:0,8,rdt);
     R.root.rotation.y=chosen?Math.sin(sel.t*.5)*.15:0;
   });
-  const tx=(sel.idx-1)*3.15;
+  const tx=selX(sel.idx);
   sel.ring.position.x=damp(sel.ring.position.x,tx,10,rdt);
   sel.ring.position.z=damp(sel.ring.position.z,1.25,10,rdt);
   sel.ring.material.opacity=.55+Math.sin(sel.t*4)*.25;
   sel.ring.scale.setScalar(1+Math.sin(sel.t*4)*.03);
   for(const L of sel.lights) L.intensity=24+Math.sin(sel.t*12+L.position.x)*5+rand(-2,2);
-  sel.cam.position.x=damp(sel.cam.position.x,tx*.28,4,rdt);
-  sel.cam.lookAt(tx*.22,1.45,0);
+  // 鏡頭跟著選取的武將平移;窄畫面(4:3、直立平板)拉遠一點,四人才放得下
+  const asp=sel.cam.aspect, back=asp<1.5? 10.4 : 9.2;
+  sel.cam.position.x=damp(sel.cam.position.x,tx*.62,4,rdt);
+  sel.cam.position.z=damp(sel.cam.position.z,back,4,rdt);
+  sel.cam.lookAt(sel.cam.position.x*.95,1.45,0);
 }
 function setSelIdx(i){
   if(sel.idx!==i){ AUD.ensure(); AUD.guard(); }
@@ -6113,9 +6184,16 @@ function setSelIdx(i){
 function buildCards(){
   const wrap=$('cards');
   wrap.innerHTML='';
-  CHAR_ORDER.forEach((id,i)=>{
+  HERO_ORDER.forEach((id,i)=>{
     const C=CHARS[id];
     const d=document.createElement('div');
+    if(heroLocked(id)){
+      d.className='card lock';
+      d.innerHTML=`<span class="key">${i+1}</span><h2>？？？</h2><div class="wpn">🔒 ${T('sel.locked')}</div>`;
+      d.addEventListener('click',()=>setSelIdx(i));
+      wrap.appendChild(d);
+      return;
+    }
     d.className='card';
     d.innerHTML=`<span class="key">${i+1}</span><h2>${LN(C,'name')}<small>${LN(C,'zi')}</small></h2>
       <div class="wpn">${LN(C,'epithet')} ・ ${LN(C,'weapon')}</div>
@@ -6168,7 +6246,12 @@ function setDiff(id){
   const rec=BEST.get(bestKey(S.pickStage||'hulao', id));
   $('bestline').textContent = rec? T('sel.best',recL(rec)) : T('sel.noRecord');
 }
-function begin(){ AUD.ensure(); startBattle(CHAR_ORDER[sel.idx], {stage:S.pickStage||'hulao'}); }
+function begin(){
+  AUD.ensure();
+  const id=HERO_ORDER[sel.idx];
+  if(heroLocked(id)){ AUD.guard(); addShake(.05); announce(T('sel.locked'),'ui quick'); return; }
+  startBattle(id, {stage:S.pickStage||'hulao'});
+}
 // 戰績鍵:虎牢關沿用舊版的「難度」鍵,其他關卡為「關卡:難度」
 function bestKey(stage,diff){ return stage==='hulao'? diff : `${stage}:${diff}`; }
 // 重新出陣時沿用本場的模式與關卡
@@ -6304,7 +6387,7 @@ const DAILY={
   },
 };
 function lastChar(){ let id=null; try{ id=localStorage.getItem('musou.last'); }catch(e){}
-  return CHARS[id]? id : 'liubei'; }
+  return (CHARS[id] && !heroLocked(id))? id : 'liubei'; }
 
 // ============================================================
 // 主選單 / 設定 / 操作說明
@@ -6484,6 +6567,7 @@ function allyDefFor(id){
            weapon:C.rig.weapon, rig:C.rig };
 }
 function spawnAllies(playerId){
+  if(playerId==='lubu') return;              // 呂布單騎出陣
   for(const id of CHAR_ORDER){
     if(id===playerId) continue;
     const def=allyDefFor(id);
@@ -6599,6 +6683,7 @@ function toSelect(){
   $('select').classList.remove('hidden');
   $('campaign').classList.add('hidden');
   S.pickStage=S.pickStage||lastStage();
+  refreshSelectLocks(); buildCards(); refreshWeaponUI(); setSelIdx(clamp(sel.idx,0,HERO_ORDER.length-1));
   const sub=$('seltitle').querySelector('.sub');
   sub.dataset.t=`stage.${S.pickStage}.name`; sub.textContent=T(sub.dataset.t);
   setDiff(DIFF.id);
@@ -6858,9 +6943,10 @@ function tick(rdtRaw){
     return;
   }
   if(S.mode==='select'){
-    if(input.take('ArrowLeft')||input.take('KeyA')) setSelIdx((sel.idx+2)%3);
-    if(input.take('ArrowRight')||input.take('KeyD')) setSelIdx((sel.idx+1)%3);
-    ['Digit1','Digit2','Digit3'].forEach((c,i)=>{ if(input.take(c)) setSelIdx(i); });
+    const NH=HERO_ORDER.length;
+    if(input.take('ArrowLeft')||input.take('KeyA')) setSelIdx((sel.idx+NH-1)%NH);
+    if(input.take('ArrowRight')||input.take('KeyD')) setSelIdx((sel.idx+1)%NH);
+    ['Digit1','Digit2','Digit3','Digit4'].forEach((c,i)=>{ if(i<NH && input.take(c)) setSelIdx(i); });
     if(input.take('Tab')){ const i=DIFF_ORDER.indexOf(DIFF.id); setDiff(DIFF_ORDER[(i+1)%DIFF_ORDER.length]); }
     if(input.take('Enter')||input.take('NumpadEnter')||input.take('MenuOK')) begin();
     if(input.take('Escape')||input.take('MenuBack')) openCampaign();
@@ -6968,7 +7054,7 @@ window.addEventListener('resize',()=>{
 });
 input.init();
 applyLang();
-for(const id of CHAR_ORDER) HERO_MOVES[id]=buildHeroMoves(id);
+for(const id of HERO_ORDER) HERO_MOVES[id]=buildHeroMoves(id);
 loadStage('hulao');
 buildBricks();
 buildStuds();
@@ -7054,6 +7140,32 @@ const SELFTEST={
         r[id]=k;
       }
       return r;
+    }],
+    ['呂布:未解鎖不可選 → 擊破呂布解鎖 → 單騎出陣與天下無雙', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.unlocks'); localStorage.removeItem('musou.campaign'); localStorage.removeItem('musou.best'); BEST.load();
+      S.pickStage='hulao'; toSelect(); X.step(.1);
+      const li=HERO_ORDER.indexOf('lubu');
+      X.expect(heroLocked('lubu') && $('cards').children[li].classList.contains('lock'), '呂布應為未解鎖剪影');
+      setSelIdx(li); begin(); X.step(.1);
+      X.expect(S.mode==='select', '未解鎖時不應能出陣');
+      // 擊破呂布 → 解鎖
+      setDiff('normal'); X.enterPlay('guanyu');
+      director.time=STAGE.bossDef.tAt; X.stepSafe(4);
+      const b=director.boss; let n=0;
+      while(b.alive && n<30){ b.hp=1; dealHit(player,b,{dmg:9,kb:1,up:0,pierce:1,noElem:1}); X.step(.05); n++; }
+      X.expect(!heroLocked('lubu'), '擊破呂布後未解鎖');
+      toSelect(); X.step(.1);
+      X.expect(!$('cards').children[li].classList.contains('lock'), '解鎖後卡片仍是鎖定狀態');
+      // 呂布單騎出陣 + 天下無雙
+      setSelIdx(li); begin(); X.step(2.6);
+      X.expect(S.mode==='play' && player.id==='lubu', `應以呂布出陣:${S.mode} ${player&&player.id}`);
+      X.expect(!enemies.some(e=>e.kind==='ally'), '呂布應單騎出陣(不帶友軍)');
+      X.stepSafe(12);
+      const k0=director.kills; player.musou=100; input.pressed.add('KeyL'); X.step(1/60);
+      X.expect(player.state==='musou' && $('cutin').querySelector('.cw').textContent===T('musou.lubu'), '天下無雙未發動');
+      let t=0; while(player.state==='musou' && t<10){ X.step(.25); t+=.25; }
+      X.expect(player.musFin, '天下無雙終結技未觸發');
+      return { 無雙擊破:director.kills-k0 };
     }],
     ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
       X.enterPlay('guanyu',{survival:true});
@@ -7424,7 +7536,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign,
+  selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
