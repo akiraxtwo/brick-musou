@@ -87,6 +87,8 @@ body{
 #objpanel .o.opt{font-size:13px; color:rgba(232,220,192,.78)}
 #objpanel .o.opt i{color:var(--gold)}
 #objpanel .o.done{opacity:.5}
+#objpanel .o.gar{color:#ffb0a0; font-size:13px}
+#objpanel .o.gar i{color:#ff8a70}
 #objpanel .o.done span{text-decoration:line-through; text-decoration-color:rgba(217,185,110,.7)}
 body.touch #objpanel{top:118px; font-size:12px}
 #topright{position:absolute; top:22px; right:26px; display:flex; flex-direction:column; align-items:flex-end; gap:10px}
@@ -942,10 +944,19 @@ const I18N={
   'menu.selectStage':'Choose a battle','res.next':'Next Battle (N)','quick.hint':(st,c,d)=>`${st} ・ ${c} ・ ${d}`,
   'best.stage':(s,d,r)=>`${s} (${d}): ${r.char} ${r.kills} slain・rank ${r.rank}`,'best.stageNone':(s)=>`${s}: no record`,
   'stage.sishui.brief':'Take the camps and draw Hua Xiong out','stage.hulao.brief':'The Flying General Lu Bu bars the way',
+  'stage.luoyang.chapter':'CHAPTER I 　 THE ALLIED COALITION','stage.luoyang.name':'Pursuit Through Luoyang',
+  'stage.luoyang.sub':'Dong Zhuo has put Luoyang to the torch ─ catch him before he flees through the north gate!',
+  'stage.luoyang.win':'Dong Zhuo is routed ─ the coalition retakes Luoyang','stage.luoyang.lose':'Dong Zhuo escapes Luoyang……',
+  'stage.luoyang.brief':'Chase Dong Zhuo through the burning city',
+  'obj.stopEscape':(n,d)=>`Defeat ${n} before he escapes (${d} to the gate)`,'obj.fail.escape':'DONG ZHUO HAS ESCAPED!',
+  'ann.boss.dongzhuo':'DONG ZHUO APPEARS!','ann.boss.dongzhuo.sub':'"Burn it! Burn Luoyang to the ground!"',
+  'ann.boss.lubu':'LU BU JOINS THE BATTLE!!','ann.boss.lubu.sub':'"Among men, Lu Bu; among horses, Red Hare"',
+  'ann.bossDown':(n)=>`Enemy officer ${n} has been defeated!`,'ann.bossRage':(n)=>`${n} flies into a rage!`,
+  'ann.ambush':(n)=>`${n}: Ambushers, strike!`,'ann.fireFall':'Burning debris is falling!',
   'stage.sishui.chapter':'CHAPTER I 　 THE ALLIED COALITION','stage.sishui.name':'Battle of Sishui Gate',
   'stage.sishui.sub':"Hua Xiong holds the pass and has cut down the coalition's champions ─ take the camps and draw him out",
   'stage.sishui.win':'Hua Xiong has fallen ─ Sishui Gate is breached',
-  'obj.wine':'Slay Hua Xiong before the wine cools (60s)','obj.new':'NEW OBJECTIVE','obj.captureAll':(p,n)=>`Capture every base ${p} / ${n}`,
+  'obj.wine':'Slay Hua Xiong before the wine cools (60s)','obj.new':'NEW OBJECTIVE','obj.captureAll':(p,n)=>`Capture every base ${p} / ${n}`,'obj.garrison':(n,k)=>`${n}: ${k} defenders left (slay them nearby)`,
   'ann.gateOpen':'THE GATE OPENS!','ann.huaxiongSub':'"Which of you rats dares face me?"',
   'ann.volley':(n)=>`${n}: Loose arrows!`,'fx.counter':'COUNTER',
   'stage.hulao.chapter':'CHAPTER I 　 THE ALLIED COALITION','stage.hulao.name':'Battle of Hulao Gate',
@@ -1061,9 +1072,18 @@ I18N.zh={
   'menu.selectStage':'選擇戰場','res.next':'下一戰（N）','quick.hint':(st,c,d)=>`${st} ・ ${c} ・ ${d}`,
   'best.stage':(s,d,r)=>`${s}(${d}):${r.char} ${r.kills} 擊破・評價 ${r.rank}`,'best.stageNone':(s)=>`${s}:尚無戰績`,
   'stage.sishui.brief':'攻陷營寨,逼華雄出關','stage.hulao.brief':'陣前飛將呂布擋道',
+  'stage.luoyang.chapter':'第 一 章 　 反董卓聯合軍','stage.luoyang.name':'洛陽追擊戰',
+  'stage.luoyang.sub':'董卓焚毀洛陽、挾天子西遷 ─ 在他逃出北門前追上!',
+  'stage.luoyang.win':'擊破董卓 ─ 國賊倉皇西逃,聯軍收復洛陽','stage.luoyang.lose':'董卓逃出洛陽……',
+  'stage.luoyang.brief':'追擊火城中的董卓',
+  'obj.stopEscape':(n,d)=>`在逃脫前擊破 ${n}(距北門 ${d})`,'obj.fail.escape':'董卓逃脫了!',
+  'ann.boss.dongzhuo':'董卓 現身!','ann.boss.dongzhuo.sub':'「燒!把洛陽燒個乾淨!」',
+  'ann.boss.lubu':'呂布 參戰!!','ann.boss.lubu.sub':'「人中呂布,馬中赤兔」',
+  'ann.bossDown':(n)=>`敵將 ${n},已被擊破!`,'ann.bossRage':(n)=>`${n}進入狂暴狀態!`,
+  'ann.ambush':(n)=>`${n}:伏兵,出擊!`,'ann.fireFall':'燃燒的瓦礫落下!',
   'stage.sishui.chapter':'第 一 章 　 反董卓聯合軍','stage.sishui.name':'汜水關之戰',
   'stage.sishui.sub':'華雄據關連斬聯軍數將 ─ 攻陷營寨,逼其出關','stage.sishui.win':'華雄授首 ─ 汜水關已破',
-  'obj.wine':'溫酒斬華雄(出關 60 秒內擊破)','obj.new':'新目標','obj.captureAll':(p,n)=>`攻陷全部據點 ${p} / ${n}`,
+  'obj.wine':'溫酒斬華雄(出關 60 秒內擊破)','obj.new':'新目標','obj.captureAll':(p,n)=>`攻陷全部據點 ${p} / ${n}`,'obj.garrison':(n,k)=>`${n} 守軍剩餘 ${k}(在附近擊破)`,
   'ann.gateOpen':'汜水關城門大開!','ann.huaxiongSub':'「關東鼠輩,誰敢與我一戰!」',
   'ann.volley':(n)=>`${n}:放箭!`,'fx.counter':'反擊',
   'stage.hulao.chapter':'第 一 章 　 反董卓聯合軍','stage.hulao.name':'虎牢關之戰',
@@ -1198,7 +1218,18 @@ const OFFICER_DEFS = {
     rig:{ headColor:0xF5CD2F, hair:0x1B1B1B, beard:'mustache', headgear:'ohelm', face:'plain',
       cloth:0x6D6E6C, cloth2:0xAA7F2E, armor:0x9BA19D, pants:0x1B1B1B, boots:0x1B1B1B, cape:0x6D6E6C, pads:true } },
 };
+OFFICER_DEFS.xurong={ sig:'ambush', name:'徐榮', zi:'董卓軍中郎將', en:{name:'Xu Rong', zi:"Dong Zhuo's Rearguard"},
+  hp:1900, atk:13, speed:3.8, scale:1.12, weapon:'spear',
+  rig:{ headColor:0xF5CD2F, hair:0x1B1B1B, beard:'mustache', headgear:'helm', face:'tiger',
+    cloth:0x583927, cloth2:0xAA7F2E, armor:0x1B1B1B, pants:0x1B1B1B, boots:0x1B1B1B, cape:0x583927, pads:true } };
 const BOSS_DEFS = {
+ dongzhuo:{   // 洛陽:帶著親衛往北門逃;被追上時停下來反擊(震地),打一陣子又繼續逃
+  name:'董卓', zi:'相國', en:{name:'Dong Zhuo', zi:'The Chancellor'}, hp:7000, atk:15, speed:3.4, scale:1.34, weapon:'sword',
+  // 追擊 bot(疾走追人、靠近連打、無雙滿就放)模擬:易 剩 80~110、普通 剩 30~60、修羅 剩約 5
+  flee:true, fleeSpeed:3.0, fightDur:[5,7], restDur:[3,4.5], sprint:1.45, brain:'dongzhuo', moves:'officer',
+  rig:{ headColor:0xF5CD2F, hair:0x1B1B1B, beard:'bushy', headgear:'crown', face:'tiger',
+    cloth:0x6B2E7A, cloth2:0xAA7F2E, armor:0xAA7F2E, pants:0x1B1B1B, boots:0x1B1B1B, cape:0x6B2E7A, pads:true },
+ },
  lubu:{
   name:'呂布', zi:'飛將', en:{name:'Lu Bu', zi:'The Flying General'}, hp:5200, atk:18, speed:4.3, scale:1.3, weapon:'halberd',
   rig:{ headColor:0xF5CD2F, hair:0x1B1B1B, beard:'mustache', headgear:'bosshelm', face:'tiger',
@@ -1249,6 +1280,43 @@ const STAGES = {
       ground:{ base:'#7E7C62', avenue:'#9A9484', plate:'#6A624E', wear:'50,50,36' },
     },
     build:(P,rng)=>buildSishui(P,rng),
+  },
+  luoyang:{
+    id:'luoyang', seed:190,
+    arena:{ x:44, zMin:-96, zMax:96 },
+    playerStart:{ x:0, z:-84 },
+    allyStart:{ x:0, z:-90, sx:6, sz:2 },
+    gate:{ x:0, z:90 },
+    enemyEntry:{ x:0, z:60, spread:10 },
+    exit:{ x:0, z:94 },
+    gateOpen:true,                        // 北門早已為董卓敞開
+    prespawnZMax:10,
+    arrowMinZ:999,                        // 城中沒有城牆箭雨,改為燃燒瓦礫
+    kinds:{ archer:{ kills:40, time:10 }, shield:{ kills:120, time:30 } },
+    events:{ cav:false },
+    officers:[ { id:'xurong', trigger:true } ],
+    boss:{ id:'dongzhuo', trigger:true },
+    objectives:[
+      { id:'dong',   kind:'defeat', target:'dongzhuo', final:true, escape:true, textKey:'obj.stopEscape' },
+      { id:'xurong', kind:'defeat', target:'xurong', optional:true },
+      { id:'kills',  kind:'kills',  n:400, optional:true },
+    ],
+    bases:[],
+    legion:null,
+    onStart:()=>luoyangStart(),
+    onTick:(dt)=>luoyangTick(dt),
+    env:{   // 夜晚火城:天際線被火光染紅
+      sky:{ top:0x0a0c22, mid:0x2a1a3a, hor:0xb8441c, low:0x1a0c0e },
+      sunBall:{ color:0x9aa6c8, glow:0x5a6a9a, pos:[230,175,300], scale:.42, glowScale:1.25, glowOpacity:.18 },   // 小而冷的月亮
+      sun:{ day:0x8a9ce0, night:0x8a9ce0, iDay:1.35, iNight:1.35 },
+      hemi:{ day:0x4a3a6e, night:0x4a3a6e, ground:0x5a2a14, iDay:.7, iNight:.7 },
+      ambient:.22,
+      fog:{ day:0x2e1a22, night:0x2e1a22, near:55, far:250 },
+      skyDark:1,
+      dusk:{ start:0, perSec:0, cap:0, boss:0 },
+      ground:{ base:'#5c534a', avenue:'#6e665c', plate:null, wear:'24,16,12' },
+    },
+    build:(P,rng)=>buildLuoyang(P,rng),
   },
   hulao:{
     id:'hulao', seed:42,
@@ -2578,6 +2646,10 @@ function officerMoves(weapon){
 }
 // --- 呂布招式 ---
 const BOSS_MOVES = {
+  // 董卓:跳起震地(全方位、不可格擋)
+  stomp: mkAtk({dur:1.05, pose:(R,u)=>{ pSmash()(R,u); R.body.position.y=kf(u,[[0,0],[.35,.5],[.55,-.12],[1,0]]); },
+    hits:[{t0:.52,t1:.66,range:4.6,arc:TAU,dmg:1.3,kb:10,up:.6,shake:.45,unblockable:1}],
+    events:[{t:.05,sfx:'roar'},{t:.52,sfx:'boom',fx:'slam'}]}),
   combo:[
     mkAtk({dur:.62, pose:pSweep('R',1), lunge:lungeFn(.2,.5,5), hits:[{t0:.28,t1:.62,range:4.1,arc:2.6,dmg:1,kb:8,up:0,shake:.15}], events:[{t:.2,sfx:'whoosh',big:1}]}),
     mkAtk({dur:.62, pose:pSweep('R',-1), lunge:lungeFn(.2,.5,5), hits:[{t0:.28,t1:.62,range:4.1,arc:2.6,dmg:1,kb:8,up:0,shake:.15}], events:[{t:.2,sfx:'whoosh',big:1}]}),
@@ -2705,11 +2777,11 @@ const ambLight=new THREE.AmbientLight(0xfff0dd,.30); scene.add(ambLight);
 // ============================================================
 // 世界搭建
 // ============================================================
-const world={ banners:[], fires:[], props:new THREE.Group() };
+const world={ banners:[], fires:[], flames:[], props:new THREE.Group() };
 scene.add(world.props);
 // 釋放一棵物件樹的 GPU 資源;快取中的共用幾何 / 材質不動
 function disposeTree(root){
-  const geoKeep=new Set(GEO.values()), matKeep=new Set([...MATS.values(), ...PMATS.values()]);
+  const geoKeep=new Set(GEO.values()), matKeep=new Set([...MATS.values(), ...PMATS.values(), LANTERN_MAT, ...FLAME_MATS]);
   root.traverse(o=>{
     if(o.isInstancedMesh) o.dispose();
     if(o.geometry && !geoKeep.has(o.geometry)) o.geometry.dispose();
@@ -2720,7 +2792,7 @@ function disposeTree(root){
 function clearWorld(){
   disposeTree(world.props);
   world.props.clear();
-  world.banners.length=0; world.fires.length=0; world.gate=null;
+  world.banners.length=0; world.fires.length=0; world.flames.length=0; world.gate=null;
 }
 function buildWorld(){
   clearWorld();
@@ -2747,6 +2819,38 @@ function updateGate(dt){
   G.open=damp(G.open, G.target, 1.6, dt);
   G.L.rotation.y=-G.open*1.72; G.R.rotation.y=G.open*1.72;
 }
+
+// ---------- 洛陽:夜晚火城,大街兩側房屋,北門敞開 ----------
+function buildLuoyang(P, rng){
+  const { mkBanner, mkFire, scatter, mountains, ground, fortress, house }=propKit(P,rng);
+  ground(STAGE.env.ground, 4.2);
+  fortress({ z:100, half:62, crenel:50, studHalf:54, wall:0x5a5e5a, roof:0x1B1B1B });
+  // 大街兩側兩排房屋;交叉巷口留空
+  let lights=0;
+  for(const side of [-1,1]){
+    for(let z=-110; z<=92; z+=15){
+      if(Math.abs(z+30)<7 || Math.abs(z-30)<7) continue;
+      const burn = rng()<.42;
+      const light = burn && lights<4 && rng()<.5;
+      if(light) lights++;
+      house(side*(52+rng()*3), z+rng()*3, { w:12+rng()*3, d:10+rng()*2, h:5.5+rng()*2.5, rot:side>0? -Math.PI/2 : Math.PI/2,
+        wall:rng()<.5? 0xDEC69C : 0xC9B28A, roof:rng()<.5? 0x2b2f36 : 0x583927, burning:burn, light });
+      house(side*(72+rng()*6), z+rng()*6, { w:14, d:12, h:8+rng()*4, rot:side>0? -Math.PI/2 : Math.PI/2,
+        wall:0xB9A47C, roof:0x1B1B1B, burning:rng()<.3, light:false });
+    }
+  }
+  // 大街燈籠
+  for(let z=-80; z<=80; z+=20) for(const x of [-40,40]){
+    P.add(mesh(box(.18,4.2,.18), mat(0x3a2a1c), x,2.1,z));
+    const lan=new THREE.Mesh(geo('lantern',()=>new THREE.BoxGeometry(.7,.9,.7)), LANTERN_MAT); lan.position.set(x,4.2,z); P.add(lan);
+  }
+  mkBanner(-8,95,'董','#7a1f1f','#e8cf8a'); mkBanner(9,95,'董','#7a1f1f','#e8cf8a');
+  mkFire(-12,-90); mkFire(12,-90);
+  mountains({ n:12, rMin:220, colors:[0x2a2630,0x3a3036] });
+  scatter({ nTree:0, nRock:26, exclRock:(x,z)=>Math.abs(x)<12 });
+}
+const LANTERN_MAT=new THREE.MeshBasicMaterial({ color:new THREE.Color(0xff5a2a).multiplyScalar(1.8) });
+const FLAME_MATS=[0xff5a1a,0xffa030,0xffe070].map(c=>new THREE.MeshBasicMaterial({ color:new THREE.Color(c).multiplyScalar(2.1) }));
 
 // ---------- 汜水關:晨間山隘,兩側峭壁,北端關城 ----------
 function buildSishui(P, rng){
@@ -2857,6 +2961,29 @@ function propKit(P, rng){
       P.add(g2);
     }
   };
+  // 城中房屋:牆 + 紅柱 + 三層階梯屋瓦;可燃燒(發光火焰方塊 + 餘燼,少數帶點光源)
+  const house=(x,z,{ w=12, d=10, h=6, rot=0, wall=0xDEC69C, roof=0x2b2f36, burning=false, light=false }={})=>{
+    const g=new THREE.Group(); g.position.set(x,0,z); g.rotation.y=rot;
+    const body=mesh(box(w,h,d), mat(wall), 0,h/2,0); body.receiveShadow=true; g.add(body);
+    for(const sx of [-1,1]) g.add(mesh(box(.55,h,.55), mat(0x8c1a14), sx*(w/2-.35), h/2, -d/2-.1));
+    g.add(mesh(box(w*.5,1.4,.12), mat(0x1B1B1B), 0,h*.58,-d/2-.08));
+    g.add(mesh(box(w+1.8,.8,d+1.8), mat(roof), 0,h+.4,0));
+    g.add(mesh(box(w*.72,.9,d*.62), mat(roof), 0,h+1.25,0));
+    g.add(mesh(box(w*.42,.7,d*.3), mat(0x8c1a14), 0,h+2.0,0));
+    if(burning){
+      for(let k=0;k<3;k++){
+        const fx=(rng()-.5)*w*.6, fz=(rng()-.5)*d*.5, fh=1.4+rng()*1.6;
+        const fl=new THREE.Mesh(geo(`flame${k}`,()=>{ const b=new THREE.BoxGeometry(1,1,1); b.translate(0,.5,0); return b; }), FLAME_MATS[k%3]);
+        fl.scale.set(1.3-k*.3, fh, 1.3-k*.3); fl.position.set(fx, h+1.6, fz); g.add(fl);
+        world.flames.push({ m:fl, base:fh, phase:rng()*TAU, emT:rng()*.3, x, z, y:h+2.4 });
+      }
+      if(light){
+        const L=new THREE.PointLight(0xff7a30, 36, 26, 1.6); L.position.set(0,h+3,0); g.add(L);
+        world.fires.push({ pos:V3(x,h+3,z), light:L, phase:rng()*TAU });
+      }
+    }
+    P.add(g);
+  };
   // 依顏色分桶合併大量方塊(山 / 峭壁),不論幾塊都只有少數 draw call
   const shade=(hex,k)=>new THREE.Color(hex).multiplyScalar(k).getHex();
   const bucketMerge=(buckets,{shadow=false}={})=>{
@@ -2946,7 +3073,7 @@ function propKit(P, rng){
     }
     bucketMerge(buckets);
   };
-  return { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, mountains, ground, fortress, cliffs, tentM, tent2M, palM };
+  return { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, mountains, ground, fortress, cliffs, house, tentM, tent2M, palM };
 }
 function buildHulao(P, rng){
   const { mkBanner, mkFire, mkTent, mkAbatis, mkWatch, scatter, mountains, ground, fortress }=propKit(P,rng);
@@ -3144,6 +3271,8 @@ function applyEnv(E){
   sunBall.material.color.set(E.sunBall.color).multiplyScalar(1.9);
   sunGlow.material.color.set(E.sunBall.glow).multiplyScalar(1.5);
   sunBall.position.set(...E.sunBall.pos); sunGlow.position.copy(sunBall.position);
+  const sc=E.sunBall.scale||1; sunBall.scale.setScalar(sc); sunGlow.scale.setScalar(sc*(E.sunBall.glowScale||1));
+  sunGlow.material.opacity=E.sunBall.glowOpacity??.35;
   DUSK.sun.set(E.sun.day); DUSK.night.set(E.sun.night); DUSK.iSun=[E.sun.iDay,E.sun.iNight];
   DUSK.hemiS.set(E.hemi.day); DUSK.hemiN.set(E.hemi.night); DUSK.iHemi=[E.hemi.iDay,E.hemi.iNight];
   hemiLight.groundColor.set(E.hemi.ground);
@@ -4911,7 +5040,7 @@ class Enemy{
       this.maxHp=Math.round(def.hp*(kind==='boss'?DIFF.bossHp:DIFF.enemyHp)); this.hp=this.maxHp;
       this.pow=def.atk*DIFF.enemyAtk; this.speed=def.speed;
       this.radius=.62*def.scale; this.reachScale=def.scale*.95; this.scale=def.scale;
-      this.moves=kind==='boss'? BOSS_MOVES.combo : officerMoves(def.weapon);
+      this.moves=(kind==='boss' && def.moves!=='officer')? BOSS_MOVES.combo : officerMoves(def.weapon);
       this.comboIdx=0;
       this.attackRange=kind==='boss'?4.2:3.2;
       this.windupDur=.42; this.windupPose=mobWindupPose(def.weapon==='spear'?'spear':'sword');
@@ -5050,6 +5179,11 @@ class Enemy{
     updateStatus(this,dt);
     const R=this.rig;
     const slowK = this.slowT>0? .6 : 1;
+    // 逃跑型 BOSS 的反擊 / 脫離計時:不論正在出招或硬直都要倒數,否則被纏上就永遠不逃
+    if(this.def && this.def.flee){
+      if(this.fightT>0){ this.fightT-=dt; if(this.fightT<=0){ const RD=this.def.restDur||[3,4.5]; this.restT=rand(RD[0],RD[1]); } }
+      else if(this.restT>0) this.restT-=dt;
+    }
     if(this.frozen>0) dt=0;
     this.cd=Math.max(0,this.cd-dt);
     // 摩擦與衝量
@@ -5174,9 +5308,11 @@ class Enemy{
       }
       default:{ // seek
         let mv=false;
-        if(aiOn && tgt && tgt.alive){
+        if(aiOn && tgt && tgt.alive && this.fleeing(dt)){ mv=true; }
+        else if(aiOn && tgt && tgt.alive){
           this.yaw=angLerp(this.yaw,Math.atan2(dxp,dzp),1-Math.exp(-5*dt));
-          if(this.kind==='boss') this.updateBossBrain(dt,distP,dxp,dzp,tgt);
+          if(this.kind==='boss' && this.def && this.def.brain==='dongzhuo') this.updateDongBrain(dt,distP,dxp,dzp,tgt);
+          else if(this.kind==='boss') this.updateBossBrain(dt,distP,dxp,dzp,tgt);
           else if(this.kind==='officer' && this.def && this.def.sig) this.updateOfficerBrain(dt,distP,dxp,dzp,tgt);
           if(this.kind==='archer'){ this.archerSeek(dt,distP,dxp,dzp); mv=this.archerMv; }
           else{
@@ -5222,7 +5358,7 @@ class Enemy{
     this.leapCd-=dt; this.spinCd-=dt;
     if(!this.enraged && this.hp<this.maxHp*.35){
       this.enraged=true; this.speed*=1.25; this.pow=Math.round(this.pow*1.2);
-      announce(T('ann.lubuRage'),'red'); AUD.roar(); entFlash(this);
+      announce(T('ann.bossRage',this.name),'red'); AUD.roar(); entFlash(this);
     }
     if(this.enraged && Math.random()<dt*8) sparks(V3(this.pos.x,1.4,this.pos.z),0xff3020,1,{speed:1.5,up:2,grav:-.5,life:.5});
     if(this.leapCd<=0 && distP>6 && distP<17){
@@ -5239,7 +5375,30 @@ class Enemy{
       this.state='strike'; startAttack(this,BOSS_MOVES.spin);
     }
   }
-  // 敵將招牌技:charge 華雄衝陣 / volley 胡軫喚弓兵齊射 / counter 李肅反擊架勢
+  // 逃跑型 BOSS(董卓):玩家逼近 → 停下反擊 6~9 秒 → 再逃至少 3 秒;抵達出口即判定逃脫
+  fleeing(dt){
+    if(!this.def || !this.def.flee || !player) return false;
+    const dP=Math.hypot(player.pos.x-this.pos.x, player.pos.z-this.pos.z);
+    const D=this.def, FD=D.fightDur||[6,9];
+    if(this.fightT>0) return false;                         // 反擊中(計時器在 update 每幀倒數)
+    if(!(this.restT>0) && dP<7 && player.alive){ this.fightT=rand(FD[0],FD[1]); return false; }   // restT 初始為 undefined,不能寫 <=0
+    const ex=STAGE.exit, ddx=ex.x-this.pos.x, ddz=ex.z-this.pos.z, dl=Math.hypot(ddx,ddz)||1;
+    const sp=D.fleeSpeed*(this.restT>0? (D.sprint||1.2) : 1)*(this.slowT>0?.6:1);
+    moveEntity(this, ddx/dl*sp*dt, ddz/dl*sp*dt);
+    this.yaw=angLerp(this.yaw,Math.atan2(ddx,ddz),1-Math.exp(-5*dt));
+    this.gait+=dt*sp*2.2;
+    if(dl<2.5 && !this.escaped){ this.escaped=true; OBJ.fail('escape'); }
+    return true;
+  }
+  updateDongBrain(dt,distP,dxp,dzp,tgt){
+    this.spinCd-=dt;
+    if(this.spinCd<=0 && distP<5.5 && Math.random()<dt*1.5){
+      this.spinCd=rand(6,8);
+      warnRing(this.pos,4.6,.55);
+      this.state='strike'; startAttack(this,BOSS_MOVES.stomp);
+    }
+  }
+  // 敵將招牌技:charge 華雄衝陣 / volley 胡軫喚弓兵齊射 / counter 李肅反擊架勢 / ambush 徐榮伏兵煙幕
   updateOfficerBrain(dt,distP,dxp,dzp,tgt){
     if(this.sigCd===undefined) this.sigCd=rand(3,5);
     this.sigCd-=dt;
@@ -5257,6 +5416,19 @@ class Enemy{
       announce(T('ann.volley',this.name),'red quick');
       AUD.gong(true);
       arrowVolley(tgt.pos, 3, 5.5);
+    }else if(sig==='ambush' && distP<14){
+      this.sigCd=rand(14,18);
+      announce(T('ann.ambush',this.name),'red quick');
+      dust(this.pos,18,2.4); sparks(V3(this.pos.x,1,this.pos.z),0x8a8a8a,24,{speed:4,up:3,grav:-.6,life:1});
+      const a=Math.atan2(-dxp,-dzp);                   // 煙幕中後撤
+      moveEntity(this, Math.sin(a)*9, Math.cos(a)*9);
+      dust(this.pos,10,2);
+      for(let i=0;i<6;i++){
+        const b=rand(TAU), d=rand(5,8);
+        enemies.push(new Enemy(i%3===0?'shield':'mob', V3(clamp(tgt.pos.x+Math.sin(b)*d,-ARENA.x+2,ARENA.x-2),0,
+                                                          clamp(tgt.pos.z+Math.cos(b)*d,ARENA.zMin+2,ARENA.zMax-2))));
+      }
+      AUD.roar();
     }else if(sig==='counter' && distP<4.5 && tgt.state==='attack'){
       this.sigCd=rand(5.5,8);
       this.state='counterStance'; this.t=0; this.atk=null;
@@ -5373,7 +5545,8 @@ function buildBases(){
       new THREE.MeshBasicMaterial({ color:0x7dffb0, transparent:true, opacity:.3, depthWrite:false, side:THREE.DoubleSide }));
     ring.position.y=.1; g.add(ring);
     scene.add(g);
-    bases.push({ ...d, g, cloth, ring, side:1, cap:-100, contest:0, r:8 });
+    const garrison=d.garrison||STAGE.garrison||40;
+    bases.push({ ...d, g, cloth, ring, side:1, cap:-100, contest:0, r:8, garrison, left:garrison });
   }
   for(const b of bases) setBaseSide(b,1,true);
 }
@@ -5391,29 +5564,32 @@ function setBaseSide(b,side,silent){
     morale.add(ally? 12 : -12);
   }
 }
+// 據點佔領:在據點附近擊破守軍,守軍歸零即攻陷(兵海越密集越快;攻陷後不會被奪回)
+// 舊版「圈內我方人數 − 敵方人數」在兵海密度下永遠是負數,主要目標會卡死
 function updateBases(dt){
   if(S.mode!=='play') return;
   for(const b of bases){
-    let a=0, f=0;
-    if(player && player.alive && Math.hypot(player.pos.x-b.x, player.pos.z-b.z)<b.r) a+=3;
-    for(const e of enemies){
-      if(!e.alive) continue;
-      if(Math.hypot(e.pos.x-b.x, e.pos.z-b.z)>b.r) continue;
-      const w = e.isMob? 1 : 2.5;
-      if(e.side===0) a+=w; else f+=w;
-    }
-    b.contest = a>0 && f>0;
-    const net=(a-f);
-    if(net!==0){
-      b.cap=clamp(b.cap + net*9*dt, -100, 100);
-      if(b.cap>=100 && b.side!==0) setBaseSide(b,0);
-      else if(b.cap<=-100 && b.side!==1) setBaseSide(b,1);
-    }
-    // 視覺:佔領進度以圈的不透明度與脈動表示
-    const prog=Math.abs(b.cap)/100;
-    b.ring.material.opacity = b.contest? .35+Math.sin(S.time*9)*.22 : .16+prog*.28;
+    const near = player && player.alive && Math.hypot(player.pos.x-b.x, player.pos.z-b.z)<b.r*1.4;
+    const prog = b.side===0? 1 : 1-b.left/b.garrison;
+    b.contest = near && b.side===1;
+    b.ring.material.opacity = b.side===0? .3 : (near? .34+Math.sin(S.time*8)*.16 : .14+prog*.34);
     b.g.children[1].rotation.y=Math.sin(S.time*1.6+b.x)*.22;
   }
+}
+function baseKill(e){
+  for(const b of bases){
+    if(b.side!==1 || Math.hypot(e.pos.x-b.x, e.pos.z-b.z)>b.r*1.4) continue;
+    b.left=Math.max(0, b.left-(e.isMob? 1 : 6));
+    if(b.left<=0) setBaseSide(b,0);
+    OBJ.dirty=true;
+    return;
+  }
+}
+function nearestEnemyBase(maxD=26){
+  if(!player) return null;
+  let best=null, bd=maxD;
+  for(const b of bases){ if(b.side!==1) continue; const d=Math.hypot(player.pos.x-b.x, player.pos.z-b.z); if(d<bd){ bd=d; best=b; } }
+  return best;
 }
 const morale={
   v:50, disp:50,
@@ -5530,15 +5706,16 @@ const director={
   },
   spawnOfficer(){ return this.spawnOfficerDef(STAGE.officerList[this.officerIdx++]); },
   // 由關卡事件 / 目標召喚(不走時程)
-  spawnById(id){ const d=STAGE.officerList.find(o=>o.id===id); return d? this.spawnOfficerDef(d) : null; },
-  spawnBoss(){
+  spawnById(id,pos){ const d=STAGE.officerList.find(o=>o.id===id); return d? this.spawnOfficerDef(d,pos) : null; },
+  spawnBoss(pos){
     this.bossSpawned=true;
+    const B=STAGE.bossDef;
     announce(T('ann.warning'),'red big quick');
-    announce(T('ann.lubu'),'red big',T('ann.lubuSub'));
+    announce(T(`ann.boss.${B.id}`),'red big',T(`ann.boss.${B.id}.sub`));
     AUD.roar(); AUD.gong(true); addShake(.8);
     AUD.intensity=1;
-    openGate();
-    this.boss=new Enemy('boss',V3(STAGE.enemyEntry.x,0,STAGE.enemyEntry.z),STAGE.bossDef);
+    if(!B.flee) openGate();
+    this.boss=new Enemy('boss', pos||V3(STAGE.enemyEntry.x,0,STAGE.enemyEntry.z), B);
     enemies.push(this.boss);
     bossEntranceCine(this.boss);
   },
@@ -5598,7 +5775,8 @@ const director={
         else if(this.kills>=O.at || this.time>=O.tAt) this.spawnOfficer();
       }
       const B=STAGE.bossDef;
-      if(B && !this.bossSpawned && (this.kills>=B.at || this.time>=B.tAt)) this.spawnBoss();
+      if(B && !B.trigger && !this.bossSpawned && (this.kills>=B.at || this.time>=B.tAt)) this.spawnBoss();
+      if(STAGE.onTick) STAGE.onTick(dt);
     }
     for(const m of [200,500,1000,1600,2500]) if(this.kills>=m && !this.milestones[m]){ this.milestones[m]=1; medal(T('ms.'+m)); }
   },
@@ -5607,11 +5785,11 @@ const director={
     if(src && src.noCredit){ e.noCredit=1; }
     const credit=!e.noCredit;
     if(e.isMob){
-      if(credit){ this.kills++; this.krate+=1;
+      if(credit){ this.kills++; this.krate+=1; baseKill(e);
         const r=Math.random();
         if(r<.06) spawnDrop(e.pos,'bun'); else if(r<.1) spawnDrop(e.pos,'wine'); }
     }else if(e.kind==='officer'){
-      this.kills+=5; this.krate+=3;
+      this.kills+=5; this.krate+=3; baseKill(e);
       this.officersSlain.push(e.name);
       if(e.def) OBJ.defeated(e.def.id);
       announce(T('ann.officerDown',LN(e.def||e,'name')),'ink');
@@ -5625,7 +5803,7 @@ const director={
       this.kills+=10;
       this.officersSlain.push(e.name);
       slowmo(.15,2.4); addShake(.9);
-      announce(T('ann.lubuDown'),'big ink');
+      announce(T('ann.bossDown',LN(e.def||e,'name')),'big ink');
       AUD.fanfare(true); AUD.intensity=0;
       shockRing(e.pos,0xffe0a0,11,.9);
       sparks(V3(e.pos.x,1.6,e.pos.z),0xffe08a,40,{speed:9,up:8});
@@ -5645,6 +5823,50 @@ const director={
 //                    optional(次要,完成加評價), final(完成即勝利), onDone() }
 // 主角陣亡恆為失敗;其他失敗條件由關卡邏輯呼叫 OBJ.fail(key)
 // ============================================================
+// 燃燒的瓦礫:紅圈預警 1.2 秒後落下,敵我皆傷
+function fireHazard(center, n, spread){
+  for(let i=0;i<n;i++){
+    const px=clamp(center.x+rand(-spread,spread),-ARENA.x,ARENA.x), pz=clamp(center.z+rand(-spread,spread),ARENA.zMin,ARENA.zMax);
+    const spot=V3(px,0,pz);
+    warnRing(spot,3.2,1.2);
+    schedule(1.2,()=>{
+      shockRing(spot,0xff7a30,3.8,.45); dust(spot,6,1.4); AUD.boom();
+      sparks(V3(px,1,pz),0xff9a40,26,{speed:7,up:7});
+      const src={ pos:spot, side:-1, noCredit:true };
+      const h={ dmg:1, kb:8, up:.6, pierce:1, noElem:1, unblockable:1 };
+      for(const t of [player, ...enemies]){
+        if(!t || !t.alive || Math.hypot(t.pos.x-px,t.pos.z-pz)>3.3) continue;
+        t.takeHit(Math.max(1,Math.round(MOB_DEF.atk*(t.isPlayer? 2.2*DIFF.enemyAtk : 3))), src, h);
+      }
+    });
+  }
+}
+// 洛陽:董卓帶著親衛出現在前方,往北門逃
+function luoyangStart(){
+  const pos=V3(0,0,-40);
+  director.spawnBoss(pos);
+  for(let i=0;i<8;i++){ const a=i/8*TAU; enemies.push(new Enemy(i%2?'shield':'mob', V3(pos.x+Math.sin(a)*4,0,pos.z+Math.cos(a)*4))); }
+  S.luoyang={ esc:6, fire:9, xr:false, fireAnn:false };
+}
+function luoyangTick(dt){
+  const L=S.luoyang; if(!L || !player) return;
+  const b=director.boss;
+  if(b && b.alive && (L.esc-=dt)<=0){            // 親衛陸續護駕
+    L.esc=rand(6,9);
+    for(let i=0;i<3;i++){ const a=rand(TAU);
+      enemies.push(new Enemy(Math.random()<.35?'shield':'mob', V3(clamp(b.pos.x+Math.sin(a)*5,-ARENA.x+2,ARENA.x-2),0,clamp(b.pos.z+Math.cos(a)*5,ARENA.zMin+2,ARENA.zMax-2)))); }
+  }
+  if(!L.xr && b && b.alive && (b.hp<b.maxHp*.65 || director.time>60)){   // 徐榮斷後:擋在玩家與董卓之間
+    L.xr=true;
+    const p=V3(clamp((b.pos.x+player.pos.x)/2,-ARENA.x+3,ARENA.x-3),0,clamp((b.pos.z+player.pos.z)/2,ARENA.zMin+3,ARENA.zMax-3));
+    director.spawnById('xurong',p);
+  }
+  if((L.fire-=dt)<=0 && player.alive && !S.cineLock){
+    L.fire=rand(11,16);
+    if(!L.fireAnn){ L.fireAnn=true; announce(T('ann.fireFall'),'red quick'); }
+    fireHazard(player.pos,3,8);
+  }
+}
 // 汜水關:攻陷兩座營寨 → 城門大開,華雄率親衛出關
 function huaxiongSally(){
   openGate();
@@ -5670,7 +5892,7 @@ const OBJ={
   },
   spawned(id){ if(this.spawnT && this.spawnT[id]===undefined) this.spawnT[id]=director.time; },
   text(o){
-    if(o.textKey)          return T(o.textKey, o.target? objName(o.target) : Math.min(o.prog,o.n||0), o.n);
+    if(o.textKey)          return o.target? T(o.textKey, objName(o.target), o.prog) : T(o.textKey, Math.min(o.prog,o.n||0), o.n);
     if(o.kind==='defeat')  return T('obj.defeat', objName(o.target));
     if(o.kind==='capture') return T('obj.capture', Math.min(o.prog,o.n), o.n);
     if(o.kind==='kills')   return T('obj.kills', Math.min(o.prog,o.n), o.n);
@@ -5688,10 +5910,14 @@ const OBJ={
   update(){
     if(this.ended || !this.list.length) return;
     let dirty=false;
+    if(this.dirty){ dirty=true; this.dirty=false; }
+    const nb=nearestEnemyBase(), nk=nb? nb.name+nb.left : '';
+    if(nk!==this.nearKey){ this.nearKey=nk; dirty=true; }
     const own=bases.filter(b=>b.side===0).length;
     for(const o of this.list){
       if(o.state!=='active') continue;
       const before=o.prog;
+      if(o.escape){ const b=director.boss; if(b && b.alive) o.prog=Math.max(0,Math.round(Math.hypot(STAGE.exit.x-b.pos.x, STAGE.exit.z-b.pos.z))); }
       if(o.kind==='capture') o.prog=own;
       if(o.kind==='kills')   o.prog=director.kills;
       if(o.prog!==before) dirty=true;
@@ -5728,8 +5954,11 @@ const OBJ={
     if(!this.list.length){ el.innerHTML=''; return; }
     const sorted=this.list.filter(o=>o.state!=='locked').sort((a,b)=>(a.optional?1:0)-(b.optional?1:0));
     const icon=o=> o.state==='done'?'✓' : o.state==='failed'?'✗' : (o.optional?'◇':'◆');
+    const nb=nearestEnemyBase();
     el.innerHTML=sorted.map(o=>`<div class="o ${o.optional?'opt':''} ${o.state==='done'||o.state==='failed'?'done':''}">`+
-      `<i>${icon(o)}</i><span>${this.text(o)}</span></div>`).join('');
+      `<i>${icon(o)}</i><span>${this.text(o)}</span></div>`).join('')+
+      (nb && this.list.some(o=>o.kind==='capture' && o.state==='active')?
+        `<div class="o gar"><i>⚑</i><span>${T('obj.garrison', LN(nb,'name'), nb.left)}</span></div>` : '');
   },
 };
 
@@ -6208,6 +6437,7 @@ function closeHowto(){
 // ============================================================
 function cleanupBattle(){
   S.attract=false;
+  S.luoyang=null;
   OBJ.list=[]; OBJ.ended=false; OBJ.render();
   input.vAx=[0,0]; input.vActive=false; input.vYaw=0;   // 清掉攻擊模式 bot / 觸控殘留的虛擬軸
   if(_rndOrig){ Math.random=_rndOrig; _rndOrig=null; }
@@ -6239,7 +6469,7 @@ function cleanupBattle(){
   annQ.length=0; annBusy=0; $('announce').innerHTML='';
   director.reset();
   morale.reset();
-  for(const b of bases){ b.cap=-100; setBaseSide(b,1,true); b.contest=0; }
+  for(const b of bases){ b.cap=-100; setBaseSide(b,1,true); b.contest=0; b.left=b.garrison; }
   HUD.morale(50);
   HUD.boss(null); HUD.combo(0); HUD.lowShown=false;
   $('vignette').classList.remove('lowhp');
@@ -6269,7 +6499,7 @@ function startBattle(charId, opt={}){
   loadStage(opt.stage || 'hulao');
   S.stageId=STAGE.id;
   S.dayT=STAGE.env.dusk.start; applyDayT(S.dayT);   // 每場從關卡的起始天色開始(原本會沿用上一場的夜色)
-  if(world.gate){ world.gate.open=world.gate.target=0; updateGate(0); }
+  if(world.gate){ world.gate.open=world.gate.target=STAGE.gateOpen?1:0; updateGate(0); }
   OBJ.start();
   // 開場卡文字依關卡
   for(const [sel,k] of [['.chapter','chapter'],['h1','name'],['.sub','sub']]){
@@ -6302,6 +6532,7 @@ function startBattle(charId, opt={}){
     if(!(S.mode==='campaign'||S.mode==='settings'||S.mode==='howto')) S.mode='title';
     $('hud').classList.add('hidden'); $('stagecard').classList.add('hidden');
     spawnAllies(charId); director.prespawn();
+    if(STAGE.onStart) STAGE.onStart();
     return;
   }
   try{ localStorage.setItem('musou.last', charId); if(S.gameMode==='story') localStorage.setItem('musou.lastStage', STAGE.id); }catch(e){}
@@ -6393,7 +6624,8 @@ function showResults(win){
   $('resmode').textContent=modeLabel();
   $('resword').textContent=win?T('res.win'):T('res.lose');
   $('resword').className=win?'':'lose';
-  $('ressub').textContent=win?T(`stage.${STAGE.id}.win`):T('res.loseSub');
+  const loseKey=`stage.${STAGE.id}.lose`;
+  $('ressub').textContent=win? T(`stage.${STAGE.id}.win`) : (I18N.zh[loseKey]&&OBJ.ended? T(loseKey) : T('res.loseSub'));
   $('robjs').textContent=OBJ.summary();
   $('rchar').textContent=`${LN(C,'name')} ${LN(C,'zi')}`;
   $('rkills').textContent=director.kills;
@@ -6653,6 +6885,7 @@ function tick(rdtRaw){
       announce(T('stage.go'),'');
       spawnAllies(S.currentChar);
       director.prespawn();
+      if(STAGE.onStart) STAGE.onStart();
     }
   }
   else if(S.mode==='play'){
@@ -6685,7 +6918,7 @@ function tick(rdtRaw){
     HUD.setMus(player.musou);
     HUD.setHP(player.hp,player.maxHp);
     let bb=null;
-    if(director.boss&&director.boss.alive) bb=[director.boss,T('hud.flying')];
+    if(director.boss&&director.boss.alive) bb=[director.boss,LN(director.boss.def||{},'zi')];
     else{
       let bd=30;
       for(const e of enemies){
@@ -6701,6 +6934,10 @@ function tick(rdtRaw){
     drawMinimap();
   }
 
+  for(const f of world.flames){
+    f.m.scale.y=f.base*(1+Math.sin(S.time*9+f.phase)*.22+Math.sin(S.time*23+f.phase*2)*.08);
+    if((f.emT-=rdt)<=0){ f.emT=.18+Math.random()*.2; _tv.set(f.x+(Math.random()-.5)*4, f.y, f.z+(Math.random()-.5)*4); emberFx(_tv,1); }
+  }
   for(const f of world.fires){
     f.light.intensity=26+Math.sin(S.time*13+f.phase)*6+rand(-3,3);
     f.emberT=(f.emberT||0)-rdt;
@@ -6856,6 +7093,25 @@ const SELFTEST={
       X.expect($('ressub').textContent.startsWith(T('stage.hulao.win')), '勝利副標未依關卡');
       return { 達成:$('robjs').textContent, 城門:+world.gate.open.toFixed(2) };
     }],
+    ['據點:在附近擊破守軍即攻陷(兵海中 60 秒內可完成)', ()=>{ const X=SELFTEST;
+      setDiff('normal'); X.enterPlay('guanyu',{stage:'sishui'});
+      const b=bases[0], g0=b.left;
+      X.expect(g0>0 && b.side===1, '據點初始守軍錯誤');
+      // 模擬玩家:守在營寨附近持續普攻(不直接改據點狀態)
+      let t=0, atk=0;
+      while(b.side===1 && t<60*60){
+        const p=player; p.hp=p.maxHp;
+        const dx=b.x-p.pos.x, dz=b.z-p.pos.z, L=Math.hypot(dx,dz);
+        if(L>4){ p.pos.x+=dx/L*.12; p.pos.z+=dz/L*.12; }
+        if((atk++%9)===0) input.pressed.add('KeyJ');
+        X.step(1/60); t++;
+      }
+      X.expect(b.side===0, `站在營寨持續攻擊 60 秒仍未攻陷(剩餘守軍 ${b.left}/${g0})`);
+      player.pos.set(bases[1].x, 0, bases[1].z-6); X.step(.1);
+      X.expect($('objpanel').textContent.includes(String(bases[1].left)) && $('objpanel').querySelector('.gar'), '靠近敵方據點時未顯示剩餘守軍');
+      X.expect(OBJ.list.find(o=>o.id==='camps').prog===1, '攻陷後目標進度未更新');
+      return { 攻陷秒數:+(t/60).toFixed(1), 守軍:g0 };
+    }],
     ['汜水關:攻陷營寨 → 華雄出關 → 溫酒斬華雄', ()=>{ const X=SELFTEST;
       setDiff('normal'); X.enterPlay('guanyu',{stage:'sishui'});
       X.expect(STAGE.id==='sishui' && !LEGION.enabled && bases.length===3, '汜水關未正確載入');
@@ -6911,6 +7167,66 @@ const SELFTEST={
         r.反擊='ok'; drop(ls);
       }finally{ director.update=du; }
       return r;
+    }],
+    ['洛陽:董卓出逃 → 追上即反擊 → 徐榮斷後 → 擊破即勝利', ()=>{ const X=SELFTEST;
+      setDiff('normal'); X.enterPlay('zhangfei',{stage:'luoyang'});
+      const b=director.boss;
+      X.expect(STAGE.id==='luoyang' && b && b.def.id==='dongzhuo' && world.gate.open===1, '洛陽開局:董卓未現身或北門未開');
+      X.stepSafe(4);                                        // 登場運鏡
+      const z0=b.pos.z; X.stepSafe(4);
+      X.expect(b.pos.z>z0+5, `玩家遠離時董卓應往北門逃(z ${z0.toFixed(1)}→${b.pos.z.toFixed(1)})`);
+      const o=OBJ.list.find(x=>x.id==='dong');
+      X.expect(o.prog>0 && $('objpanel').textContent.includes(String(o.prog)), '目標未顯示距北門距離');
+      player.pos.set(b.pos.x, 0, b.pos.z-4); X.stepSafe(1);
+      X.expect(b.fightT>0, '被追上時董卓應停下反擊');
+      b.hp=Math.round(b.maxHp*.5); X.stepSafe(1);
+      X.expect(enemies.some(e=>e.kind==='officer' && e.def && e.def.id==='xurong'), '董卓重傷後徐榮未出現斷後');
+      let n=0; while(b.alive && n<40){ b.hp=1; dealHit(player,b,{dmg:9,kb:1,up:0,pierce:1,noElem:1}); X.step(.05); n++; }
+      X.stepSafe(5);
+      X.expect(S.mode==='victory', `擊破董卓應勝利,實為 ${S.mode}`);
+      X.expect($('ressub').textContent.startsWith(T('stage.luoyang.win')), '勝利副標未依關卡');
+      return { 達成:$('robjs').textContent };
+    }],
+    ['洛陽平衡:普通難度追擊可在董卓逃脫前擊破', ()=>{ const X=SELFTEST;
+      setDiff('normal'); X.enterPlay('guanyu',{stage:'luoyang'});
+      const b=director.boss; let f=0;
+      try{
+        while(S.mode==='play' && f<60*240){
+          const p=player; p.hp=p.maxHp;
+          if(b.alive){
+            const dx=b.pos.x-p.pos.x, dz=b.pos.z-p.pos.z, L=Math.hypot(dx,dz)||1, yw=cam.yaw, mx=dx/L, mz=dz/L;
+            input.kb.ShiftLeft = L>5;
+            if(L>2.6){ input.vAx=[-Math.cos(yw)*mx+Math.sin(yw)*mz, Math.sin(yw)*mx+Math.cos(yw)*mz]; input.vActive=true; }
+            else { input.vAx=[0,0]; input.vActive=false; }
+            if(L<3.8 && (f%9)===0) input.pressed.add(p.musou>=100?'KeyL':'KeyJ');
+          }
+          X.step(1/60); f++;
+        }
+      }finally{ input.kb.ShiftLeft=false; input.vAx=[0,0]; input.vActive=false; }
+      const o=OBJ.list.find(x=>x.id==='dong');
+      X.expect(S.mode==='victory', `追擊 bot 在普通難度未能擊破董卓(${S.mode},距北門 ${o.prog},血 ${Math.round(b.hp/b.maxHp*100)}%)`);
+      X.expect(o.prog<=90, `普通難度太輕鬆:擊破時董卓還離北門 ${o.prog}`);
+      return { 秒:Math.round(f/60), 距北門:o.prog };
+    }],
+    ['洛陽:董卓逃出北門即敗北', ()=>{ const X=SELFTEST;
+      X.enterPlay('liubei',{stage:'luoyang'});
+      X.stepSafe(4);
+      const b=director.boss; b.pos.set(0,0,88); player.pos.set(0,0,-80);
+      let g=0; while(S.mode==='play' && g<12){ X.stepSafe(1); g++; }
+      X.expect(S.mode==='defeat', `董卓抵達北門應敗北,實為 ${S.mode}`);
+      X.expect($('ressub').textContent.startsWith(T('stage.luoyang.lose')), '敗北副標應為董卓逃脫');
+      return {};
+    }],
+    ['洛陽:燃燒瓦礫落下並造成傷害', ()=>{ const X=SELFTEST;
+      X.enterPlay('guanyu',{stage:'luoyang'});
+      X.stepSafe(4);                                        // 運鏡中不落瓦礫,先等登場演出結束
+      X.expect(!S.cineLock, '登場運鏡應已結束');
+      S.luoyang.fire=0; const w0=FX.warns.length; X.step(.1);
+      X.expect(FX.warns.length>=w0+3, `燃燒瓦礫未預警(${FX.warns.length-w0})`);
+      // 直接在玩家腳下落一塊,確認會傷人
+      player.iframes=0; const hp0=player.hp; fireHazard(player.pos,1,0); X.step(1.4);
+      X.expect(player.hp<hp0, '玩家站在落點卻沒有受傷');
+      return {};
     }],
     ['戰役:地圖 → 選將 → 通關記錄 → 下一戰 / 重新出陣保留關卡', ()=>{ const X=SELFTEST;
       localStorage.removeItem('musou.campaign'); localStorage.removeItem('musou.best'); localStorage.removeItem('musou.lastStage'); BEST.load();
