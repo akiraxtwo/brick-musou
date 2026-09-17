@@ -2656,7 +2656,7 @@ function buildWorld(){
   // 樹與岩
   const trunkM=mat(0x583927), leafM=mat(0x237841), leaf2M=mat(0x184632);
   for(let i=0;i<14;i++){
-    let x,z; do{ x=rand(-88,88); z=rand(-86,70); }while(Math.abs(x)<26 && z>-60);
+    let x,z; do{ x=-88+rng()*176; z=-86+rng()*156; }while(Math.abs(x)<26 && z>-60);   // 用場景種子:每次載入位置一致
     const g=new THREE.Group(); const s=.8+rng()*.7;
     const lm = rng()<.5?leafM:leaf2M;
     g.add(mesh(geo('trunk',()=>new THREE.CylinderGeometry(.20,.24,2.0,8)), trunkM, 0,1.0,0));
@@ -2669,7 +2669,7 @@ function buildWorld(){
   }
   const rockM=mat(0x9BA19D);
   for(let i=0;i<12;i++){
-    let x,z; do{ x=rand(-90,90); z=rand(-88,75); }while(Math.abs(x)<22 && z>-60);
+    let x,z; do{ x=-90+rng()*180; z=-88+rng()*163; }while(Math.abs(x)<22 && z>-60);
     const g2=new THREE.Group(); g2.position.set(x,0,z); g2.rotation.y=rng()*TAU;
     const nb=1+((rng()*3)|0);
     for(let k=0;k<nb;k++){
@@ -6369,7 +6369,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
-  selftest:(o)=>SELFTEST.run(o),
+  selftest:(o)=>SELFTEST.run(o), world, ARENA,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
