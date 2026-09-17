@@ -779,7 +779,7 @@ const input = {
     let gp=null;
     for(const p of pads){ if(p && p.connected){ gp=p; break; } }
     if(!gp){
-      if(this.padIdx>=0){ this.padIdx=-1; this.pk=Object.create(null); }
+      if(this.padIdx>=0){ this.padIdx=-1; this.pk=Object.create(null); updatePadHint(); }
       this.padAx=[0,0]; this.padCam=0; return;
     }
     if(this.padIdx!==gp.index){ this.padIdx=gp.index; this.padName=(gp.id||'').slice(0,44); updatePadHint(); }
@@ -1055,6 +1055,13 @@ function T(k,...a){
   return typeof v==='function'? v(...a) : v;
 }
 // 資料表欄位在地化:物件上有 en:{...} 就取,否則退回原欄位
+// 戰績紀錄顯示用:武將名依目前語言(新紀錄存 cid;舊紀錄只有 char,反查中英文名)
+function recL(r){
+  if(!r) return r;
+  let id=r.cid;
+  if(!CHARS[id]) id=CHAR_ORDER.find(k=>CHARS[k].name===r.char || (CHARS[k].en && CHARS[k].en.name===r.char));
+  return Object.assign({}, r, { char: id? LN(CHARS[id],'name') : (r.char||'') });
+}
 function LN(o,f){
   if(!o) return '';
   return (LANG.cur==='en' && o.en && o.en[f]!==undefined)? o.en[f] : o[f];
@@ -1360,78 +1367,9 @@ const WEAPONS = {
 // 模型面向 +Z,yaw=0 時朝 +Z
 // ============================================================
 // ============================================================
-// 程序化蒙皮人物(玩家 / 敵將 / BOSS 專用)
-// 骨架命名與剛體版 R 介面完全一致 → 所有既有姿勢函式零修改
+// 布料物理(verlet 披風 / 戰裙)與肢體自動修正 —— 積木小人共用
+// (舊版程序化蒙皮人物已於第五輪移除;積木版 R 介面與其相同,姿勢函式不受影響)
 // ============================================================
-const HIP_Y=0.98;
-const BONE_DEF=[
-  // name       parent    local pos
-  ['body',     null,     [0,0,0]],
-  ['torso',    'body',   [0,HIP_Y,0]],
-  ['head',     'torso',  [0,.68,0]],
-  ['armL',     'torso',  [-.34,.56,0]],
-  ['elbowL',   'armL',   [0,-.30,0]],
-  ['armR',     'torso',  [.34,.56,0]],
-  ['elbowR',   'armR',   [0,-.30,0]],
-  ['legL',     'body',   [-.15,HIP_Y,0]],
-  ['kneeL',    'legL',   [0,-.45,0]],
-  ['legR',     'body',   [.15,HIP_Y,0]],
-  ['kneeR',    'legR',   [0,-.45,0]],
-];
-
-// 臉部貼圖(每武將一張)
-const FACE_CACHE=new Map();
-function makeFaceTexture(cfg){
-  const key=`${cfg.skin}|${cfg.face||'plain'}|${cfg.hair}`;
-  if(FACE_CACHE.has(key)) return FACE_CACHE.get(key);
-  const N=128, cv=document.createElement('canvas'); cv.width=cv.height=N;
-  const c=cv.getContext('2d');
-  const hex=v=>'#'+v.toString(16).padStart(6,'0');
-  c.fillStyle=hex(cfg.skin); c.fillRect(0,0,N,N);
-  const ink=hex(cfg.hair), F=cfg.face||'plain';
-  // 眼睛
-  c.fillStyle=ink;
-  if(F==='phoenix'){          // 關羽:丹鳳眼(細長上挑)
-    for(const sx of [-1,1]){
-      c.save(); c.translate(64+sx*22,62); c.rotate(sx*-.22);
-      c.beginPath(); c.ellipse(0,0,15,4.5,0,0,TAU); c.fill();
-      c.restore();
-    }
-  }else if(F==='tiger'){      // 張飛:環眼(圓瞪)
-    for(const sx of [-1,1]){
-      c.beginPath(); c.arc(64+sx*22,62,9,0,TAU); c.fillStyle='#fff'; c.fill();
-      c.beginPath(); c.arc(64+sx*22,62,5.5,0,TAU); c.fillStyle=ink; c.fill();
-    }
-  }else{                      // 劉備 / 一般:溫和杏眼
-    for(const sx of [-1,1]){
-      c.save(); c.translate(64+sx*21,62);
-      c.beginPath(); c.ellipse(0,0,11,5,0,0,TAU); c.fillStyle=ink; c.fill();
-      c.restore();
-    }
-  }
-  // 眉
-  c.strokeStyle=ink; c.lineCap='round';
-  c.lineWidth = F==='tiger'?9 : F==='phoenix'?7 : 5;
-  for(const sx of [-1,1]){
-    c.save(); c.translate(64+sx*22,44); c.scale(sx,1);
-    c.beginPath();
-    if(F==='phoenix'){ c.moveTo(-16,6); c.quadraticCurveTo(0,-6,17,-9); }      // 臥蠶眉
-    else if(F==='tiger'){ c.moveTo(-15,-4); c.quadraticCurveTo(2,-10,16,2); }  // 怒眉
-    else { c.moveTo(-15,2); c.quadraticCurveTo(0,-4,15,-1); }
-    c.stroke(); c.restore();
-  }
-  // 鼻與嘴
-  c.strokeStyle='rgba(0,0,0,.28)'; c.lineWidth=3;
-  c.beginPath(); c.moveTo(64,68); c.lineTo(64,84); c.stroke();
-  c.lineWidth = F==='tiger'?5:3.5; c.strokeStyle='rgba(60,20,16,.62)';
-  c.beginPath();
-  if(F==='tiger'){ c.moveTo(50,100); c.quadraticCurveTo(64,94,78,100); }   // 抿嘴
-  else { c.moveTo(52,98); c.quadraticCurveTo(64,103,76,98); }
-  c.stroke();
-  const t=new THREE.CanvasTexture(cv); t.colorSpace=THREE.SRGBColorSpace;
-  FACE_CACHE.set(key,t); return t;
-}
-
 // ---------- verlet 布料(披風 / 戰裙)----------
 // 於角色 root 的區域座標模擬:root 只有 yaw 旋轉與等比縮放,重力不變;
 // 移動慣性由實體速度旋轉回區域座標後注入。
@@ -1524,200 +1462,6 @@ function updateCloths(R, vel, yaw, dt){
   }
 }
 const _clothVel={x:0,z:0}, _clothM2=new THREE.Matrix4();
-
-function makeSkinnedHuman(cfg){
-  const root=new THREE.Group();
-  const R={ root, meshes:[], cfg, skinned:true, autoLimb:true };
-  // ---- 骨架 ----
-  const B={};
-  const bones=[];
-  for(const [name,parent,p] of BONE_DEF){
-    const b=new THREE.Bone(); b.name=name; b.position.set(p[0],p[1],p[2]);
-    B[name]=b; bones.push(b);
-    if(parent) B[parent].add(b); else root.add(b);
-    R[name]=b;
-  }
-  const bi={}; bones.forEach((b,i)=>bi[b.name]=i);
-
-  // ---- 蒙皮幾何 builder ----
-  const geos=[], mats=[];
-  // g 已在絕對(rest)座標;bone 主骨;blend {bone, from, to}(依絕對 Y 由 from→to 漸變到 blend.bone)
-  const part=(g, material, bone, blend)=>{
-    const n=g.attributes.position.count;
-    const si=new Uint16Array(n*4), sw=new Float32Array(n*4);
-    const main=bi[bone], other=blend?bi[blend.bone]:0;
-    const pos=g.attributes.position;
-    for(let i=0;i<n;i++){
-      let w=0;
-      if(blend){
-        const y=pos.getY(i);
-        w=smooth(clamp((blend.from-y)/(blend.from-blend.to),0,1));
-      }
-      si[i*4]=main; si[i*4+1]=other;
-      sw[i*4]=1-w;  sw[i*4+1]=w;
-    }
-    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si,4));
-    g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw,4));
-    geos.push(g); mats.push(material);
-  };
-  const CAP=(r,len,rs=8)=>new THREE.CapsuleGeometry(r,len,3,rs);
-  const at=(g,x,y,z)=>{ g.translate(x,y,z); return g; };
-  const sc=(g,x,y,z)=>{ g.scale(x,y,z); return g; };
-  const bx=(w,h,d)=>new THREE.BoxGeometry(w,h,d,1,1,1);
-
-  const M={ skin:mat(cfg.skin), cloth:mat(cfg.cloth), cloth2:mat(cfg.cloth2),
-            armor:mat(cfg.armor), pants:mat(cfg.pants), boots:mat(cfg.boots), hair:mat(cfg.hair) };
-
-  // 軀幹(旋轉輪廓 → 壓扁成橢圓截面)
-  {
-    const prof=[[.17,.90],[.20,1.00],[.19,1.12],[.21,1.26],[.25,1.38],[.27,1.47],[.24,1.55],[.15,1.62],[.10,1.66]];
-    const pts=prof.map(p=>new THREE.Vector2(p[0],p[1]));
-    const g=new THREE.LatheGeometry(pts,12);
-    sc(g,1,1,.66);
-    part(g, M.cloth, 'torso', {bone:'body', from:1.12, to:.96});
-  }
-  // 胸甲(前後兩片)
-  {
-    const g=new THREE.LatheGeometry(
-      [[.255,1.14],[.285,1.28],[.30,1.40],[.275,1.50],[.20,1.56]].map(p=>new THREE.Vector2(p[0],p[1])),12);
-    sc(g,1,1,.68);
-    part(g, M.armor, 'torso');
-  }
-  // 腰帶
-  part(sc(at(new THREE.CylinderGeometry(.235,.235,.075,12),0,1.02,0),1,1,.7), M.cloth2, 'torso');
-  // 骨盆 + 戰裙
-  part(sc(at(new THREE.CylinderGeometry(.24,.26,.30,12),0,.86,0),1,1,.72), M.pants, 'body');
-  if(cfg.cape!==undefined) part(sc(at(new THREE.CylinderGeometry(.27,.34,.34,12),0,.80,0),1,1,.78), M.cloth, 'body');
-  // 頸
-  part(at(CAP(.078,.10,8),0,1.63,0), M.skin, 'head', {bone:'torso', from:1.60, to:1.54});
-  // 頭
-  part(sc(at(new THREE.SphereGeometry(.185,12,10),0,1.83,0),1,1.06,.94), M.skin, 'head');
-
-  const limb=(sx)=>{
-    const L = sx<0?'L':'R';
-    const shY=1.54, elY=1.24, haY=.94;
-    // 上臂
-    part(at(CAP(.088,shY-elY,8), sx*.34,(shY+elY)/2,0), M.cloth, 'arm'+L, {bone:'elbow'+L, from:elY+.10, to:elY-.02});
-    // 護腕 / 前臂
-    part(at(CAP(.078,elY-haY-.05,8), sx*.34,(elY+haY)/2,0), M.skin, 'elbow'+L);
-    part(sc(at(new THREE.CylinderGeometry(.095,.085,.14,8), sx*.34,elY-.16,0),1,1,1), M.armor, 'elbow'+L);
-    // 手
-    part(sc(at(new THREE.SphereGeometry(.082,8,6), sx*.34,haY,0),1,1.1,.9), M.skin, 'elbow'+L);
-    // 肩甲
-    if(cfg.pads) part(sc(at(new THREE.SphereGeometry(.145,10,8), sx*.345,shY+.045,0),1,.72,1), M.armor, 'arm'+L);
-    // 大腿
-    const hpY=HIP_Y, knY=.53, anY=.12;
-    part(at(CAP(.105,hpY-knY-.06,8), sx*.15,(hpY+knY)/2,0), M.pants, 'leg'+L, {bone:'knee'+L, from:knY+.10, to:knY-.02});
-    // 小腿
-    part(at(CAP(.09,knY-anY-.06,8), sx*.15,(knY+anY)/2,0), M.pants, 'knee'+L);
-    // 靴
-    part(at(bx(.19,.14,.30), sx*.15,.07,.05), M.boots, 'knee'+L);
-  };
-  limb(-1); limb(1);
-
-  // ---- 合併 + 綁定 ----
-  const merged=mergeGeometries(geos, true);
-  const skin=new THREE.SkinnedMesh(merged, mats);
-  skin.castShadow=true; skin.frustumCulled=false;
-  root.add(skin);
-  root.updateMatrixWorld(true);               // rest pose 世界矩陣就緒後才建 Skeleton
-  const skel=new THREE.Skeleton(bones);
-  skin.bind(skel);
-  R.meshes.push(skin);
-  R.skin=skin;
-
-  // ---- 掛在骨頭上的剛體細節 ----
-  const add=(parent,m)=>{ m.castShadow=true; parent.add(m); R.meshes.push(m); return m; };
-  const addN=(parent,m)=>{ m.castShadow=false; parent.add(m); R.meshes.push(m); return m; };
-  const head=B.head, torso=B.torso;
-
-  // 臉(貼圖平面,貼在頭部前方)
-  {
-    const fm=new THREE.MeshLambertMaterial({ map:makeFaceTexture(cfg) });
-    const f=new THREE.Mesh(new THREE.PlaneGeometry(.28,.28), fm);
-    f.position.set(0,.17,.172); f.rotation.x=-.05;
-    addN(head,f);
-  }
-  // 髮 / 冠(座標與剛體版 head Group 內完全一致)
-  const hairM=M.hair;
-  const hb=(w,h,d,x,y,z,m2)=>mesh(box(w,h,d), m2||hairM, x,y,z, false);
-  if(cfg.headgear==='crown'){
-    addN(head, hb(.32,.1,.32, 0,.32,-.01));
-    addN(head, hb(.34,.075,.34, 0,.345,0, mat(0xc9a437)));
-    addN(head, hb(.06,.06,.02, 0,.345,.172, mat(0xe8d080)));
-    addN(head, mesh(geo('bun',()=>new THREE.CylinderGeometry(.06,.075,.12,8)), hairM, 0,.43,-.02, false));
-  }else if(cfg.headgear==='wrap'){
-    addN(head, hb(.32,.1,.32, 0,.31,-.01));
-    addN(head, hb(.34,.09,.34, 0,.35,0, mat(cfg.cloth)));
-    addN(head, mesh(geo('bun',()=>new THREE.CylinderGeometry(.06,.075,.12,8)), mat(cfg.cloth), 0,.44,-.02, false));
-  }else if(cfg.headgear==='band'){
-    addN(head, hb(.33,.12,.33, 0,.32,-.01));
-    addN(head, hb(.34,.05,.34, 0,.28,0, mat(cfg.cloth2)));
-    const t1=hb(.09,.2,.09, -.1,.44,-.05); t1.rotation.z=.4; addN(head,t1);
-    const t2=hb(.09,.22,.09, .09,.45,-.06); t2.rotation.z=-.3; addN(head,t2);
-  }else if(cfg.headgear==='ohelm'){
-    addN(head, mesh(geo('helm',()=>new THREE.ConeGeometry(.21,.24,8)), mat(0x7a7060), 0,.4,0, false));
-    addN(head, mesh(geo('helmr',()=>new THREE.CylinderGeometry(.23,.24,.05,8)), mat(0xc9a437), 0,.3,0, false));
-    addN(head, mesh(geo('plume',()=>new THREE.ConeGeometry(.05,.22,6)), mat(0xa5303a), 0,.56,0, false));
-  }else if(cfg.headgear==='bosshelm'){
-    addN(head, hb(.33,.12,.33, 0,.32,-.01));
-    addN(head, mesh(geo('bhelm',()=>new THREE.ConeGeometry(.22,.26,8)), mat(0x2c2c34), 0,.42,0, false));
-    addN(head, mesh(geo('helmr',()=>new THREE.CylinderGeometry(.24,.25,.06,8)), mat(0xc9a437), 0,.31,0, false));
-    addN(head, mesh(geo('bball',()=>new THREE.SphereGeometry(.05,8,6)), mat(0xa5303a), 0,.57,0, false));
-    for(const s2 of [-1,1]){
-      const f=mesh(box(.025,.78,.025), mat(0x8c3a3a), s2*.14,.72,-.12, false);
-      f.rotation.z=s2*-.45; f.rotation.x=-.3; addN(head,f);
-      const ft=mesh(box(.04,.2,.03), mat(0x5c2424), s2*.35,1.02,-.2, false); ft.rotation.z=s2*-.45; ft.rotation.x=-.3; addN(head,ft);
-    }
-  }
-  // 鬍
-  if(cfg.beard==='long'){
-    const b=mesh(box(.15,.55,.05), hairM, 0,-.16,.13, false); b.rotation.x=.12; addN(head,b);
-    for(const s2 of [-1,1]){ const m2=mesh(box(.035,.3,.03), hairM, s2*.1,-.05,.14, false); m2.rotation.z=s2*.18; m2.rotation.x=.1; addN(head,m2); }
-  }else if(cfg.beard==='bushy'){
-    addN(head, mesh(box(.3,.2,.13), hairM, 0,-.02,.10, false));
-    addN(head, mesh(box(.34,.07,.1), hairM, 0,.10,.13, false));
-  }else if(cfg.beard==='mustache'){
-    for(const s2 of [-1,1]){ const m2=mesh(box(.1,.022,.02), hairM, s2*.08,.09,.15, false); m2.rotation.z=s2*-.35; addN(head,m2); }
-    addN(head, mesh(box(.05,.09,.03), hairM, 0,-.02,.14, false));
-  }
-  // 披風 + 戰裙(verlet 布料,掛於 root 之下、以區域座標模擬)
-  R.cloths=[];
-  if(cfg.cape!==undefined && cfg.cape!==null){
-    const cm=new THREE.MeshLambertMaterial({ color:cfg.cape, side:THREE.DoubleSide });
-    const cl=new Cloth(.56,.98,6,6,cm,-.22);
-    cl.backOnly=true;
-    // 錨點:沿肩線環繞(兩側略往前包)
-    cl.anchors=cl.anchors.map(a=>{ const t=a.x/.28; return {x:a.x*.94, y:.58, z:-.21+Math.abs(t)*.09}; });
-    root.add(cl.mesh); R.meshes.push(cl.mesh);
-    R.cloths.push({cloth:cl, bone:torso});
-    R.cape=null;
-  }
-  { // 戰裙:前後左右四片短布
-    const sm=new THREE.MeshLambertMaterial({ color:cfg.cloth2!==undefined?cfg.cloth:cfg.cloth, side:THREE.DoubleSide });
-    for(const [ang,w] of [[0,.34],[Math.PI,.34],[Math.PI/2,.26],[-Math.PI/2,.26]]){
-      const cl=new Cloth(w,.34,3,3,sm,0);
-      const r=.235;
-      cl.anchors=cl.anchors.map(a=>({ x:Math.sin(ang)*r + Math.cos(ang)*a.x, y:.02, z:Math.cos(ang)*r*.74 - Math.sin(ang)*a.x }));
-      root.add(cl.mesh); R.meshes.push(cl.mesh);
-      R.cloths.push({cloth:cl, bone:B.torso});
-    }
-  }
-  // 武器(掛前臂骨,握點在手部)
-  if(cfg.weapon){
-    const wR=WEAPONS[cfg.weapon](); wR.position.set(0,-.32,0); B.elbowR.add(wR); R.weaponR=wR;
-    wR.traverse(o=>{ if(o.isMesh){ o.castShadow=true; R.meshes.push(o); } });
-    if(cfg.dual){
-      const wL=WEAPONS[cfg.weapon](); wL.position.set(0,-.32,0); B.elbowL.add(wL); R.weaponL=wL;
-      wL.traverse(o=>{ if(o.isMesh){ o.castShadow=true; R.meshes.push(o); } });
-    }
-  }
-  const two = cfg.weapon==='guandao'||cfg.weapon==='snakespear'||cfg.weapon==='halberd'||cfg.weapon==='mobspear'||cfg.weapon==='spear';
-  R.twoHand=two;
-  R.wBase = two ? {x:.14,z:0} : {x:Math.PI*.92,z:0};
-  root.scale.setScalar(cfg.scale||1);
-  return R;
-}
 
 // 手肘 / 膝蓋程序性跟隨(招式可用 R.ovElbowR 等覆寫)
 function autoLimbs(R){
@@ -2314,119 +2058,6 @@ function makeHuman(cfg){
   if(cfg.ldraw && !cfg.lite) return makeLDrawMinifig(cfg);   // 近距離角色:LDraw 真零件
   if(cfg.lite) return makeLegoMob(cfg);                      // 雜兵:合併幾何(draw call 減半)
   return makeLegoHuman(cfg);
-  /* eslint-disable no-unreachable */
-  const root=new THREE.Group();
-  const body=new THREE.Group(); root.add(body);
-  const R={ root, body, meshes:[], cfg };
-  const lite = !!cfg.lite; // 雜兵:少細節、少陰影
-  const add=(parent,m,shadow=true)=>{ m.castShadow = shadow && !lite ? true : (shadow&&m.userData.keepShadow?true:false); parent.add(m); R.meshes.push(m); return m; };
-  const addS=(parent,m)=>{ m.castShadow=true; parent.add(m); R.meshes.push(m); return m; }; // 必投影(雜兵軀幹)
-
-  const hipY=0.98;
-  // 腿
-  for(const side of [-1,1]){
-    const leg=new THREE.Group(); leg.position.set(side*0.15,hipY,0); body.add(leg);
-    addS(leg, mesh(box(.17,.98,.19), mat(cfg.pants), 0,-.49,0));
-    add(leg, mesh(box(.2,.14,.3), mat(cfg.boots), 0,-.92,.04), false);
-    R[side<0?'legL':'legR']=leg;
-  }
-  // 骨盆與戰裙
-  addS(body, mesh(box(.46,.2,.28), mat(cfg.pants), 0,hipY-.1,0));
-  if(!lite) add(body, mesh(box(.52,.3,.32), mat(cfg.cloth), 0,hipY-.22,0));
-  add(body, mesh(box(.48,.07,.3), mat(cfg.cloth2), 0,hipY+.02,0), false); // 腰帶
-  // 軀幹
-  const torso=new THREE.Group(); torso.position.set(0,hipY,0); body.add(torso); R.torso=torso;
-  addS(torso, mesh(box(.52,.62,.3), mat(cfg.cloth), 0,.31,0));
-  addS(torso, mesh(box(.56,.4,.34), mat(cfg.armor), 0,.36,0)); // 胸甲
-  if(cfg.pads){
-    add(torso, mesh(box(.26,.1,.3), mat(cfg.armor), -.36,.58,0));
-    add(torso, mesh(box(.26,.1,.3), mat(cfg.armor), .36,.58,0));
-  }
-  // 披風
-  if(cfg.cape!==undefined && cfg.cape!==null){
-    const cape=new THREE.Group(); cape.position.set(0,.6,-.18); torso.add(cape);
-    const cm=mesh(geo('cape',()=>{const g=new THREE.BoxGeometry(.56,1.15,.04); g.translate(0,-.55,0); return g;}), mat(cfg.cape), 0,0,0);
-    add(cape,cm); R.cape=cape;
-  }
-  // 頭
-  const head=new THREE.Group(); head.position.set(0,.68,0); torso.add(head); R.head=head;
-  addS(head, mesh(box(.3,.32,.3), mat(cfg.skin), 0,.16,0));
-  if(!lite){
-    // 眉眼
-    add(head, mesh(box(.055,.028,.012), mat(0x1a120c), -.07,.19,.152), false);
-    add(head, mesh(box(.055,.028,.012), mat(0x1a120c), .07,.19,.152), false);
-    const browL=mesh(box(.095,.024,.012), mat(0x1a120c), -.075,.245,.152, false); browL.rotation.z=-.28; add(head,browL,false);
-    const browR=mesh(box(.095,.024,.012), mat(0x1a120c), .075,.245,.152, false); browR.rotation.z=.28; add(head,browR,false);
-  }
-  // 髮/冠
-  const hairM=mat(cfg.hair);
-  if(cfg.headgear==='crown'){
-    add(head, mesh(box(.32,.1,.32), hairM, 0,.32,-.01), false);
-    add(head, mesh(box(.34,.075,.34), mat(0xc9a437), 0,.345,0), false);
-    add(head, mesh(box(.06,.06,.02), mat(0xe8d080), 0,.345,.172), false);
-    add(head, mesh(geo('bun',()=>new THREE.CylinderGeometry(.06,.075,.12,8)), hairM, 0,.43,-.02), false);
-  }else if(cfg.headgear==='wrap'){
-    add(head, mesh(box(.32,.1,.32), hairM, 0,.31,-.01), false);
-    add(head, mesh(box(.34,.09,.34), mat(cfg.cloth), 0,.35,0), false);
-    add(head, mesh(geo('bun',()=>new THREE.CylinderGeometry(.06,.075,.12,8)), mat(cfg.cloth), 0,.44,-.02), false);
-  }else if(cfg.headgear==='band'){
-    add(head, mesh(box(.33,.12,.33), hairM, 0,.32,-.01), false);
-    add(head, mesh(box(.34,.05,.34), mat(cfg.cloth2), 0,.28,0), false);
-    const t1=mesh(box(.09,.2,.09), hairM, -.1,.44,-.05, false); t1.rotation.z=.4; add(head,t1,false);
-    const t2=mesh(box(.09,.22,.09), hairM, .09,.45,-.06, false); t2.rotation.z=-.3; add(head,t2,false);
-  }else if(cfg.headgear==='helm'){
-    add(head, mesh(geo('helm',()=>new THREE.ConeGeometry(.21,.24,8)), mat(0x6a7078), 0,.4,0), false);
-    add(head, mesh(geo('helmr',()=>new THREE.CylinderGeometry(.23,.24,.05,8)), mat(0x565c64), 0,.3,0), false);
-  }else if(cfg.headgear==='ohelm'){
-    add(head, mesh(geo('helm',()=>new THREE.ConeGeometry(.21,.24,8)), mat(0x7a7060), 0,.4,0), false);
-    add(head, mesh(geo('helmr',()=>new THREE.CylinderGeometry(.23,.24,.05,8)), mat(0xc9a437), 0,.3,0), false);
-    add(head, mesh(geo('plume',()=>new THREE.ConeGeometry(.05,.22,6)), mat(0xa5303a), 0,.56,0), false);
-  }else if(cfg.headgear==='bosshelm'){
-    add(head, mesh(box(.33,.12,.33), hairM, 0,.32,-.01), false);
-    add(head, mesh(geo('bhelm',()=>new THREE.ConeGeometry(.22,.26,8)), mat(0x2c2c34), 0,.42,0), false);
-    add(head, mesh(geo('helmr',()=>new THREE.CylinderGeometry(.24,.25,.06,8)), mat(0xc9a437), 0,.31,0), false);
-    add(head, mesh(geo('bball',()=>new THREE.SphereGeometry(.05,8,6)), mat(0xa5303a), 0,.57,0), false);
-    for(const s of [-1,1]){ // 雉雞翎
-      const f=mesh(box(.025,.78,.025), mat(0x8c3a3a), s*.14,.72,-.12, false);
-      f.rotation.z=s*-.45; f.rotation.x=-.3; add(head,f,false);
-      const ft=mesh(box(.04,.2,.03), mat(0x5c2424), s*.35,1.02,-.2, false); ft.rotation.z=s*-.45; ft.rotation.x=-.3; add(head,ft,false);
-    }
-  }
-  // 鬍
-  if(cfg.beard==='long'){
-    const b=mesh(box(.15,.52,.05), hairM, 0,-.15,.13, false); b.rotation.x=.12; add(head,b,false);
-    for(const s of [-1,1]){ const m2=mesh(box(.035,.3,.03), hairM, s*.1,-.05,.14, false); m2.rotation.z=s*.18; m2.rotation.x=.1; add(head,m2,false); }
-  }else if(cfg.beard==='bushy'){
-    add(head, mesh(box(.3,.2,.13), hairM, 0,-.02,.1), false);
-    add(head, mesh(box(.34,.07,.1), hairM, 0,.1,.13), false);
-  }else if(cfg.beard==='mustache'){
-    for(const s of [-1,1]){ const m2=mesh(box(.1,.022,.02), hairM, s*.08,.09,.15, false); m2.rotation.z=s*-.35; add(head,m2,false); }
-    add(head, mesh(box(.05,.09,.03), hairM, 0,-.02,.14), false);
-  }
-  // 手臂 + 武器
-  const mkArm=(side)=>{
-    const arm=new THREE.Group(); arm.position.set(side*.34,.56,0); torso.add(arm);
-    addS(arm, mesh(box(.15,.6,.15), mat(cfg.cloth), 0,-.3,0));
-    add(arm, mesh(box(.17,.16,.17), mat(cfg.armor), 0,-.1,0), false);
-    add(arm, mesh(geo('hand',()=>new THREE.SphereGeometry(.085,8,6)), mat(cfg.skin), 0,-.62,0), false);
-    return arm;
-  };
-  R.armL=mkArm(-1); R.armR=mkArm(1);
-  if(cfg.weapon){
-    const wR=WEAPONS[cfg.weapon](); wR.position.set(0,-.62,0); R.armR.add(wR); R.weaponR=wR;
-    wR.traverse(o=>{ if(o.isMesh){ o.castShadow=!lite; R.meshes.push(o); } });
-    if(cfg.dual){
-      const wL=WEAPONS[cfg.weapon](); wL.position.set(0,-.62,0); R.armL.add(wL); R.weaponL=wL;
-      wL.traverse(o=>{ if(o.isMesh){ o.castShadow=!lite; R.meshes.push(o); } });
-    }
-  }
-  // 武器基準握姿
-  const two = cfg.weapon==='guandao'||cfg.weapon==='snakespear'||cfg.weapon==='halberd'||cfg.weapon==='mobspear'||cfg.weapon==='spear';
-  if(cfg.weapon==='bow' && R.weaponR){ R.armR.remove(R.weaponR); R.weaponR.position.set(0,-.62,0); R.armL.add(R.weaponR); R.weaponL=R.weaponR; R.weaponR=null; }
-  R.twoHand=two;
-  R.wBase = two ? {x:.14,z:0} : {x:Math.PI*.92,z:0};
-  root.scale.setScalar(cfg.scale||1);
-  return R;
 }
 
 function resetPose(R){
@@ -5801,7 +5432,7 @@ function setDiff(id){
   DIFF=DIFFS[id]; BEST.setDiff(id);
   document.querySelectorAll('.dbtn').forEach(b=>b.classList.toggle('on',b.dataset.id===id));
   const rec=BEST.get(id);
-  $('bestline').textContent = rec? T('sel.best',rec) : T('sel.noRecord');
+  $('bestline').textContent = rec? T('sel.best',recL(rec)) : T('sel.noRecord');
 }
 function begin(){ AUD.ensure(); startBattle(CHAR_ORDER[sel.idx]); }
 
@@ -5938,10 +5569,10 @@ function buildHowto(){
 function showBest(){
   const lines=DIFF_ORDER.map(id=>{
     const r=BEST.get(id), d=DIFFS[id];
-    return r? T('best.line',LN(d,'label'),r) : T('best.none',LN(d,'label'));
+    return r? T('best.line',LN(d,'label'),recL(r)) : T('best.none',LN(d,'label'));
   });
   const sv=BEST.get('survival');
-  lines.push(sv? T('best.surv',sv) : T('best.survNone'));
+  lines.push(sv? T('best.surv',recL(sv)) : T('best.survNone'));
   announce(T('ann.records'),'ui', lines.join('　/　'));
 }
 function toTitle(){
@@ -6153,18 +5784,18 @@ function showResults(win){
     const w=director.wave;
     rank = w>=12?'S' : w>=8?'A' : w>=5?'B' : 'C';
     $('roffs').textContent=T('res.waveN',w);
-    BEST.put('survival',{ char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, wave:w });
+    BEST.put('survival',{ cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, wave:w });
   }
   else if(win){
     const pts=(director.kills+(player?player.maxCombo:0)*1.5+(player?player.hp/player.maxHp:0)*60-director.time/5)*DIFF.scoreMul;
     rank=pts>=190?'S':pts>=150?'A':pts>=110?'B':'C';
   }
   const rl=$('rankletter'); rl.textContent=rank; rl.className=rank==='S'?'S':'';
-  const isBest=BEST.put(DIFF.id,{char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t});
+  const isBest=BEST.put(DIFF.id,{cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t});
   $('ressub').textContent += isBest? T('res.best') : '';
   if(S.gameMode==='daily'){
     const score=director.kills+(player?player.maxCombo:0)*1.5+(win?400:0);
-    const d=DAILY.record({ char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, win, score });
+    const d=DAILY.record({ cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, win, score });
     $('ressub').textContent += T('res.daily',S.daily.day,d.streak);
   }
   S.lastWin=win; S.lastRank=rank;
@@ -6490,6 +6121,239 @@ S.mode='title';
 ATTRACT.start();
 requestAnimationFrame(loop);
 
+// ============================================================
+// 自我測試:GAME.selftest() 或網址加 ?selftest
+// 全部在頁面內以 tick() 快轉模擬,零外部工具;每個測試用固定亂數種子(結果可重現),
+// 跑完還原 localStorage(musou.*)、設定、語言與手把,不會污染玩家存檔
+// ============================================================
+const SELFTEST={
+  last:null,
+  step(sec){ const n=Math.ceil(sec*60), nr=S.noRender; S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=nr; },
+  // 長時間模擬時定期補血,避免測試本身因玩家站著挨打而失敗
+  stepSafe(sec){ for(let t=0;t<sec;t+=1){ if(player&&player.alive){ player.hp=player.maxHp; } this.step(Math.min(1,sec-t)); } },
+  expect(c,msg){ if(!c) throw new Error(msg); },
+  hash(str){ let h=2166136261; for(const ch of str){ h^=ch.codePointAt(0); h=Math.imul(h,16777619); } return h>>>0; },
+  resetInput(){
+    input.kb=Object.create(null); input.pk=Object.create(null); input.pressed.clear();
+    input.vAx=[0,0]; input.vActive=false; input.vYaw=0;
+    input.padActive=false; input.padAx=[0,0]; input.padCam=0; input.padPrev=[];
+  },
+  enterPlay(id,opt){ startBattle(id,opt); this.step(2.6); this.expect(S.mode==='play',`開局後應為 play,實為 ${S.mode}`); },
+  pe(el,type,x,y,id){ el.dispatchEvent(new PointerEvent(type,{pointerId:id,clientX:x,clientY:y,bubbles:true,cancelable:true,pointerType:'touch',isPrimary:true})); },
+  center(el){ const b=el.getBoundingClientRect(); return [b.x+b.width/2, b.y+b.height/2]; },
+
+  cases:[
+    ['開機:攻擊模式', T_=>{ const X=SELFTEST;
+      toTitle(); const k0=director.kills; X.step(8);
+      X.expect(S.mode==='title' && S.attract, '攻擊模式未啟動');
+      X.expect(director.kills-k0>=10, `8 秒擊破過少:${director.kills-k0}`);
+      X.expect(enemies.length>=40, `敵數過少:${enemies.length}`);
+      return { 擊破:director.kills-k0, 敵數:enemies.length };
+    }],
+    ['攻擊模式 → 快速出陣不殘留移動', ()=>{ const X=SELFTEST;
+      toTitle(); X.step(6);
+      MENUS.title.idx=0; MENUS.title.items[0].run(); X.step(2.6);
+      X.expect(S.mode==='play' && !S.attract, `未進入戰鬥:${S.mode}`);
+      const ax=input.axis();
+      X.expect(ax[0]===0 && ax[1]===0 && !input.vActive, `沒按鍵卻有移動輸入:${ax}`);
+      return { 軸:ax.join(',') };
+    }],
+    ['三位武將開局', ()=>{ const X=SELFTEST, r={};
+      for(const id of CHAR_ORDER){
+        X.enterPlay(id);
+        X.expect(player && player.alive, `${id} 玩家不存在`);
+        X.expect(!$('hud').classList.contains('hidden'), `${id} HUD 未顯示`);
+        X.expect((player.rig.cloths||[]).length>=1, `${id} 布料遺失`);
+        X.expect($('pname').textContent.includes(LN(CHARS[id],'name')), `${id} 名牌錯誤`);
+        r[id]=`布料${player.rig.cloths.length}`;
+      }
+      return r;
+    }],
+    ['三人無雙各自不同且會結束', ()=>{ const X=SELFTEST, r={};
+      const MIN={ liubei:25, guanyu:50, zhangfei:50 };
+      for(const id of CHAR_ORDER){
+        setDiff('normal'); X.enterPlay(id); X.stepSafe(12);
+        const k0=director.kills; player.hp=player.maxHp; player.musou=100;
+        input.pressed.add('KeyL'); X.step(1/60);
+        X.expect(player.state==='musou', `${id} 未進入無雙`);
+        X.expect($('cutin').querySelector('.cw').textContent===T('musou.'+id), `${id} cut-in 招名錯誤`);
+        let t=0; while(player.state==='musou' && t<10){ X.step(.25); t+=.25; }
+        X.expect(player.state!=='musou', `${id} 無雙沒有結束`);
+        X.expect(player.musFin, `${id} 終結技未觸發`);
+        const k=director.kills-k0;
+        X.expect(k>=MIN[id], `${id} 無雙擊破 ${k} < ${MIN[id]}`);
+        r[id]=k;
+      }
+      return r;
+    }],
+    ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
+      X.enterPlay('guanyu',{survival:true});
+      X.expect(S.gameMode==='survival' && !$('wavebox').classList.contains('hidden'), '無盡之陣狀態錯誤');
+      director.waveT=39.5; X.stepSafe(1.5);
+      X.expect(director.wave===2, `波數應為 2,實為 ${director.wave}`);
+      X.expect($('wavenum').textContent==='2', 'HUD 波數未更新');
+      setPause(true); MENUS.pause.items[2].run(); X.step(2.6);
+      X.expect(S.gameMode==='survival' && director.wave===1, `重新出陣應維持無盡之陣:${S.gameMode} wave${director.wave}`);
+      return { 波數:'1→2→重開1' };
+    }],
+    ['每日挑戰:種子套用與還原', ()=>{ const X=SELFTEST;
+      const before=Math.random, c=DAILY.cfg();
+      DAILY.start(); X.step(2.6);
+      X.expect(S.gameMode==='daily' && S.mut===c.mut.k && S.currentChar===c.char, '每日設定未套用');
+      X.expect(Math.random!==before, '每日種子未套用');
+      toSelect();
+      X.expect(Math.random===before, '離開每日挑戰後亂數未還原');
+      X.expect(S.gameMode==='story' && !S.mut, '離開後模式未重設');
+      return { 日:c.day, 武將:c.char, 變異:c.mut.k };
+    }],
+    ['勝利流程:擊破呂布 → 結算 → 分享卡', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.best'); BEST.load();
+      setDiff('normal'); X.enterPlay('guanyu');
+      director.time=BOSS_DEF.tAt; X.step(.1);
+      const b=director.boss;
+      X.expect(b && b.alive, '呂布未登場');
+      X.stepSafe(4);
+      let n=0; while(b.alive && n<30){ b.hp=1; b.iframes=0; dealHit(player,b,{dmg:9,kb:1,up:0,pierce:1,noElem:1}); X.step(.05); n++; }
+      X.expect(!b.alive, '呂布打不倒');
+      X.stepSafe(5);
+      X.expect(S.mode==='victory', `應為勝利結算,實為 ${S.mode}`);
+      X.expect(!$('results').classList.contains('hidden'), '結算畫面未顯示');
+      X.expect(/^[SABC]$/.test($('rankletter').textContent), `評價異常:${$('rankletter').textContent}`);
+      const rec=BEST.get('normal');
+      X.expect(rec && rec.cid==='guanyu', '戰績未存武將 id');
+      openShare(true,S.lastRank);
+      X.expect(S.mode==='share' && $('shareimg').src.length>20000, '分享卡未產生');
+      closeShare();
+      X.expect(S.mode==='victory', '關閉分享後未回到結算');
+      return { 評價:$('rankletter').textContent, 分享卡KB:Math.round($('shareimg').src.length/1024) };
+    }],
+    ['敗北流程', ()=>{ const X=SELFTEST;
+      X.enterPlay('liubei'); player.die(); X.step(3);
+      X.expect(S.mode==='defeat', `應為敗北結算,實為 ${S.mode}`);
+      X.expect($('resword').textContent===T('res.lose'), '敗北字樣錯誤');
+      return {};
+    }],
+    ['暫停 → 設定存檔 → 繼續', ()=>{ const X=SELFTEST;
+      X.enterPlay('zhangfei');
+      input.pressed.add('Escape'); X.step(1/60);
+      X.expect(S.mode==='pause', `Esc 未暫停:${S.mode}`);
+      MENUS.pause.items[1].run();
+      X.expect(S.mode==='settings', '未開啟設定');
+      const it=MENUS.settings.items.find(i=>i.lab===T('set.master'));
+      it.set(.37);
+      X.expect(SETTINGS.d.master===.37 && JSON.parse(localStorage.getItem('musou.settings')).master===.37, '設定未寫入存檔');
+      closeSettings();
+      X.expect(S.mode==='pause', '關閉設定未回到暫停');
+      setPause(false);
+      X.expect(S.mode==='play', '未回到戰鬥');
+      return {};
+    }],
+    ['語言切換(中 ↔ 英)', ()=>{ const X=SELFTEST;
+      SETTINGS.set('lang','en'); applyLang(); toSelect(); X.step(.2);
+      X.expect(document.documentElement.lang==='en', 'html lang 未切換');
+      X.expect($('cards').textContent.includes('Liu Bei'), '武將卡未翻譯');
+      X.expect(MENUS.title.items[0].lab==='Quick Battle', '主選單未翻譯');
+      X.expect(recL({char:'關羽'}).char==='Guan Yu' && recL({cid:'zhangfei',char:'張飛'}).char==='Zhang Fei', '戰績武將名未依語言顯示');
+      SETTINGS.set('lang','zh'); applyLang();
+      X.expect($('cards').textContent.includes('劉備') && MENUS.title.items[0].lab==='快速出陣', '切回中文失敗');
+      return {};
+    }],
+    ['觸控:虛擬搖桿與按鍵', ()=>{ const X=SELFTEST;
+      const was=SETTINGS.d.touchUI; SETTINGS.d.touchUI='on'; TOUCH.apply();
+      try{
+        X.enterPlay('liubei'); TOUCH.sync();
+        X.expect(!$('touch').classList.contains('hidden'), '觸控層未顯示');
+        const st=$('tstick'), p0=player.pos.clone();
+        X.pe(st,'pointerdown',120,240,71); X.pe(st,'pointermove',120+TOUCH.R*2,240,71);
+        X.expect(Math.abs(input.vAx[0]-1)<.01, `搖桿軸錯誤:${input.vAx}`);
+        X.step(1);
+        const moved=Math.hypot(player.pos.x-p0.x, player.pos.z-p0.z);
+        X.pe(st,'pointerup',120,240,71);
+        X.expect(moved>3, `推滿搖桿 1 秒只移動 ${moved.toFixed(2)}`);
+        X.expect(input.vAx[0]===0 && !input.vActive, '放開搖桿後軸未歸零');
+        const j=document.querySelector('.tbtn[data-code="KeyJ"]'), [x,y]=X.center(j);
+        X.pe(j,'pointerdown',x,y,72); X.step(.1); X.pe(j,'pointerup',x,y,72);
+        X.expect(player.state==='attack', `點攻擊鍵未出招:${player.state}`);
+        return { 移動:+moved.toFixed(2) };
+      }finally{ SETTINGS.d.touchUI=was; TOUCH.apply(); }
+    }],
+    ['手把:類比移動與按鍵', ()=>{ const X=SELFTEST;
+      const btns=Array.from({length:17},()=>({pressed:false,value:0}));
+      const pad={ id:'SELFTEST Pad', index:0, connected:true, axes:[1,0,0,0], buttons:btns, vibrationActuator:null };
+      navigator.getGamepads=()=>[pad];
+      try{
+        X.enterPlay('guanyu');
+        const p0=player.pos.clone(); X.step(1);
+        const moved=Math.hypot(player.pos.x-p0.x, player.pos.z-p0.z);
+        X.expect(moved>3, `左搖桿推滿 1 秒只移動 ${moved.toFixed(2)}`);
+        pad.axes=[0,0,0,0]; X.step(.3);
+        btns[2].pressed=true; X.step(1/60); btns[2].pressed=false; X.step(.1);
+        X.expect(player.state==='attack', `□ 未出招:${player.state}`);
+        return { 移動:+moved.toFixed(2) };
+      }finally{ delete navigator.getGamepads; X.step(1/60); }
+    }],
+  ],
+
+  async run(opt={}){
+    const T0=performance.now();
+    const LS={}; for(let i=0;i<localStorage.length;i++){ const k=localStorage.key(i); if(k && k.startsWith('musou.')) LS[k]=localStorage.getItem(k); }
+    const setSnap=JSON.parse(JSON.stringify(SETTINGS.d));
+    const rnd=Math.random;
+    const errs=[], oe=console.error;
+    console.error=(...a)=>{ errs.push(a.map(String).join(' ')); oe.apply(console,a); };
+    const onErr=e=>errs.push(String((e && e.message) || e));
+    addEventListener('error',onErr);
+    const results=[];
+    const panel=opt.overlay? SELFTEST.panel() : null;
+    try{
+      for(const [name,fn] of this.cases){
+        if(opt.only && !name.includes(opt.only)) continue;
+        this.resetInput();
+        Math.random=mulberry32(this.hash(name));
+        const t1=performance.now();
+        let row;
+        try{ const d=fn(); row={ 測試:name, 結果:'✅', 毫秒:Math.round(performance.now()-t1), 細節:d? JSON.stringify(d) : '' }; }
+        catch(e){ row={ 測試:name, 結果:'❌', 毫秒:Math.round(performance.now()-t1), 細節:String((e && e.message) || e) }; }
+        finally{ Math.random=rnd; }
+        results.push(row);
+        if(panel) SELFTEST.paint(panel,results,false);
+        await new Promise(r=>setTimeout(r,0));   // 讓頁面喘口氣,也讓外部 await 能取回控制
+      }
+      results.push({ 測試:'主控台無錯誤', 結果: errs.length? '❌':'✅', 毫秒:0, 細節: errs.slice(0,3).join(' | ') });
+    }finally{
+      console.error=oe; removeEventListener('error',onErr);
+      Math.random=rnd;
+      delete navigator.getGamepads;
+      for(let i=localStorage.length-1;i>=0;i--){ const k=localStorage.key(i); if(k && k.startsWith('musou.')) localStorage.removeItem(k); }
+      for(const k in LS) localStorage.setItem(k,LS[k]);
+      Object.assign(SETTINGS.d,setSnap); SETTINGS.apply(); applyLang();
+      BEST.load(); WEAPON.load(); setDiff(BEST.lastDiff()); refreshWeaponUI();
+      this.resetInput();
+      toTitle();
+    }
+    const fail=results.filter(r=>r.結果!=='✅').length;
+    const summary={ 通過:results.length-fail, 失敗:fail, 秒:+((performance.now()-T0)/1000).toFixed(1), results };
+    this.last=summary; window.__selftest=summary;
+    console.table(results);
+    if(panel) SELFTEST.paint(panel,results,true,summary);
+    return summary;
+  },
+  panel(){
+    let el=document.getElementById('selftest');
+    if(!el){ el=document.createElement('div'); el.id='selftest';
+      el.style.cssText='position:fixed;right:12px;top:12px;z-index:999;max-width:min(560px,94vw);max-height:90vh;overflow:auto;'+
+        'background:rgba(8,6,5,.94);border:1px solid #d9b96e;color:#e8dcc0;font:12px/1.5 ui-monospace,monospace;padding:10px 12px';
+      document.body.appendChild(el); }
+    return el;
+  },
+  paint(el,rows,done,sum){
+    const esc=t=>String(t).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+    el.innerHTML=`<b style="color:#f6e2a4">SELFTEST ${done? `— 通過 ${sum.通過} / 失敗 ${sum.失敗} ・ ${sum.秒}s` : '執行中…'}</b>`+
+      rows.map(r=>`<div>${r.結果} ${esc(r.測試)} <span style="opacity:.55">${r.毫秒}ms</span>`+
+        (r.細節? `<div style="opacity:.7;padding-left:1.6em">${esc(r.細節)}</div>` : '')+`</div>`).join('');
+  },
+};
+
 window.GAME={
   S, enemies, director, CHARS, cam,
   get player(){ return player; },
@@ -6505,9 +6369,11 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
+  selftest:(o)=>SELFTEST.run(o),
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
 clearTimeout(window.__bootWatch);
+if(/[?&]selftest\b/.test(location.search)) setTimeout(()=>SELFTEST.run({overlay:true}),400);
 </script>
 </body>
 </html>
