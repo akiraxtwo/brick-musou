@@ -7,19 +7,20 @@
 <meta name="description" content="A Three Kingdoms hack-and-slash built from bricks: one HTML file, zero external assets, 140 brick soldiers on screen. Keyboard, gamepad and touch — play right in your browser.">
 <meta name="theme-color" content="#0d0b09">
 <meta property="og:type" content="website">
-<meta property="og:url" content="https://brick-warriors.vercel.app/">
+<link rel="canonical" href="https://brick.akiraxclaw.com/">
+<meta property="og:url" content="https://brick.akiraxclaw.com/">
 <meta property="og:site_name" content="BRICK MUSOU">
 <meta property="og:locale" content="en_US">
 <meta property="og:locale:alternate" content="zh_TW">
 <meta property="og:title" content="BRICK MUSOU ・ Three Kingdoms Brick Brawler">
 <meta property="og:description" content="One HTML file. Zero assets. 140 brick soldiers on screen. A Three Kingdoms musou you play in the browser.">
-<meta property="og:image" content="https://brick-warriors.vercel.app/assets/og.jpg?v=2">
+<meta property="og:image" content="https://brick.akiraxclaw.com/assets/og.jpg?v=2">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="BRICK MUSOU ・ Three Kingdoms Brick Brawler">
 <meta name="twitter:description" content="One HTML file. Zero assets. 140 brick soldiers on screen. A Three Kingdoms musou you play in the browser.">
-<meta name="twitter:image" content="https://brick-warriors.vercel.app/assets/og.jpg?v=2">
+<meta name="twitter:image" content="https://brick.akiraxclaw.com/assets/og.jpg?v=2">
 <meta name="twitter:image:alt" content="BRICK MUSOU — a brick general in a sea of soldiers">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
 <style>
@@ -7790,7 +7791,7 @@ function shareLine(win,rank){
   for(let i=0;i<n;i++) bar[i]='🟨';
   if(rank==='S'){ bar[0]='🟩'; bar[1]='🟩'; bar[2]='🟩'; bar[3]='🟩'; }
   return T('share.line', modeLabel(), bar.join(''), rank!=='─'?rank:(win?'':T('res.lose')),
-           LN(CHARS[S.currentChar],'name'), director.kills, player?player.maxCombo:0, time);
+           LN(CHARS[S.currentChar],'name'), director.kills, player?player.maxCombo:0, time) + '\nhttps://brick.akiraxclaw.com';
 }
 function openShare(win,rank){
   const cv=makeShareCard(win,rank);
