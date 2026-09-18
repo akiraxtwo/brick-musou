@@ -1,25 +1,26 @@
 <!DOCTYPE html>
-<html lang="zh-Hant">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>積木無雙・虎牢關之戰</title>
-<meta name="description" content="用 Three.js 打造的積木風格三國無雙割草遊戲:單一 HTML 檔、零外部素材,同屏 140 名積木敵兵,支援鍵盤、手把與觸控,瀏覽器直接玩。">
+<title>BRICK MUSOU ・ Three Kingdoms Brick Brawler</title>
+<meta name="description" content="A Three Kingdoms hack-and-slash built from bricks: one HTML file, zero external assets, 140 brick soldiers on screen. Keyboard, gamepad and touch — play right in your browser.">
 <meta name="theme-color" content="#0d0b09">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://brick-warriors.vercel.app/">
-<meta property="og:site_name" content="積木無雙 Brick Warriors">
-<meta property="og:locale" content="zh_TW">
-<meta property="og:title" content="積木無雙・虎牢關之戰">
-<meta property="og:description" content="一個 HTML 檔、零素材、140 個積木兵同屏的三國無雙——瀏覽器直接玩。">
+<meta property="og:site_name" content="BRICK MUSOU">
+<meta property="og:locale" content="en_US">
+<meta property="og:locale:alternate" content="zh_TW">
+<meta property="og:title" content="BRICK MUSOU ・ Three Kingdoms Brick Brawler">
+<meta property="og:description" content="One HTML file. Zero assets. 140 brick soldiers on screen. A Three Kingdoms musou you play in the browser.">
 <meta property="og:image" content="https://brick-warriors.vercel.app/assets/og.jpg">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="積木無雙・虎牢關之戰">
-<meta name="twitter:description" content="一個 HTML 檔、零素材、140 個積木兵同屏的三國無雙——瀏覽器直接玩。">
+<meta name="twitter:title" content="BRICK MUSOU ・ Three Kingdoms Brick Brawler">
+<meta name="twitter:description" content="One HTML file. Zero assets. 140 brick soldiers on screen. A Three Kingdoms musou you play in the browser.">
 <meta name="twitter:image" content="https://brick-warriors.vercel.app/assets/og.jpg">
-<meta name="twitter:image:alt" content="積木無雙 — 兵海中的積木武將">
+<meta name="twitter:image:alt" content="BRICK MUSOU — a brick general in a sea of soldiers">
 <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚔️</text></svg>">
 <style>
 :root{
@@ -558,7 +559,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
 <!-- ===== 主選單 ===== -->
 <div id="title" class="screen">
   <div class="tstack">
-    <h1 class="tlogo" data-t="title.logo">積木無雙</h1>
+    <h1 class="tlogo" data-t="title.logo">BRICK MUSOU</h1>
     <div class="tsub" data-t="title.sub">虎 牢 關 之 戰</div>
     <div class="tline"></div>
     <div class="menu" id="titlemenu"></div>
@@ -618,7 +619,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
 
 <div id="select" class="screen">
   <div id="seltitle">
-    <h1 data-t="title.logo">積木無雙</h1>
+    <h1 data-t="title.logo">BRICK MUSOU</h1>
     <div class="sub" data-t="sel.sub">虎牢關之戰 ─ 三英戰呂布</div>
     <div class="subline"></div>
   </div>
@@ -920,8 +921,10 @@ const SETTINGS={
   d:{ master:.55, bgm:.34, sfx:.9, quality:'auto', camSens:1, camInvert:0,
       shake:1, rumble:1, dmgnum:1, padDead:.22, tutorial:1,
       touchUI:'auto', touchSize:1, touchAlpha:.72,
-      lang: (navigator.language||'zh').toLowerCase().startsWith('zh') ? 'zh' : 'en' },
-  load(){ try{ Object.assign(this.d, JSON.parse(localStorage.getItem('musou.settings')||'{}')); }catch(e){} },
+      lang:'en' },
+  load(){ try{ Object.assign(this.d, JSON.parse(localStorage.getItem('musou.settings')||'{}')); }catch(e){}
+    if(this.d.langV!==2){ this.d.lang='en'; this.d.langV=2; }   // 改版:預設語言改為英文(舊存檔切一次,之後可在設定改回中文)
+  },
   save(){ try{ localStorage.setItem('musou.settings',JSON.stringify(this.d)); }catch(e){} },
   apply(){
     if(AUD.master) AUD.master.gain.value = AUD.muted?0:this.d.master;
@@ -1055,7 +1058,7 @@ const I18N={
  zh:{},   // 繁中即原文,查不到就退回 key 對應的 zh 表(見下)
  en:{
   // --- 主選單 / 畫面 ---
-  'title.logo':'BRICK WARRIORS', 'title.sub':'BATTLE OF HULAO GATE',
+  'title.logo':'BRICK MUSOU', 'title.sub':'BATTLE OF HULAO GATE',
   'title.hint':'↑↓ Select ・ Enter Confirm',
   'menu.quick':'Quick Battle', 'menu.sortie':'Sortie', 'menu.survival':'Endless Array',
   'menu.daily':'Daily Challenge', 'menu.settings':'Settings', 'menu.howto':'Controls', 'menu.records':'Records',
@@ -1316,10 +1319,10 @@ const I18N={
   'share.title':'SHARE','share.now':'Share','share.copyImg':'Copy Image',
   'share.copyTxt':'Copy Text','share.dl':'Download','share.close':'Close (Esc)',
   'share.alt':'Battle record card',
-  'share.game':'BRICK WARRIORS','share.tag':'Battle of Hulao Gate ・ Dynasty action in one HTML file',
+  'share.game':'BRICK MUSOU','share.tag':'Battle of Hulao Gate ・ Dynasty action in one HTML file',
   'share.rank':'RANK','share.file':(n,k)=>`BrickWarriors_${n}_${k}kills.png`,
   'share.line':(mode,bar,rank,hero,kills,combo,time)=>
-    `Brick Warriors ${mode}\n${bar} ${rank} ・ ${hero}\n${kills} slain ・ ${combo} combo ・ ${time}`,
+    `BRICK MUSOU ${mode}\n${bar} ${rank} ・ ${hero}\n${kills} slain ・ ${combo} combo ・ ${time}`,
   // --- 模式 ---
   'mode.story':'Battle of Hulao Gate',
   'mode.daily':(d,m)=>`Daily #${d} ・ ${m}`,
@@ -1592,7 +1595,7 @@ I18N.zh={
 function applyLang(){
   LANG.cur = (SETTINGS.d.lang==='en')? 'en' : 'zh';
   document.documentElement.lang = LANG.cur==='en'? 'en' : 'zh-Hant';
-  document.title = LANG.cur==='en'? 'Brick Warriors ・ Battle of Hulao Gate' : '積木無雙・虎牢關之戰';
+  document.title = LANG.cur==='en'? 'BRICK MUSOU ・ Three Kingdoms Brick Brawler' : '積木無雙 BRICK MUSOU';
   for(const el of document.querySelectorAll('[data-t]'))  el.textContent = T(el.dataset.t);
   for(const el of document.querySelectorAll('[data-th]')) el.innerHTML   = T(el.dataset.th);
   for(const el of document.querySelectorAll('[data-tp]')) el.placeholder = T(el.dataset.tp);
