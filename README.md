@@ -1,482 +1,305 @@
-# BRICK MUSOU(積木無雙)
+# BRICK MUSOU
 
-線上版:<https://brick.akiraxclaw.com>(備用 <https://brick-warriors.vercel.app>)
+**English** | [繁體中文](README.zh-TW.md) | [日本語](README.ja.md)
 
-用 **Three.js** 打造的**積木風格**三國無雙割草動作遊戲。**單一 HTML 檔案、雙擊即玩**:
-武將與敵將使用內嵌的 **LDraw 真實積木零件**,雜兵、武器、場景、馬匹皆為程式化建模;
-動畫、特效、後處理、音樂音效全部由程式即時生成。
+**▶ Play now: <https://brick.akiraxclaw.com>** (mirror: <https://brick-warriors.vercel.app>)
 
-> 積木小人本來就是剛體、不彎肘膝、肩髖單軸擺動——與遊戲原有的姿勢系統完全同構,
-> 因此 36 招連段、空戰、格擋、騎乘等全部戰鬥系統一行未改就直接沿用。
+![BRICK MUSOU](assets/og.jpg)
 
-## 執行方式
+A **brick-built Three Kingdoms hack-and-slash** made with **Three.js**, packed into **one HTML file**.
+Heroes and officers are built from real **LDraw brick parts** embedded in the page. Soldiers, weapons,
+horses, scenery, animation, effects, post-processing, music and sound are all generated in code:
+no image, model or audio files.
 
-引擎(three.js r160)由 CDN 以 importmap 載入,需要網路連線。
+- Up to **140 brick soldiers on screen** at once, and more than 200 KOs a minute at full speed
+- **3-battle campaign**, **Endless Array** and a **Daily Challenge** where everyone gets the same setup
+- **4 playable heroes**, each with 36 moves and their own Musou attack
+- Keyboard, **gamepad** and **touch** (multi-touch virtual stick)
+- English and Traditional Chinese, switchable at any time in Settings
 
-- **最簡單**:直接用瀏覽器打開 `index.html`(雙擊即可)。
-- **本地伺服器**(建議):
+> Brick minifigures are rigid bodies: elbows and knees don't bend, and shoulders and hips swing on one axis.
+> That matched the game's existing pose system exactly, so every combat system (36-move combos, aerial
+> attacks, guarding, riding) carried over without changing a line.
+
+## Quick start
+
+- **Play online**: <https://brick.akiraxclaw.com>
+- **Run locally**: open `index.html` in a browser, or serve the folder:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-然後開啟 <http://localhost:8000>。
+Then open <http://localhost:8000>. Three.js r160 loads from a CDN, so you need an internet connection.
+Leaderboards need the Vercel backend (see [Leaderboards](#leaderboards--analytics)). Without it they show "not open yet".
 
-## 玩法
+## Campaign — Chapter I: The Allied Coalition
 
-### 第一章:反董卓聯合軍(三場戰役)
+Main menu **Sortie** → **campaign map** → choose a hero → briefing → battle. Each battle has its own map, time of day,
+officers, music and objectives. Complete the **◆ main objectives** to win. Each **◇ optional objective** you complete
+raises your rank. Clearing a battle unlocks the next one.
 
-主選單「出陣」→ **戰役地圖** → 選將 → 出陣。每場戰役有自己的場景、天色、敵將與任務目標;
-**◆ 主要目標**完成即勝利,**◇ 次要目標**每項讓戰功評價加分。通關會記錄評價並解鎖下一戰,
-結算畫面可直接「下一戰(N)」。
-
-| 戰役 | 場景 | 主要目標 | 次要目標 | 敵將 |
+| Battle | Setting | Main objective | Optional objectives | Officers |
 |---|---|---|---|---|
-| **汜水關之戰** | 晨間山隘、兩側峭壁、北端關城 | 攻陷 2 座營寨 → 城門大開、**華雄出關** → 擊破華雄 | **溫酒斬華雄**(出關 60 秒內擊破)、攻陷全部營寨 | 華雄 |
-| **虎牢關之戰** | 黃昏平原、兩翼背景大軍、城門 | 擊破**呂布**(登場時城門推開) | 擊破胡軫、擊破李肅、攻陷全部據點 | 胡軫、李肅、呂布 |
-| **洛陽追擊戰** | 夜晚火城、大街兩側燃燒房屋 | 在**董卓**逃出北門前擊破他(逃脫即敗北) | 擊破徐榮、擊破 400 人 | 徐榮、董卓 |
+| **Battle of Sishui Gate** | Morning mountain pass between cliffs | Capture 2 camps → the gate opens and **Hua Xiong** sallies out → defeat him | Defeat Hua Xiong within 60 s of his sally ("before the wine cools"); capture every camp | Hua Xiong |
+| **Battle of Hulao Gate** | Dusk plain, armies on both flanks | Defeat **Lu Bu** (the gate opens when he arrives) | Defeat Hu Zhen and Li Su; capture every base | Hu Zhen, Li Su, Lu Bu |
+| **Pursuit Through Luoyang** | Burning city at night | Defeat **Dong Zhuo** before he escapes through the north gate (if he escapes, you lose) | Defeat Xu Rong; 400 KOs | Xu Rong, Dong Zhuo |
 
-- 汜水關與虎牢關一開始就開放(虎牢關是原本的內容,舊版的勝利紀錄會自動視為通關);洛陽在通關虎牢關後解鎖
-- 虎牢關的進度採 **擊破數 / 時間雙軌觸發,先到者算**——高手用擊破數提前推進,新手靠時間也會照樣推進
-- 巔峰時每分鐘可擊破 200 人以上,同屏敵兵可達 **140 隻**
-- 依擊破數、連擊、剩餘體力、用時、次要目標與難度加權得到戰功評價(S/A/B/C),戰績依「關卡 × 難度」分別保存
+- Sishui and Hulao are open from the start. Luoyang unlocks after you clear Hulao.
+- At Hulao, the story advances on **KOs or time, whichever comes first**. Strong players push ahead faster; newer players still progress.
+- Your rank (S/A/B/C) is weighted by KOs, max combo, remaining HP, clear time, optional objectives and difficulty.
+  Records are kept per battle × difficulty.
 
-### 成長與收集
+### Officer signature moves
 
-- **呂布可操作**:任一模式擊破呂布即解鎖(舊版通關過虎牢關的存檔自動解鎖)。方天畫戟、C6 跳劈、
-  專屬無雙「**天下無雙**」(可移動的畫戟旋風,每 0.9 秒震地打上天,終結技範圍 12)。呂布單騎出陣,不帶友軍
-- **武將等級 Lv1~20**:親手擊破得經驗(雜兵 1 / 敵將 25 / BOSS 150,屬性燃燒與連鎖雷也算),
-  通關依評價加發;每級體力 +2%、攻擊 +1.5%、無雙回復 +1%,戰鬥中升級即時生效。友軍擊破與主選單背景不給經驗
-- **戰功 26 項**(主選單「戰功」可看進度):戰鬥、戰役、模式、收集四類
-- **服裝**:部分戰功解鎖——劉備白袍(桃園結義)、關羽金甲(溫酒斬華雄)、張飛黑甲(千人斬)、呂布赤甲(修羅通關);
-  選將畫面按 **C**(手把 △)切換
-
-### 引導與演出
-
-- **戰前簡報**:從選將出陣時先看簡報——史實背景、主要 / 次要目標、俯視地圖(城門或出口、據點、董卓逃跑路線、我軍位置)。
-  快速出陣與重新出陣會跳過
-- **情境式教學**:第一次遊玩時依狀態一次提示一個操作(移動 → 連擊 → C 技 → 格擋 → 無雙 → 據點 → 敵將 → 上馬 → 跳躍),
-  文字依鍵盤 / 手把 / 觸控切換,做出動作即關閉;設定可關閉或重新顯示
-- **對白**:積木臉頭像 + 台詞,在開場、敵將登場與被擊破、BOSS 登場、友軍倒地、危急、勝利、董卓接近北門時出現
-- **每關配樂**:汜水關 C 宮調 104 BPM(明亮)/ 虎牢關 A 羽調 96 BPM / 洛陽 G 商調 118 BPM(急促追擊鼓點)
-
-### 敵將招牌技
-
-| 敵將 | 招牌技 | 對策 |
+| Officer | Signature | How to beat it |
 |---|---|---|
-| 華雄 | **衝陣**:地面出現直線預警後高速衝鋒,途中霸體 | 看到預警就橫移 |
-| 胡軫 | **喚弓兵齊射**:在你周圍落下 3 處箭雨 | 離開紅圈 |
-| 李肅 | **反擊架勢**:你連打時舉起架勢(金色光點),此時攻擊他會被無傷迴旋反擊 | 看到架勢先停手 |
-| 徐榮 | **伏兵煙幕**:煙霧中後撤,並在你身邊召出 6 名伏兵 | 無雙清場 |
-| 呂布 | 跳劈(紅圈預警)、旋風斬、血量 35% 以下狂暴 | — |
-| 董卓 | 往北門逃;被追上時停下 5~7 秒反擊(跳躍震地,不可格擋),再脫離逃跑 | 疾走緊追、無雙爆發 |
+| Hua Xiong | **Charge**: a straight warning line appears, then he dashes along it with super armor | Sidestep when the line appears |
+| Hu Zhen | **Archer volley**: calls down 3 arrow storms around you | Leave the red circles |
+| Li Su | **Counter stance**: raises a guard (gold sparkles) during your combos; hitting him triggers an unblockable spin | Stop attacking while the stance is up |
+| Xu Rong | **Ambush smoke**: retreats into smoke and summons 6 ambushers around you | Clear them with Musou |
+| Lu Bu | Leaping cleave (red circle warning), whirlwind, enrages below 35 % HP | — |
+| Dong Zhuo | Flees toward the north gate. When caught, he fights back for 5–7 s (unblockable leap stomp), then runs again | Sprint after him and burst with Musou |
 
-洛陽另有**燃燒瓦礫**:紅圈預警 1.2 秒後落下,敵我皆傷。
+Luoyang also has **falling burning debris**: a red circle warns you 1.2 s before it lands, and it hurts both sides.
 
-### 可選武將
+## Heroes
 
-| 武將 | 武器 | 特色 |
-|------|------|------|
-| 劉備(玄德) | 雌雄雙股劍 | 出招最快、連擊流暢,均衡型 |
-| 關羽(雲長) | 青龍偃月刀 | 攻擊範圍最大,大開大闔 |
-| 張飛(翼德) | 丈八蛇矛 | 威力最強,蓄力可裂地震飛一片 |
+| Hero | Weapon | Style | Musou | Finisher |
+|---|---|---|---|---|
+| Liu Bei (Xuande) | Twin Dragon Swords | Fastest, smoothest combos; balanced | **Twin Dragon Rage**: dashes forward (steerable), crossing slashes in a 210° arc | Leaping cross cut, radius 6.5 |
+| Guan Yu (Yunchang) | Green Dragon Blade | Widest reach, big sweeping arcs | **Azure Dragon Tide**: three full 360° sweeps, each with a shockwave | Overhead cleave, radius 9 |
+| Zhang Fei (Yide) | Serpent Spear | Strongest hits; charge attacks split the ground | **Roar of Yan**: repeated ground strikes with growing shockwaves that launch everything | Earth splitter, radius 11 |
+| Lu Bu (Fengxian) | Sky Piercer halberd | **Unlocked by defeating Lu Bu** in any mode; fights alone, with no allies | **Peerless**: a moving halberd cyclone that slams the ground every 0.9 s | Radius 12 |
 
-### 難度
+Measured against a full crowd: Guan Yu about 200 KOs per Musou, Zhang Fei about 190, Liu Bei about 100. Liu Bei is the
+speed hero: his Musou mows a path forward instead of clearing a circle, so its KO count is intentionally lower.
 
-| 難度 | 敵體力 | 敵攻擊 | 敵量 | 呂布體力 |
-|------|--------|--------|------|----------|
-| 易(初陣) | ×0.8 | ×0.7 | ×0.85 | ×0.8 |
-| 普通(武人) | ×1 | ×1 | ×1 | ×1 |
-| 修羅(一騎當千) | ×1.35 | ×1.5 | ×1.2 | ×1.6 |
+The two heroes you don't pick join as **allied officers** with green name tags and officer-level strength. When knocked
+down, they kneel for 25 s and then return. They never die permanently, but each knockdown costs 8 morale.
 
-### 選單
+## Modes
 
-啟動後先進**主選單**(快速出陣 / 出陣 / 無盡之陣 / 每日挑戰 / 設定 / 操作說明 / 戰功 / 排行榜 / 戰績),遊戲中按 `Esc` 或手把 `Start`
-開**暫停選單**(繼續 / 設定 / 重新出陣 / 返回選將 / 回主選單)。
-全部選單都能用**鍵盤、手把、滑鼠、觸控**操作(拉條可以直接點在條上設定數值)。
+| Mode | Description |
+|---|---|
+| **Campaign** | The three battles above. |
+| **Quick Battle** | Jumps straight into your last battle with your last hero and difficulty. |
+| **Endless Array** | Infinite waves, one every 40 s. Each wave adds 7 % enemy HP and 5 % attack. An officer arrives every 3 waves, and Lu Bu returns every 6. Rank S at wave 12. |
+| **Daily Challenge** | Seeded by the date: **everyone in the world gets the same hero, difficulty and mutation** that day, plus the same opening formation of 48 soldiers. Tracks your streak. |
 
-- **攻擊模式**:主選單背後跑的是**真的一場戰鬥**——由 bot 操作,走與玩家完全相同的輸入路徑
-  (寫進 `input.vAx` / `input.pressed`),因此不需要另寫一套演示邏輯。約 75 秒或 bot 陣亡就換一位武將重開。
-  演出層(告知、獎章、cut-in、傷害數字、擊破運鏡、畫面震動)在攻擊模式全部靜音,不會干擾選單。
-- **快速出陣**:用上一場的武將與難度直接開打,跳過選將畫面。
+**Daily mutations** (one per day): Arrow Storm (twice as many archers) · Iron Wall (enemy HP +35 %) ·
+Bloodlust (Musou gauge +70 %) · Last Stand (HP −40 %, ATK +30 %) · Low Morale (bases no longer affect morale).
 
-### 遊戲模式
+> Daily runs are **not frame-identical**. The on-screen enemy cap scales with device performance, so a phone and a
+> desktop never play exactly the same fight. The hero, difficulty, mutation and opening formation are fixed.
 
-| 模式 | 說明 |
-|------|------|
-| **虎牢關之戰** | 主線。擊破數 / 時間雙軌推進,擊破呂布獲勝。 |
-| **無盡之陣** | 無限波次。每 40 秒進一波,敵兵體力 +7%/波、攻擊 +5%/波、同屏下限隨波數提高;每 3 波一名敵將、每 6 波呂布再臨。不會勝利,撐得越久評價越高(第 12 波 S)。 |
-| **每日挑戰** | 以日期為種子,**同一天全世界拿到同一位武將、同一難度、同一變異**,開場的 48 名敵兵配置也相同。紀錄連續挑戰天數(streak)。 |
+## Progression & collection
 
-**每日變異**(每天抽一種):
+- **Hero levels 1–20**: you earn EXP for your own KOs (soldier 1, officer 25, boss 150; burn and chain-lightning kills count)
+  plus a clear bonus scaled by rank. Each level adds +2 % HP, +1.5 % ATK and +1 % Musou gain, and applies mid-battle.
+  Allied KOs and the title-screen demo give no EXP.
+- **26 achievements** in four groups (combat, campaign, modes, collection). See the **Achievements** screen.
+- **Outfits** unlocked by achievements: Liu Bei *White Robe*, Guan Yu *Gold Armor*, Zhang Fei *Black Armor*,
+  Lu Bu *Crimson Armor*. Press **C** (gamepad △) on hero select to switch.
+- **Weapon growth**: officers and Lu Bu always drop a glowing **weapon crate**. Each crate gives weapon level +1
+  (max 10, +6 % ATK each) and an element. Weapon progress is saved between runs:
 
-| 變異 | 效果 |
-|------|------|
-| 弓矢如雨 | 弓兵數量倍增 |
-| 鐵壁 | 敵兵體力 +35% |
-| 血氣方剛 | 無雙計量 +70% |
-| 背水 | 體力 −40%,攻擊 +30% |
-| 士氣低迷 | 據點不再影響士氣 |
+| Element | Effect |
+|---|---|
+| **Flame** | Burns for 3 s, damage every 0.5 s |
+| **Thunder** | 18 % chance to chain to up to 3 nearby enemies |
+| **Frost** | 40 % slow for 3 s, 12 % chance to freeze |
 
-> 註:每日挑戰**不保證逐幀一致**——同屏敵兵上限會依裝置效能自動升降檔,
-> 手機與桌機本來就打不到同一場。固定的是武將、難度、變異與開場配置。
+## Combat
 
-### 線上排行榜與數據
+### Keyboard & mouse
 
-- **排行榜**:每日挑戰(每天一張榜)/ 無盡之陣(先比波數再比擊破)/ 三關 × 三難度。
-  結算畫面輸入暱稱後按「登錄排行榜」才會送出(**不會自動上傳**);同一台裝置每張榜只保留最佳成績,改暱稱會搬過去。
-- **伺服器檢查**:時間 15–3600 秒、擊破數 / 連擊 / 波數與時間的比例上限、每 IP 每分鐘最多 12 次。
-  純前端遊戲無法根本防作弊,只擋明顯異常。
-- **自製埋點**(不載入任何外部 script、不存個人資料):只做每日彙總計數——開局、通關 / 敗北與用時、
-  敗北時間分布、評價、無盡之陣波數、中途離開、語言與裝置類型。
-- **後端**:`api/score.js`、`api/event.js`、`api/stats.js`(Vercel Functions)+ Upstash Redis。
-  **沒有設定資料庫時**,API 回 `503 {enabled:false}`,遊戲內排行榜顯示「尚未開放」、結算頁不顯示登錄列,其他功能不受影響。
-- **開通步驟**:Vercel 專案 → Storage / Marketplace → 加入 **Upstash Redis** 並連到此專案
-  (會自動注入 `KV_REST_API_URL` / `KV_REST_API_TOKEN`)→ 重新部署。
-  想看數據再加環境變數 `STATS_TOKEN`,然後開 `/api/stats?days=7&token=…`(各關各難度的場次、勝率、平均通關秒數、中途離開數)。
-- **本機測試**:`.claude/serve.mjs` 內建記憶體版 Redis 模擬,`/api/*` 直接可用;
-  `POST /__mock?on=0` 模擬未開通、`?reset=1` 清空。
+| Key | Action |
+|---|---|
+| `WASD` / arrows | Move |
+| `J` / `Z` / left click | Attack (**6-hit combo**) |
+| `K` / `X` | **Charge attack**: standing = C1, after hit N = C(N+1), C1–C6 |
+| `Space` | Jump (`J` in the air = aerial slashes, `K` in the air = ground slam) |
+| `H` / right mouse (hold) | **Guard**: −85 % frontal damage. Get hit within 0.15 s of raising guard for a **perfect guard** (no damage, time stop, +12 Musou, next hit ×1.5) |
+| `L` / middle click | **Musou** (when the gauge is full; works mid-combo or while being hit) |
+| `R` | Mount / dismount (near the horse) |
+| `Shift` | Sprint |
+| `Q` / `E` | Rotate camera |
+| `M` · `Esc` · `Tab` | Mute · Pause · Difficulty (hero select) |
 
-### 戰績分享卡
+### Charge attacks (same meaning for every hero, with weapon-specific motions)
 
-結算畫面按 **`S`** 或點「分享戰績」,會用**當下這一幀的戰場截圖**合成一張 1200×630 的戰績卡
-(武將積木臉頭像、模式、勝敗、評價、擊破 / 連擊 / 用時 / 難度),可以:
-
-- **分享**(手機 Web Share,直接把 PNG 丟進其他 App)
-- **複製圖片**(桌機 Clipboard API)/ **下載** / **複製文字**(一行式戰績,含 🟩 評價格)
-
-### 語言
-
-支援**English / 繁體中文**,在設定裡即時切換(不需重載)。**預設英文**(英文標題 BRICK MUSOU);
-舊存檔在改版後第一次開啟時會切成英文一次,之後玩家改回中文會被記住(`musou.settings.langV`)。
-遊戲名稱刻意不使用 LEGO 商標,頁尾保留「與 LEGO 集團無隸屬關係」聲明。
-武將名、字、稱號、武器、敵將、據點、難度、屬性、連擊稱號、里程碑獎章全部有英文版。
-
-**設定選單**(存進 localStorage,跨場次保留):
-
-| 項目 | 說明 |
-|------|------|
-| 主音量 / 背景音樂 / 音效 | 三段獨立音量 |
-| 畫質 | 自動(依 FPS 動態調整)/ 高 / 中 / 低 |
-| 視角靈敏度・視角反轉 | 鍵盤與右搖桿共用 |
-| 畫面震動 | 0~150%,會暈的可以關掉 |
-| 手把震動・搖桿死區 | 死區 5%~45% 可調 |
-| 傷害數字 | 可關閉以減少畫面雜訊 |
-| 觸控按鍵 | 自動(偵測觸控裝置)/ 開 / 關 |
-| 按鍵大小・按鍵透明度 | 觸控按鍵的尺寸與不透明度 |
-| 清除存檔 | 重設武器等級與最高戰績 |
-
-### 手把支援
-
-支援 **Gamepad API**(Xbox / PlayStation / 泛用 XInput 手把,插上即用,右下角會顯示型號)。
-左搖桿是**類比移動**——推越滿跑越快。
-
-| 手把 | 動作 |
-|------|------|
-| 左搖桿 / D-pad | 移動 |
-| 右搖桿 | 旋轉視角 |
-| `□` / `X` | 普通攻擊 |
-| `△` / `Y` | 蓄力 C 技 |
-| `×` / `A` | 跳躍 |
-| `○` / `B` | 無雙亂舞 |
-| `R1` / `RB` | 格擋 |
-| `L1` / `LB` | 疾走 |
-| `L2` `R2` | 視角左 / 右 |
-| `L3`(左搖桿按下) | 上馬 / 下馬 |
-| `Start` | 暫停選單 |
-| `Select` | 切換難度(選將畫面) |
-
-選單中:`D-pad`/左搖桿 移動游標、`A` 確定、`B` 返回、`←→` 調整數值。
-
-### 觸控(手機 / 平板)
-
-偵測到觸控裝置(`pointer:coarse`)會自動顯示觸控層,也可以在設定裡強制開關。
-
-| 觸控 | 動作 |
-|------|------|
-| 左半螢幕拖曳 | **浮動虛擬搖桿**——按下的位置就是圓心,推越滿跑越快 |
-| 右半空白處拖曳 | 旋轉視角 |
-| `攻` | 普通攻擊(**按住會連打**) |
-| `技` / `跳` / `無雙` | C 技 / 跳躍 / 無雙亂舞 |
-| `擋` | 格擋(按住) |
-| `馬` | 上馬 / 下馬 |
-| 右上 `Ⅱ` | 暫停選單 |
-
-- 支援**多點觸控**:左手移動的同時右手連打互不干擾。
-- 出陣時會嘗試進入**全螢幕**並鎖定橫向;直立握持時顯示轉向提示。
-- 觸控裝置從**中畫質檔起跳**(pixelRatio 上限 1.4),自動調節仍會依 FPS 升降。
-- 按鍵**大小與透明度**可在設定調整。
-
-### 操作
-
-| 按鍵 | 動作 |
-|------|------|
-| `WASD` / 方向鍵 | 移動 |
-| `J` / `Z` / 滑鼠左鍵 | 普通攻擊(**六段連擊**) |
-| `K` / `X` | **蓄力 C 技**——站立按=C1,第 N 段連擊後按=C(N+1),共 C1~C6 |
-| `空白鍵` | **跳躍** |
-| 空中 `J` | **空中連斬**(兩段,可追打浮空敵) |
-| 空中 `K` | **空中下砸**(落地產生範圍衝擊波) |
-| `H` / 滑鼠右鍵(按住) | **格擋**——正面減傷 85%;舉盾後 0.15 秒內受擊觸發**完美格擋**(免傷、時停、無雙+12、下一擊 ×1.5) |
-| `L` / 滑鼠中鍵 | **無雙**(計量滿時;連擊中或受擊中皆可發動)——三人各自不同,見下表 |
-| `R` | **上馬 / 下馬**(靠近坐騎時) |
-| `Shift` | 疾走 |
-| `Q` / `E` | 旋轉視角 |
-| `M` | 靜音 |
-| `Esc` | 暫停 |
-| `Tab`(選將畫面) | 切換難度 |
-
-### 無雙(三人各一套)
-
-| 武將 | 招名 | 內容 | 終結技 |
-|------|------|------|--------|
-| 劉備 | **雙龍亂舞** | 自動向前突進(可用方向鍵轉向),雙劍左右交叉連斬,每 0.07 秒一次前方 210° 判定 | 躍起交叉斬,範圍 6.5 |
-| 關羽 | **青龍怒濤** | 三次全方位大橫掃(每 1.2 秒一圈、範圍 4.9),每一圈都帶震波 | 過頂重劈,範圍 9 |
-| 張飛 | **燕人咆哮** | 原地連續戳地,每一下放出逐漸擴大的震波(3.2→6.5)把整片敵人打上天 | 大地裂,範圍 11 |
-
-實測(兵海圍上來後發動):關羽約 200 擊破、張飛約 190、劉備約 100——劉備是速度型,
-無雙走「突進割草」而非「原地清場」,擊破數刻意設定較低。
-
-### C 技一覽(三武將共通語意,動作與範圍依武器不同)
-
-| 招 | 觸發 | 效果 |
-|----|------|------|
-| C1 | 站立按 K | 破防突進——貫穿盾兵 |
-| C2 | 一段後 | **挑空**——把敵人打上天,接空中連段 |
-| C3 | 二段後 | 三連打——最後一擊**暈眩** 2.6 秒 |
-| C4 | 三段後 | 大迴旋——範圍擊飛 |
-| C5 | 四段後 | 上劈接橫掃——強力兩段 |
-| C6 | 五段後 | 大範圍爆發——衝擊波 + 全體擊飛 |
-
-### 騎馬
-
-出陣時戰場上會有一匹坐騎待命(小地圖不顯示,靠近後按 `R` 上馬)。
-
-- 移動速度 12(疾走 16),轉向有慣性,鏡頭自動拉遠
-- 時速夠快時**自動踐踏**沿路敵兵
-- 馬上 `J` = 左右交替側劈(範圍 4.2、貫穿)、`K` = 前衝突擊(範圍 4.6、大幅擊飛)
-- 再按 `R` 下馬
-
-### 武器成長與屬性
-
-擊破**敵將與呂布**必定掉落 **武器匣**(小地圖上的金色方塊,會發光)。拾取後:
-
-- 武器 **等級 +1**(上限 10,每級攻擊力 +6%)
-- 附加 **屬性**,刀光與命中特效會跟著換色:
-
-| 屬性 | 效果 |
-|------|------|
-| **炎** | 命中後燃燒 3 秒,每 0.5 秒持續掉血 |
-| **雷** | 18% 機率觸發**鏈電**,跳躍最多 3 名鄰近敵人 |
-| **冰** | 減速 40% 共 3 秒,12% 機率直接凍結 |
-
-武器等級與屬性存進 localStorage,**跨場次保留**,選將畫面的武將卡上會顯示。
-
-### 友軍武將(三英同場)
-
-沒被選用的另外兩位武將會作為**友軍武將**一同出陣:
-
-- 綠色名牌、敵將級戰力,會自行追擊敵兵
-- 敵將與呂布也會攻擊他們
-- 倒下時**單膝跪地 25 秒後重整旗鼓**(不會永久陣亡),但會讓士氣 −8
-
-### 據點攻防與士氣
-
-汜水關有 3 座營寨、虎牢關有 4 個據點,開場全為董卓軍所有。
-
-- 每座據點有**守軍**(預設 40):在據點附近擊破敵兵就削減守軍(雜兵 1、敵將 6),歸零即攻陷——
-  兵海越密集攻得越快。靠近時目標面板會顯示「⚑ 剩餘守軍」
-- 攻陷後旗幟由「董」換成「漢」,圈變綠色,不會被奪回
-- 佔有據點數決定**士氣**(畫面頂端的雙色條):0 個 → 38,全佔 → 90
-- 士氣越低,敵兵生成量越多;士氣越高,**背景大軍的戰線會整體向城門推進**(肉眼可見的戰況回饋)
-- 擊破敵將 / 攻陷據點提升士氣,友軍武將倒下則降低士氣
-
-### 兵海密度(無雙感的核心)
-
-敵人生成採用**以玩家為中心的環狀投放**(13~23 碼,視野邊緣外),而非固定在城門——
-否則玩家跑到地圖邊緣時,敵兵得走 60 碼以上才過得來。另外:
-
-- **趕路加成**:雜兵距離越遠移動越快(16 碼外 ×2.6、10 碼外 ×1.9、6 碼外 ×1.35,貼身恢復正常),
-  解決「玩家疾走 8.8 而雜兵只有 2.7,永遠追不上」的問題
-- **落隊回收**:超過 30 碼且未持圍攻名額的雜兵直接移回環上(玩家看不見)
-- **繞行半徑 2.1~3.0 碼**:雜兵在你的攻擊範圍**內**遊走,而不是站在圈外等
-- **壓力系統只調節攻擊強度,不調節存在感**:危急時砍的是「同時進攻人數」(降到 2),
-  敵人密度始終維持
-
-另外把每隻雜兵的 draw call 從 **21 降到 10**(每個關節底下的零件以頂點色合併成單一 mesh),
-省下的預算全部拿去堆數量。實測 160 隻雜兵只吃掉 4.6ms(28% 幀預算)。
-
-實測結果(普通難度、割草階段):
-
-| 指標 | 優化前 | 優化後 |
+| Move | Input | Effect |
 |---|---|---|
-| 同屏敵兵 | 34 | **120~140** |
-| 十碼內敵數 | 4 | **46~51** |
-| 攻擊範圍內敵數 | 2.4 | **6.5~16** |
-| 空手率 | 43% | **16~21%** |
-| 每分鐘擊破 | 38 | **93~250**(依難度) |
-| 最大連擊 | 61 | **1347**(修羅) |
-| 背景軍團 | 170 | **340** |
-| FPS | 60 | **60(零降檔)** |
+| C1 | K while standing | Guard-breaking lunge that pierces shields |
+| C2 | after 1 hit | **Launcher** into aerial combos |
+| C3 | after 2 hits | Triple strike, last hit **stuns** 2.6 s |
+| C4 | after 3 hits | Wide spin, knocks back |
+| C5 | after 4 hits | Rising cut into a sweep |
+| C6 | after 5 hits | Area burst: shockwave that knocks back everything around you |
 
-### 敵人種類
+### Gamepad (Xbox / PlayStation / XInput, plug and play)
 
-- **刀兵 / 槍兵**——基本雜兵,受「圍攻名額」限制輪流進攻。
-- **弓兵**(12 擊破後登場)——保持距離拉弓射擊,靠近會後退。前方有友軍擋線時不放箭。
-- **盾兵**(20 擊破後登場)——正面 120° 完全格擋普通攻擊,需用**蓄力強擊**、**無雙**或**繞到背後**才能打傷;破防時有加長硬直。
-- **騎兵**(事件)——地面出現紅色路徑預警後,數騎沿線高速衝鋒,撞飛路徑上的所有人(含敵方雜兵)。
-- **敵將 / 呂布**——多段連擊、抗硬直;呂布另有旋風斬、跳劈(紅圈預警)與血量 35% 以下的狂暴化。
+| Button | Action |
+|---|---|
+| Left stick / D-pad | Move (**analog**: push further to run faster) |
+| Right stick · `L2` `R2` | Camera |
+| `□`/`X` · `△`/`Y` · `×`/`A` · `○`/`B` | Attack · Charge · Jump · Musou |
+| `R1`/`RB` · `L1`/`LB` · `L3` | Guard · Sprint · Mount |
+| `Start` · `Select` | Pause · Difficulty (hero select) |
 
-### 戰場事件
+### Touch (phones & tablets)
 
-- **城牆箭雨**——地面出現數個紅圈警示,1.2 秒後箭矢落下(敵我通殺)。
-- **敵軍包抄**——玩家背後突然湧出一隊敵兵。
-- **騎兵突擊**——見上。
+Drag on the left half for a **floating virtual stick**. Drag on empty space on the right half to turn the camera.
+Buttons: **ATK** (hold for auto-combo), **C**, **JMP**, **MUSOU**, **GRD** (hold), **MNT**, and **Ⅱ** to pause.
+Multi-touch works, so you can move and attack at the same time. The game goes fullscreen, prefers landscape, and starts
+touch devices at medium quality. Button size and opacity are adjustable.
 
-事件由**導演壓力系統**依戰況觸發:連擊高、擊殺快時加壓;血量低於三成會自動放緩八秒。
+### Riding
 
-### 積木風格
+A horse waits on the battlefield. Walk up to it and press `R`. Riding gives speed 12 (16 when sprinting),
+**tramples** enemies at speed, `J` gives alternating side slashes and `K` a charging strike.
 
-- **真實積木零件**(武將 / 敵將 / 呂布 / 友軍):採用 **LDraw 官方零件庫**的實際小人零件——
-  `3626b` 頭、`973` 軀幹、`3818`/`3819` 手臂、`3820` 手、`3815` 胯、`3816`/`3817` 腿,
-  共 3,240 個三角面。零件資料已離線遞迴展開並**內嵌於 HTML**(149 KB),因此無須外部檔案、
-  零載入等待,仍維持雙擊即玩。組裝採用真實小人的 LDU 偏移(髖樞軸→頸 32 LDU、頸→頭頂 24 LDU),
-  比例與正品一致。零件以**雙面渲染**(LDraw 的 BFC 面朝向指令未解析,雙面可避免面被誤剔除)。
-- **程序化積木小人**(雜兵,`makeLegoMob`):圓柱頭 + 頂部圓凸、梯形軀幹、C 形夾手、方塊腿。
-  每個關節底下的零件以**頂點色烘焙後合併成單一 mesh**(21 → 10 draw calls),
-  全體共用一個 `vertexColors` 材質;同屏上限依效能檔 60 / 100 / **140** 隻
-- 兩種建模器回傳**完全相同的 R 介面**,因此戰鬥與姿勢系統對兩者一視同仁
-- **經典積木印刷臉**:512×256 CanvasTexture,以程式生成的圓柱 UV 繞頭一圈(接縫轉到腦後)。
-  依官方印刷比例重畫:**小而實心的黑橢圓眼 + 左上高光點**、細弧眉貼近眼睛、細線微笑兩端帶小勾、
-  嘴角笑紋與下巴淡線、鬍鬚用深棕而非純黑並加高光細線——目標是「一眼認出是樂高」:
-  - **劉備**:經典黑豆眼 + 溫和微笑 + 八字鬍 + 金冠
-  - **關羽**:深橘紅頭致敬紅臉 + **丹鳳眼**(上挑細長)+ 臥蠶眉 + 八字鬍與修長垂髯
-  - **張飛**:**環眼**(白眼白 + 大黑瞳)+ 怒眉 + 虯髯 + 亂髮件
-  - **雜兵**:經典黃臉笑容 + 斗笠
-- **死亡拆解**:敵兵被擊破時整組零件(頭 / 軀幹 / 腿 / 臂 / 帽)噴飛、落地彈跳、淡出;敵將與呂布零件數加倍
-- **顆粒(studs)**:擊破噴出金色圓凸,會磁吸飛向玩家,每顆回復少量無雙計量
-- **積木底板**:地面是帶顆粒網格的底板貼圖;城牆頂有整排圓凸;樹是堆疊圓盤 + 頂部圓凸;岩石是灰磚堆
-- **塑膠質感**:全場改用 Phong 材質(specular 高光),積木小人光澤更強、場景較柔
+### Bases & morale
 
-### 小知識
+Sishui has 3 camps and Hulao has 4 bases, all held by Dong Zhuo at the start. Each has a **garrison** (40 by default).
+KOs near the base reduce it (soldier 1, officer 6), and at zero you capture it: the flag changes and it stays yours.
+Bases held set **morale** (0 bases → 38, all → 90). Low morale spawns more enemies. High morale pushes the
+background armies visibly toward the gate.
 
-- 敵兵掉落 **肉包子**(回復體力)與 **酒**(回復無雙計量)。
-- 無雙亂舞有 cut-in 演出、全程無敵,結尾附大範圍衝擊波終結技。
-- 擊破敵將與呂布會進入慢鏡環繞運鏡。
-- 連擊達 10/30/60/120 會顯示稱號(快 / 猛 / 無雙 / 天下無雙)。
-- 擊破數里程碑(50/100/200/300/500/1000)會彈出戰功獎章。
-- 戰鬥時間越久天色越暗,呂布登場後直接入夜。
+### Enemies & events
 
-## 自我測試
+- **Swordsmen / spearmen**: basic troops that take turns attacking you
+- **Archers** (after 12 KOs): keep their distance and don't shoot through their own lines
+- **Shield troops** (after 20 KOs): block normal attacks from the front 120°; use charge attacks, Musou, or hit them from behind
+- **Cavalry charge**: a red path warning, then riders trample everyone on it
+- **Arrow rain** and **flank ambushes**, triggered by the director's pressure system: it pushes harder when you're on a streak
+  and backs off for 8 s when you drop below 30 % HP
 
-在網址後面加 **`?selftest`**(例:<https://brick-warriors.vercel.app/?selftest>),
-或在主控台執行 `await GAME.selftest()`,會在頁面內以 `tick()` 快轉跑完 31 項情境,約 15–20 秒:
+Enemies drop **meat buns** (HP) and **wine** (Musou). Defeating an officer triggers a slow-motion orbit shot.
+Combo titles appear at 10/30/60/120, and KO medals pop at 50/100/200/300/500/1000.
 
-- **系統**:開機攻擊模式 / 攻擊模式切入戰鬥不殘留移動 / 三位武將開局 / 三人無雙 / 無盡之陣 / 每日挑戰 /
-  暫停 → 設定存檔 / 中英切換 / 觸控 / 手把 / 主控台無錯誤
-- **成長與收集**:呂布未解鎖不可選 → 擊破解鎖 → 單騎出陣與天下無雙 / 等級升級與能力、存檔、攻擊模式不改存檔 /
-  戰功(真實擊破觸發百人斬、累計統計、一覽畫面)與服裝切換 / 撿武器匣不洗掉等級與背水加成
-- **引導與演出**:對白依序播出與配樂切換 / 戰前簡報(地圖有內容、簡報中不開打、重來跳過)/
-  情境式教學(依裝置、完成動作即關閉、不重複、可關閉)
-- **關卡流程**:虎牢關目標與城門 / 汜水關「攻陷營寨 → 華雄出關 → 溫酒斬華雄」/ 溫酒超時失敗 /
-  敵將招牌技(衝陣命中、齊射預警、反擊無傷)/ 洛陽「出逃 → 追上反擊 → 徐榮斷後 → 擊破」/
-  董卓逃出北門即敗北 / 燃燒瓦礫 / 戰役地圖 → 通關記錄 → 下一戰 → 重新出陣保留關卡 / 勝利結算與分享卡 / 敗北
-- **線上**:探測排行榜是否開通 → 結算頁登錄列顯示與否 / 暱稱欄打字不觸發遊戲按鍵 / 排行榜畫面切換與返回 /
-  伺服器拒絕異常成績。本機(模擬資料庫)另外實測登錄、較低分不覆蓋、改名、讀回、
-  埋點「開打 → 結算 → 中途離開」在統計中可見、切成未開通後的畫面;正式站只做唯讀檢查,不會寫入排行榜
-- **平衡回歸**:模擬玩家(不直接改遊戲狀態)驗證
-  「站在營寨持續普攻 60 秒內必定攻陷」與「普通難度疾走追擊可在董卓逃脫前擊破」——
-  這兩項抓到過真實的卡關 bug(舊版佔領公式在兵海中永遠是負數;董卓反擊計時器錯誤)
+## Difficulty
 
-- 零外部工具,也能直接驗證線上正式站
-- 每個測試用固定亂數種子;跑完會還原 `localStorage`(`musou.*`)、設定、語言與手把,不會污染存檔
-- 以「故意弄壞再跑」驗證過測試確實抓得到錯誤(無雙不結束、翻譯遺失、戰績漏存武將 id)
-- `GAME.selftest({only:'無雙'})` 只跑名稱含關鍵字的項目
+| Difficulty | Enemy HP | Enemy ATK | Enemy count | Boss HP |
+|---|---|---|---|---|
+| Easy | ×0.75 | ×0.45 | ×0.72 | ×0.75 |
+| Normal | ×1 | ×1 | ×1 | ×1 |
+| Chaos | ×1.35 | ×1.5 | ×1.2 | ×1.6 |
 
-## 技術備註
+## Guidance & presentation
 
-- **資料驅動關卡**:`STAGES.<id>` 描述競技場、出生點、生成方向、敵將 / BOSS 與出場時機、據點、背景軍團、
-  兵種出現時機、事件開關、任務目標、天色環境與場景建造函式;`loadStage()` 清除舊世界(只釋放非快取資源)後重建。
-  換關重建 10 次 GPU 幾何 / 貼圖數不變。把原本寫死的虎牢關搬進來時,以「結構指紋」(場景物件位置雜湊、據點、
-  軍團部署、出生點、敵將登場順序)比對重構前後,17 項零差異
-- **任務目標 `OBJ`**:defeat / capture / kills,支援 after(前一目標完成才出現)、within(限時,以遊戲內時間計,
-  慢動作與運鏡不吃掉玩家的時間)、optional、final,以及關卡自訂失敗條件 `OBJ.fail()`
-- **佈景工具組 `propKit`**:地面、關城(可開啟的鉸鏈城門)、峽谷岩壁、階梯積木山、城中房屋(可燃燒)、
-  旗幟 / 火盆 / 營帳 / 拒馬 / 箭樓 / 樹石散佈;大量方塊依顏色合併網格,一整排山或峭壁只佔少數 draw call
+- **Pre-battle briefing**: historical context, main and optional objectives, and a top-down map of the gates, bases,
+  Dong Zhuo's escape route and your starting position. Quick Battle and retries skip it.
+- **Contextual tutorial** on your first run: one hint at a time (move → combo → charge → guard → Musou → bases →
+  officers → horse → jump). The wording matches keyboard, gamepad or touch, and each hint closes once you do the move.
+  You can turn it off or reset it in Settings.
+- **Dialogue** with brick-face portraits for openings, officer entrances and defeats, boss arrivals, fallen allies,
+  low HP, victory and Dong Zhuo nearing the gate.
+- **Per-battle music**: Sishui is bright at 104 BPM, Hulao is 96 BPM, and Luoyang is an urgent 118 BPM chase.
+- **Share card** (`S` on the results screen): a 1200×630 card built from the current battlefield frame, with portrait,
+  mode, rank, KOs, combo and time. Share it (Web Share on mobile), copy the image, download it, or copy a one-line text
+  summary that includes the game link.
 
-- Three.js r160(importmap + ES Module,CDN 載入;離線時 watchdog 會顯示提示)
-- **統一輸入層**:`input.keys` 是一個 Proxy,讀取時取「鍵盤 ∪ 手把」的聯集,寫入落在鍵盤側;
-  手把與觸控各自把訊號合成成同樣的鍵碼(`input.pk` / `input.pressed`),類比量則走
-  `input.padAx` / `input.vAx`(觸控與 attract bot 共用)與 `input.vYaw`(觸控視角)。
-  因此**加手把、加觸控、加自動演示都沒有改動任何一行戰鬥程式**。
-- **i18n**:`I18N.zh` / `I18N.en` 兩張字典 + `T(key,...args)`(值可以是字串或函式);
-  資料表(武將 / 敵將 / 難度 / 屬性 / 據點 / 變異)各自掛一個 `en:{...}`,由 `LN(obj,field)` 取用。
-  靜態 DOM 用 `data-t`(textContent)與 `data-th`(innerHTML)標記,`applyLang()` 一次刷新,
-  並重建選單、卡片、難度列與操作說明表;選單項的 `lab`/`hint` 是 getter,所以切語言即時生效。
-  英文另有一組 `html[lang="en"]` 覆寫,把中文用的寬字距收窄。
-- **分享卡取像**:renderer 沒開 `preserveDrawingBuffer`,所以在結算的同一個 task 內
-  先 `present()` 再 `drawImage(renderer.domElement)`——這樣不必為了截圖付出整場的效能代價。
-- **SEO / 分享卡**:`<head>` 內含 description、Open Graph 與 Twitter Card
-  (`og:image` 目前指向相對路徑 `assets/og.png`,部署後需改成絕對網址並補 `og:url`)。
-- **後處理**:EffectComposer + UnrealBloomPass + OutputPass,ACES Filmic tone mapping;
-  bloom threshold 設在 1.0 之上,刀光 / 火花 / 衝擊環 / 火盆以 HDR 色強度(×1.6~1.9)超過閾值才發光,
-  天空與地面不會過曝。MSAA 由 `WebGLRenderTarget({samples:4, type:HalfFloatType})` 提供。
-- **三層兵海**:背景軍團(4 個 InstancedMesh × 200 instance,部署在競技場外圍兩翼、交錯 30Hz 更新、不投影)
-  + 互動兵(骨架模型,上限依效能檔 26/36/46)+ 屍體池(單一 InstancedMesh,26 具環形緩衝)。
-- **效能自適應**:`PERF` 依 FPS 遲滯切換三檔——調整 bloom、陰影、pixelRatio、敵量上限與軍團規模。
-- **導演壓力系統**:壓力值 P 由血量 / 連擊 / 擊殺速率 / BOSS 存活加權後平滑(τ≈2s),
-  映射到敵量上限、生成間隔、圍攻名額與事件觸發。
-- **積木小人建模**(`makeLegoHuman`):回傳與先前剛體 / 蒙皮版**完全相同的 R 介面**
-  (root/body/torso/head/armL·R/legL·R/weaponL·R),因此全部姿勢函式與戰鬥系統零修改。
-  軀幹用 `taperedBox()`(改 BoxGeometry 頂點後重算法線)、夾手用弧段 TorusGeometry、
-  頭部圓柱以 `thetaStart=-π` 讓 UV 接縫轉到腦後、`autoLimb=false` 保持積木的剛體感、
-  `legAmp=0.8` 縮小短腿擺幅防穿模。蒙皮版 `makeSkinnedHuman` 保留於程式中但已停用。
-- **拆解與顆粒**:零件池 60 件 + 顆粒池 70 顆,全部池化重用;顆粒有磁吸與拾取回無雙
-- **verlet 布料**:披風(6×6 質點)與戰裙(4 片)於角色 root 區域座標模擬,
-  頂排釘在軀幹骨、橢圓柱徑向碰撞、單側約束確保披風恆在背後;迭代次數隨 `PERF` 檔位調整。
-- 全部角色(玩家 / 雜兵 / 敵將 / 呂布 / 友軍)共用同一套積木建模器,姿勢動畫皆以關鍵影格函式驅動
-- 刀光軌跡(動態三角帶)、粒子火花、衝擊波環、傷害數字、鏡頭震動、hitstop、慢動作與過場運鏡
-- 戰鼓+五聲音階 BGM 與全部音效皆以 Web Audio API 即時合成
-- **陣營系統**:所有戰鬥單位帶 `side`(0 聯軍 / 1 董卓軍),每幀重建 `SIDE0`/`SIDE1` 清單;
-  敵方 AI 以 `pickTarget()` 取最近敵對單位(玩家有 ×0.55 仇恨加權),攻擊判定與投射物皆依陣營過濾。
-- **招式資料驅動**:`buildHeroMoves(id)` 依武器型態(長兵 / 雙持)參數化產生 6 段普攻 + C1~C6,
-  三武將共 36 招皆由既有姿勢原語(`pSweep`/`pSmash`/`pThrust`/`pSpin`/`pRising`/`pDualCross`…)組合而成。
-- **手把輸入**:`input.keys` 改為 Proxy,讀取時自動取「鍵盤 OR 手把」聯集、寫入落在鍵盤側,
-  因此手把只需把按鈕合成成同樣的鍵碼,**全部戰鬥與 UI 程式碼零修改**即可支援。
-  左搖桿為類比(死區可調),推桿量直接對應移動速度。
-- **選單引擎**:`buildMenu(el, items)` 支援 action / slider / choice / toggle 四種列型,
-  同一份資料同時吃鍵盤、手把與滑鼠(hover 移游標、click 觸發);左搖桿有重複輸入冷卻避免飛快跳選。
-- 遊戲內排程器(`schedule`)取代 setTimeout,使延遲事件正確受暫停與慢動作影響
+## Leaderboards & analytics
 
-### 除錯
+- **Boards**: Daily (one per day), Endless (wave first, then KOs), and each battle × difficulty.
+  Scores are sent **only when you press "Submit Score"** on the results screen. Each device keeps its best
+  score per board, and renaming yourself carries it over.
+- **Server checks**: clear time 15–3600 s, caps on KOs, combo and waves relative to time, and 12 submissions per IP per
+  minute. A browser game can't be made cheat-proof; this only rejects obviously impossible scores.
+- **Built-in analytics**: no third-party scripts and no personal data. The server only keeps daily totals:
+  starts, wins and losses with duration, when players are defeated, ranks, Endless waves, mid-battle quits,
+  language and device type.
+- **Backend**: `api/score.js`, `api/event.js`, `api/stats.js` (Vercel Functions) with Upstash Redis.
+  **Without a database**, the API returns `503 {enabled:false}`: the in-game board shows "not open yet", the submit
+  row is hidden, and nothing else is affected.
+- **Setup**: Vercel project → Storage / Marketplace → add **Upstash Redis** and connect it to the project
+  (this injects `KV_REST_API_URL` / `KV_REST_API_TOKEN`), then redeploy. To read stats, set `STATS_TOKEN` and open
+  `/api/stats?days=7&token=…` for plays, win rate, average clear time and quits per battle and difficulty.
+- **Local testing**: `.claude/serve.mjs` includes an in-memory Redis mock, so `/api/*` works locally.
+  `POST /__mock?on=0` simulates "not configured", and `?reset=1` clears the data.
 
-開發者主控台可用 `GAME` 物件:
+## Settings & language
+
+English is the default. Traditional Chinese can be selected in Settings and switches instantly without reloading.
+Saves from older versions switch to English once, and a later choice of Chinese is remembered.
+Every name, title, weapon, officer, base, difficulty, element, combo title and medal is translated.
+
+Settings (saved in `localStorage`): master / music / SFX volume · quality (auto by FPS / high / mid / low) ·
+camera sensitivity & invert · screen shake 0–150 % · gamepad rumble & dead zone · damage numbers · tutorial ·
+touch buttons (auto / on / off), size & opacity · reset save data.
+
+## Self-test
+
+Add **`?selftest`** to the URL (e.g. <https://brick.akiraxclaw.com/?selftest>), or run `await GAME.selftest()` in the
+console. The page fast-forwards the game with `tick()` through **31 scenarios** in about 15–20 s:
+
+- **System**: title-screen demo, no leftover input after entering battle, every hero spawns, every Musou, Endless,
+  Daily, pause → settings persist, language switch, touch, gamepad, no console errors
+- **Progression**: Lu Bu locked → unlocked by defeating him → solo sortie and Peerless; levels and saves;
+  achievements and outfits; weapon crates don't wipe level bonuses
+- **Guidance**: dialogue order and music changes, briefing, contextual tutorial
+- **Battles**: Hulao objectives and gate; Sishui camps → Hua Xiong sally → 60 s timer (and failing it);
+  officer signatures; Luoyang flee → catch → Xu Rong → defeat; Dong Zhuo escaping means defeat; burning debris;
+  campaign map → record → next battle; victory results and share card; defeat
+- **Online**: leaderboard detection, submit row shown or hidden, typing a nickname doesn't trigger game keys,
+  board navigation, and the server rejecting impossible scores. Locally, with the mock database, it also submits,
+  renames, reads back and checks analytics. On production it is read-only and never writes to the boards.
+- **Balance regressions**: a simulated player, using real inputs only, must capture a camp within 60 s and must catch
+  Dong Zhuo on Normal. Both checks have caught real soft-lock bugs.
+
+Each test uses a fixed random seed and restores `localStorage` (`musou.*`), settings, language and gamepad afterwards.
+The suite was checked by deliberately breaking the game and confirming the tests fail.
+`GAME.selftest({only:'無雙'})` runs only tests whose name contains the keyword. Test names are in Chinese.
+
+## Technical notes
+
+- **Data-driven stages**: `STAGES.<id>` describes the arena, spawns, officers and boss timing, bases, background armies,
+  unit unlocks, events, objectives, lighting and a scene builder. `loadStage()` tears down the old world, freeing only
+  uncached GPU resources, and rebuilds it. Moving the hard-coded Hulao map into this system was verified with a
+  17-field structural fingerprint, with zero differences.
+- **Objectives (`OBJ`)**: defeat / capture / kills, with `after`, `within` (in game time, so slow motion and cutscenes
+  don't eat the clock), `optional`, `final` and custom fail conditions.
+- **Scenery kit (`propKit`)**: ground, gatehouses with hinged gates, canyon walls, stepped brick mountains, burnable
+  houses, banners, braziers, tents, barricades and watchtowers. Blocks are merged by color, so a whole ridge costs only a few draw calls.
+- **Unified input**: `input.keys` is a Proxy that reads keyboard ∪ gamepad. Gamepad, touch and the title-screen bot all
+  synthesize the same key codes and analog axes, so adding them changed no combat code.
+- **i18n**: `I18N.zh` / `I18N.en` plus `T(key, …args)`. Data tables carry `en:{…}` read by `LN(obj, field)`.
+  Static DOM uses `data-t` / `data-th` / `data-tp`.
+- **Crowd rendering**: background armies (4 InstancedMesh × 200), interactive soldiers (cap 60 / 100 / 140 by
+  performance tier) and an instanced corpse pool. Each soldier's parts are vertex-color baked into one mesh per joint
+  (21 → 10 draw calls). 160 soldiers cost about 4.6 ms per frame.
+- **Crowd density**: enemies spawn in a ring 13–23 units around the player instead of at the gate. Far soldiers move
+  faster to catch up, stragglers are recycled, and they circle inside your attack range. The pressure system limits
+  how many attack at once, never how many are present.
+- **Adaptive performance**: `PERF` switches three tiers with hysteresis (bloom, shadows, pixel ratio, enemy caps, army size).
+- **Rendering**: EffectComposer + UnrealBloomPass (HDR threshold above 1.0, so only effects glow), ACES Filmic,
+  4× MSAA half-float targets. Verlet cloth for capes and skirts. Web Audio synthesizes all music and sound.
+- **Share capture**: the renderer doesn't use `preserveDrawingBuffer`. The results screen renders and then calls
+  `drawImage` in the same task, so screenshots cost nothing during play.
+
+### Debug console
 
 ```js
-GAME.step(5)                  // 快轉 5 秒(不渲染:GAME.step(5,{render:false}))
-GAME.PERF.force(0)            // 強制最低效能檔
-GAME.setDiff('shura')         // 切難度
-GAME.cavalry(); GAME.arrowRain(); GAME.flank()   // 手動觸發事件
-GAME.director.P               // 目前壓力值
-GAME.fps()                    // 平滑後 FPS
-GAME.player.moves.N           // 六段普攻招式表
-GAME.player.moves.C[3]        // C3 招式資料
-GAME.spawnDrop(GAME.player.pos,'wbox','fire')  // 生成炎屬性武器匣
-GAME.WEAPON.data              // 武器等級 / 屬性存檔
-GAME.bases                    // 據點狀態
-GAME.morale.v                 // 目前士氣
-GAME.SIDE0 / GAME.SIDE1       // 兩軍單位清單
-GAME.MOUNT                    // 坐騎狀態
-GAME.burstBricks(GAME.player.pos, GAME.player.rig.cfg, 10, 6)  // 手動拆解噴零件
-GAME.burstStuds(GAME.player.pos, 8)            // 手動噴顆粒
+GAME.step(5)                   // fast-forward 5 s (GAME.step(5,{render:false}) to skip rendering)
+GAME.PERF.force(0)             // force the lowest performance tier
+GAME.setDiff('shura')          // change difficulty
+GAME.cavalry(); GAME.arrowRain(); GAME.flank()   // trigger events
+GAME.director.P                // current pressure
+GAME.spawnDrop(GAME.player.pos,'wbox','fire')    // spawn a Flame weapon crate
+GAME.bases; GAME.morale.v; GAME.MOUNT            // bases, morale, horse state
 ```
 
-## 素材授權
+## Credits
 
-積木小人零件幾何取自 **[LDraw.org 零件庫](https://library.ldraw.org/)**,
-授權 **[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)**。
-LDraw 是社群維護的開放積木 CAD 資料庫,與 LEGO 集團無隸屬關係。
-零件經離線展開為三角形資料後內嵌於 `index.html`;
-取得管道為 [gkjohnson/ldraw-parts-library](https://github.com/gkjohnson/ldraw-parts-library) 靜態鏡像。
+Minifigure part geometry comes from the **[LDraw.org parts library](https://library.ldraw.org/)**, licensed
+**[CC BY 4.0](https://creativecommons.org/licenses/by/4.0/)** and obtained through the
+[gkjohnson/ldraw-parts-library](https://github.com/gkjohnson/ldraw-parts-library) mirror. The parts were expanded
+offline and embedded in `index.html`.
 
-其餘所有內容(雜兵與馬匹建模、武器、場景、貼圖、動畫、特效、音樂音效)皆為本專案程式生成。
+Everything else (soldiers, horses, weapons, scenery, textures, animation, effects, music and sound) is generated
+by this project's code.
+
+BRICK MUSOU is an independent fan project. It is **not affiliated with, sponsored or endorsed by the LEGO Group**.
+LDraw is a community-maintained open brick CAD library, also unaffiliated with the LEGO Group.
