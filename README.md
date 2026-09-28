@@ -170,14 +170,16 @@ background armies visibly toward the gate.
 
 ### Enemies & events
 
-- **Swordsmen / spearmen**: basic troops that take turns attacking you
+- **Swordsmen / spearmen**: basic troops that take turns attacking you. They fall to two normal hits or one charge attack (at Liu Bei's stats; archers are frailer, shield troops sturdier)
 - **Archers** (after 12 KOs): keep their distance and don't shoot through their own lines
 - **Shield troops** (after 20 KOs): block normal attacks from the front 120°; use charge attacks, Musou, or hit them from behind
 - **Cavalry charge**: a red path warning, then riders trample everyone on it
 - **Arrow rain** and **flank ambushes**, triggered by the director's pressure system: it pushes harder when you're on a streak
   and backs off for 8 s when you drop below 30 % HP
 
-Enemies drop **meat buns** (HP) and **wine** (Musou). Defeating an officer triggers a slow-motion orbit shot.
+Enemies drop **meat buns** (HP) and **wine** (Musou). KOs have tiered impact: normal and charge-attack KOs freeze the frame for different lengths,
+the more soldiers one swing fells the heavier the freeze and camera punch, and the Musou finisher hits hardest
+(no extra freeze during the Musou barrage itself, so it never stutters). Defeating an officer triggers a slow-motion orbit shot.
 Combo titles appear at 10/30/60/120, and KO medals pop at 50/100/200/300/500/1000.
 
 ## Difficulty
@@ -228,7 +230,7 @@ Saves from older versions switch to English once, and a later choice of Chinese 
 Every name, title, weapon, officer, base, difficulty, element, combo title and medal is translated.
 
 Settings (saved in `localStorage`): master / music / SFX volume · quality (auto by FPS / high / mid / low) ·
-camera sensitivity & invert · screen shake 0–150 % · gamepad rumble & dead zone · damage numbers · tutorial ·
+camera sensitivity & invert · screen shake 0–150 % · gamepad rumble & dead zone · damage numbers (officers and bosses only; soldiers show none) · tutorial ·
 touch buttons (auto / on / off), size & opacity · reset save data.
 
 ## Self-test

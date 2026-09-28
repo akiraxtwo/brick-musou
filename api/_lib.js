@@ -72,10 +72,11 @@ export function boardKey(board) {
 }
 
 // 合理性檢查:純前端遊戲無法根本防作弊,只擋明顯不可能的數字
-// 60 秒挑戰的兵海密度與無雙頻率高得多(實測每秒可達 20 擊破),所以每秒上限另外放寬
+// 每秒擊破上限:bot 實測(不死、不停進攻)虎牢關張飛約 14、呂布約 20,60 秒挑戰呂布約 16;
+// 原本劇情關上限 12,強的玩家打出來的真實成績會被擋,所以放寬到 25(60 秒挑戰 30)
 export function plausible(r, key = '') {
   const t = Number(r.time), k = Number(r.kills), c = Number(r.combo), w = Number(r.wave || 0);
-  const kps = key === 'lb:rush' ? 30 : 12;
+  const kps = key === 'lb:rush' ? 30 : 25;
   if (!Number.isFinite(t) || t < 15 || t > 3600) return 'time';
   if (!Number.isInteger(k) || k < 0 || k > t * kps + 200) return 'kills';
   if (!Number.isInteger(c) || c < 0 || c > k * 6 + 300) return 'combo';

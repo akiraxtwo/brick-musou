@@ -1729,8 +1729,9 @@ const CHARS = {
 };
 const CHAR_ORDER=['liubei','guanyu','zhangfei'];
 
+// 雜兵血量:劉備(攻 23)普攻兩下、蓄力一下倒;弓兵 ×.75、盾兵 ×1.7 由此換算
 const MOB_DEF = {
-  hp:78, atk:3.6, speed:2.7, scale:.94, radius:.55,
+  hp:38, atk:3.6, speed:2.7, scale:.94, radius:.55,
   attackRange:2.0, attackCd:[1.6,2.8],
 };
 // 敵將名冊(出場時機由各關卡的 officers 清單決定)
@@ -4680,7 +4681,8 @@ function applyMobShadow(e){
 
 const scene=new THREE.Scene();
 scene.fog=new THREE.Fog(0xC49A6C, 95, 330);
-const camera=new THREE.PerspectiveCamera(55, window.innerWidth/window.innerHeight, .1, 900);
+const CAM_FOV=55;
+const camera=new THREE.PerspectiveCamera(CAM_FOV, window.innerWidth/window.innerHeight, .1, 900);
 
 // ---------- 後處理 ----------
 let composer=null, bloomPass=null;
@@ -5431,7 +5433,7 @@ function updateDayNight(rdt){
 // ============================================================
 // 特效:火花粒子 / 塵土 / 衝擊環 / 刀光軌跡 / 傷害數字
 // ============================================================
-const FX={ sparks:null, dusts:[], rings:[], warns:[], dmgs:[], shakes:0 };
+const FX={ sparks:null, dusts:[], rings:[], warns:[], dmgs:[], shakes:0, punch:0, punchV:0, kf:0 };
 { // 火花 Points 系統
   const CAP=1800;
   const g=new THREE.BufferGeometry();
@@ -5638,6 +5640,8 @@ function updateDmg(dt){
 }
 // 畫面震動 / 慢動作 / 閃光
 function addShake(a){ FX.shakes=Math.min(FX.shakes+a*SETTINGS.d.shake,1.2); }
+// 鏡頭衝擊:瞬間推近 + 視角收窄再彈回(0~1;跟畫面震動共用同一個設定)
+function camPunch(a){ FX.punchV=Math.min(Math.max(FX.punchV, a*SETTINGS.d.shake), 1); }
 function slowmo(scale,dur){ S.slowScale=scale; S.slowT=dur; }
 let hurtGlow=0, musGlow=0;
 function hurtFlash(){ if(!S.attract) hurtGlow=1; }
@@ -5957,7 +5961,7 @@ function updateStatus(e,dt){
     if(e.burnTick<=0){
       e.burnTick=.5;
       e.hp-=e.burnDmg;
-      dmgNum(V3(e.pos.x,e.pos.y,e.pos.z), e.burnDmg, '');
+      if(!e.isMob) dmgNum(V3(e.pos.x,e.pos.y,e.pos.z), e.burnDmg, '');
       sparks(V3(e.pos.x,1.0+e.pos.y,e.pos.z),0xff7a30,3,{speed:1.2,up:2.4,grav:-1,life:.45});
       if(e.hp<=0 && e.alive){ e.die({pos:e.pos,isPlayer:true,pow:0}, {kb:2}, 0, 1); }
     }
@@ -6772,6 +6776,14 @@ class Player{
     this.gainMusou(1.7);
     S.hitstop=Math.max(S.hitstop, h.dmg>=1.5?.07:.035);
   }
+  // 擊破雜兵的手感分級:普攻擊破 < 蓄力擊破 < 一刀多殺(同一幀越多越重,有上限)
+  // 無雙連段中不加(每 0.1 秒一波,會變成一直卡頓);終結技那一下照算
+  onKillFx(h){
+    if(this.state==='musou' && !this.musFin) return;
+    const n=++FX.kf, heavy=h.dmg>=1.5;
+    S.hitstop=Math.max(S.hitstop, (heavy?.085:.05) + Math.min(n-1,5)*.01);
+    if(heavy || n>=3) camPunch(heavy? .18+Math.min(n,8)*.05 : Math.min(n,8)*.05);
+  }
   faceNearestEnemy(){
     let best=null,bd=5.2;
     for(const e of SIDE1){
@@ -7014,6 +7026,7 @@ class Player{
           shockRing(this.pos,0xffffff,D.finRing*.55,.4);
           dust(this.pos,14,2);
           AUD.boom(); musouFlashFx(); slowmo(.25,.45); addShake(D.fin.shake);
+          camPunch(1); S.hitstop=Math.max(S.hitstop,.1);
           this.musou=0; HUD.setMus(0);
           this.musLight.intensity=0;
         }
@@ -7327,7 +7340,8 @@ class Enemy{
     this.hp-=dmg;
     entFlash(this);
     const crit=h.dmg>=1.8;
-    dmgNum(V3(this.pos.x,this.pos.y,this.pos.z),dmg, crit?'crit':(this.state==='launched'||this.pos.y>.2?'mus':''));
+    // 雜兵不跳數字(兵海裡滿屏數字只會蓋住畫面);敵將與 BOSS 保留,看得出血量進度
+    if(!this.isMob) dmgNum(V3(this.pos.x,this.pos.y,this.pos.z),dmg, crit?'crit':(this.state==='launched'||this.pos.y>.2?'mus':''));
     sparks(V3(this.pos.x,1.15+this.pos.y,this.pos.z),
            src.isPlayer? (src.elem&&src.elem.hit? src.elem.hit : src.char.trail) : 0xffd0a0,
            crit?16:8, {speed:crit?8:5});
@@ -7382,6 +7396,7 @@ class Enemy{
     this.rig.root.visible=false;
     this.gone=true;                       // 立刻回收(不再播倒地動畫)
     sparks(V3(this.pos.x,1.2,this.pos.z),0xF5CD2F,10,{speed:6,up:5});
+    if(this.isMob && src===player) player.onKillFx(h);
     director.onKill(this,src);
   }
   update(dt,aiOn){
@@ -8332,6 +8347,7 @@ function updateCamera(dt,rdt){
   sun.position.set((player?player.pos.x:0)-45,60,(player?player.pos.z:0)-35);
   sun.target.position.set(player?player.pos.x:0,0,player?player.pos.z:0);
   if(cam.cine){
+    FX.punch=FX.punchV=0; setCamFov(CAM_FOV);
     const c=cam.cine; c.t+=rdt;
     c.update(Math.min(c.t/c.dur,1));
     if(c.keepShake && FX.shakes>0){
@@ -8366,8 +8382,19 @@ function updateCamera(dt,rdt){
     camera.position.y+=rand(-1,1)*FX.shakes*.22;
     camera.position.z+=rand(-1,1)*FX.shakes*.26;
   }
+  // 鏡頭衝擊:約 50ms 推近到位,再用 0.3 秒彈回(用真實時間,頓幀期間照樣動)
+  if(FX.punchV>0 || FX.punch>0){
+    FX.punch=damp(FX.punch,FX.punchV,30,rdt);
+    FX.punchV=Math.max(0,FX.punchV-3.2*rdt);
+    if(FX.punchV===0 && FX.punch<.003) FX.punch=0;
+    _punchDir.subVectors(camLook,camera.position).normalize();
+    camera.position.addScaledVector(_punchDir,FX.punch*1.4);
+    setCamFov(CAM_FOV-FX.punch*6);
+  }
   camera.lookAt(camLook);
 }
+const _punchDir=V3();
+function setCamFov(f){ if(camera.fov!==f){ camera.fov=f; camera.updateProjectionMatrix(); } }
 
 // ============================================================
 // 選將畫面
@@ -9062,7 +9089,7 @@ function cleanupBattle(){
   for(const d of dmgPool){ d.live=false; d.el.style.display='none'; }
   for(const r of ringPool) r.m.visible=false;
   for(const d of dustPool) d.m.visible=false;
-  FX.sparks.data.length=0; FX.shakes=0;
+  FX.sparks.data.length=0; FX.shakes=0; FX.punch=FX.punchV=0; setCamFov(CAM_FOV);
   annQ.length=0; annBusy=0; $('announce').innerHTML='';
   director.reset();
   morale.reset();
@@ -9207,7 +9234,7 @@ const ATTRACT={
     if(this.atkT<=0 && bd<3.6){
       this.atkT=.15+Math.random()*.09;
       if(player.musou>=100) input.pressed.add('KeyL');
-      else if(player.comboIdx>=2 && Math.random()<.26) input.pressed.add('KeyK');
+      else if(player.state==='attack' && player.atkIndex>=2 && Math.random()<.26) input.pressed.add('KeyK');
       else input.pressed.add('KeyJ');
     }
   },
@@ -9340,7 +9367,9 @@ function captureFrame(){
 // ---------- 60 秒挑戰 ----------
 const RUSH_SECS=60;
 const RUSH_MOBS=90;                               // 同屏雜兵數(固定;桌機 140 / 手機低畫質 60 會讓擊破數差 2 倍以上)
-const RUSH_RANK={ S:600, A:400, B:200 };          // 擊破數評價門檻(bot 實測:劉備約 550、關羽約 610、張飛 / 呂布約 800;站著放一次無雙約 220)
+// 擊破數評價門檻。bot 實測(雜兵血量 38):劉備約 550、關羽約 640、張飛約 760、呂布約 940;
+// 開場放一次無雙後站著不動約 60~95。血量從 78 降到 38 前後幾乎一樣:擊破數卡在敵兵走過來的速度,不是砍幾刀
+const RUSH_RANK={ S:600, A:400, B:200 };
 function rushTick(){
   if(S.rushDone || S.mode!=='play') return;
   const left=Math.max(0, RUSH_SECS-director.time), s=Math.ceil(left);   // 用遊戲內時間:暫停 / 慢動作不吃秒數
@@ -9510,6 +9539,7 @@ function tick(rdtRaw){
   const rdt=Math.min(rdtRaw,.05);
   fps=lerp(fps,1/Math.max(rdtRaw,1e-4),.04);
   let dt=rdt;
+  FX.kf=0;                                  // 本幀擊破數(擊破手感分級用)
   if(S.hitstop>0){ S.hitstop-=rdt; dt*=.1; }
   if(S.slowT>0){ S.slowT-=rdt; dt*=S.slowScale; if(S.slowT<=0) S.slowScale=1; }
   S.time+=rdt;
