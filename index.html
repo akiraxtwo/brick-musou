@@ -105,6 +105,14 @@ body.touch #objpanel{top:118px; font-size:12px}
 #wavebox{text-align:right; line-height:1; margin-top:8px}
 #wavenum{font-size:30px; color:#ffb0a0; text-shadow:0 0 10px rgba(0,0,0,.9),0 2px 3px #000}
 #wavebox .wlab{font-size:12px; letter-spacing:.4em; color:var(--gold); padding-left:.4em}
+/* 60 秒挑戰的倒數:放在畫面正上方(取代士氣條的位置),不跟右側的連擊數擠在一起 */
+#rushbox{position:absolute; top:10px; left:50%; transform:translateX(-50%); text-align:center; line-height:1; pointer-events:none}
+#rushnum{display:block; font-size:46px; color:#ffe08a; text-shadow:0 0 14px rgba(0,0,0,.9),0 3px 4px #000; font-variant-numeric:tabular-nums}
+#rushnum.hurry{color:#ff6a5e}                              /* 最後 10 秒 */
+#rushbox .wlab{font-size:11px; letter-spacing:.4em; color:var(--gold); padding-left:.4em}
+body.rush #mrwrap{display:none}
+body.touch #rushnum{font-size:34px}
+body.touch.rush #medal{top:66px}                           /* 手機:獎章移到倒數下方(挑戰中沒有對白框) */
 @keyframes kpop{0%{transform:scale(1.45)}100%{transform:scale(1)}}
 
 #mrwrap{position:absolute; top:20px; left:50%; transform:translateX(-50%); text-align:center}
@@ -579,6 +587,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
     <div id="wavebox" class="hidden"><span id="wavenum">1</span><span class="wlab" data-t="hud.wave">波</span></div>
   </div>
   <div id="mrwrap"><div class="mrlab" data-t="hud.morale">士　氣</div><div id="mrbar"><div class="fill" id="mrfill"></div></div></div>
+  <div id="rushbox" class="hidden"><span id="rushnum">60</span><span class="wlab" data-t="hud.time">秒</span></div>
   <div id="combo"><span id="combonum">0</span><span class="clab" data-t="hud.combo">連擊</span></div>
   <div id="bossbar" class="hidden">
     <div id="bossname"><small>敵將</small>呂布</div>
@@ -1105,9 +1114,10 @@ const I18N={
   // --- 主選單 / 畫面 ---
   'title.logo':'BRICK MUSOU', 'title.sub':'BATTLE OF HULAO GATE',
   'title.hint':'↑↓ Select ・ Enter Confirm',
-  'menu.quick':'Quick Battle', 'menu.sortie':'Sortie', 'menu.survival':'Endless Array',
+  'menu.quick':'Quick Battle', 'menu.sortie':'Sortie', 'menu.survival':'Endless Array', 'menu.rush':'60-Second Rush',
   'menu.daily':'Daily Challenge', 'menu.settings':'Settings', 'menu.howto':'Controls', 'menu.records':'Records',
   'menu.selectHero':'Choose a hero', 'menu.endless':'Infinite waves',
+  'menu.rushHint':(b)=>b? `Best: ${b} KOs` : 'How many can you cut down in 60 seconds?',
   'menu.resume':'Resume', 'menu.restart':'Restart Battle', 'menu.toSelect':'Hero Select', 'menu.toTitle':'Main Menu',
   'menu.back':'Back',
   'set.title':'SETTINGS', 'set.hint':'↑↓ Select ・ ←→ Adjust ・ Esc Back',
@@ -1148,10 +1158,13 @@ const I18N={
   'stage.sub':'March on the traitor Dong Zhuo ─ the Flying General bars the way',
   'stage.who':(n,z)=>`${n} ${z} ── Sortie`,
   'stage.whoSurv':(n,z)=>`${n} ${z} ── Endless Array`,
+  'stage.whoRush':(n,z)=>`${n} ${z} ── 60-Second Rush`,
   'stage.go':'Strike down Dong Zhuo! All units, charge!',
+  'stage.goRush':'60 seconds! Cut them all down!', 'ann.timeUp':'TIME UP!',
+  'stage.rush.chapter':'CHALLENGE', 'stage.rush.name':'60-Second Rush', 'stage.rush.sub':'Cut down as many as you can in 60 seconds',
   // --- HUD ---
   'hud.musou':'MUSOU','hud.musouReady':'─ MUSOU RAGE READY (L) ─',
-  'hud.kills':'SLAIN','hud.wave':'WAVE','hud.morale':'MORALE','hud.combo':'COMBO',
+  'hud.kills':'SLAIN','hud.wave':'WAVE','hud.time':'SEC','hud.morale':'MORALE','hud.combo':'COMBO',
   'hud.comboT':(t)=>`COMBO ・ ${t}`,
   'hud.officer':'OFFICER','hud.flying':'FLYING GENERAL',
   'hud.hint':'<b>WASD</b> Move ・ <b>J</b> Combo ・ <b>K</b> Charge ・ <b>Space</b> Jump ・ <b>H</b> Guard ・ <b>L</b> Musou ・ <b>Shift</b> Sprint ・ <b>Esc</b> Pause',
@@ -1159,7 +1172,7 @@ const I18N={
   'credit':'Brick part geometry © LDraw.org parts library ・ CC BY 4.0 ・ Not affiliated with the LEGO Group',
   'menu.achv':'Achievements',
   'menu.board':'Leaderboard', 'lb.title':'LEADERBOARD', 'lb.hint':'← → Board ・ Tab Difficulty ・ Esc Back',
-  'lb.daily':'Daily', 'lb.surv':'Endless', 'lb.nickPh':'Nickname (1–12)', 'lb.submit':'Submit Score',
+  'lb.daily':'Daily', 'lb.surv':'Endless', 'lb.rush':'60s Rush', 'lb.nickPh':'Nickname (1–12)', 'lb.submit':'Submit Score',
   'lb.off':'Leaderboards are not open yet.', 'lb.offHint':'Coming soon', 'lb.loading':'Loading…',
   'lb.err':'Connection failed. Try again later.', 'lb.empty':'No entries yet — be the first!',
   'lb.total':(n)=>`${n} players`, 'lb.dayN':(d)=>`Day ${d}`,
@@ -1167,6 +1180,7 @@ const I18N={
   'lb.rankN':(r)=>`Ranked #${r}!`, 'lb.notBetter':(r)=>`Not above your best (currently #${r})`,
   'lb.bad':'Score rejected by server check', 'lb.rate':'Too many submissions — wait a minute',
   'lb.surv.s':(w)=>`Wave ${w}`, 'lb.stage.d':(g,t)=>`${g||'─'} ・ ${t}`, 'lb.daily.d':(k)=>`${k} KOs`,
+  'lb.rush.s':(k)=>`${k} KOs`, 'lb.rush.d':(g,c)=>`${g||'─'} ・ ${c} combo`,
   'ach.title':'ACHIEVEMENTS',
   'ach.hint':'Esc / ○ Back',
   'ach.sum':(n,t)=>`${n} / ${t} unlocked`,
@@ -1351,14 +1365,14 @@ const I18N={
   'ann.txtCopied':'Text copied','ann.copyFail':'Copy failed',
   'ann.dailyN':(d)=>`Daily Challenge #${d}`,
   // --- 結算 ---
-  'res.win':'VICTORY','res.lose':'DEFEAT',
+  'res.win':'VICTORY','res.lose':'DEFEAT','res.timeUp':'TIME UP',
   'res.winSub':'Lu Bu has fallen ─ a great victory at Hulao Gate',
   'res.loseSub':'A hundred battles, and the name undone…… rally, and raise the banner again',
   'res.hero':'Hero','res.diff':'Difficulty','res.kills':'Slain','res.combo':'Max Combo',
   'res.offs':'Officers Slain','res.time':'Battle Time','res.rank':'RANK',
   'res.best':' ── NEW BEST!','res.share':'Share (S)','res.retry':'Again (R)','res.back':'Change Hero (Esc)',
   'res.daily':(d,st)=>`　Daily #${d} ・ ${st}-day streak`,
-  'res.waveN':(w)=>`Wave ${w}`,
+  'res.waveN':(w)=>`Wave ${w}`, 'res.rushSub':(k)=>`${k} slain in 60 seconds`,
   'pause.title':'PAUSED','pause.hint':'↑↓ Select ・ Enter Confirm ・ Esc Resume',
   // --- 分享 ---
   'share.title':'SHARE','share.x':'Post on X','share.now':'Share','share.copyImg':'Copy Image',
@@ -1371,13 +1385,14 @@ const I18N={
   // --- 模式 ---
   'mode.story':'Battle of Hulao Gate',
   'mode.daily':(d,m)=>`Daily #${d} ・ ${m}`,
-  'mode.survival':(w)=>`Endless Array ・ Wave ${w}`,
+  'mode.survival':(w)=>`Endless Array ・ Wave ${w}`, 'mode.rush':'60-Second Rush',
   'daily.hint':(d,c,m)=>`#${d} ${c}・${m}`,'daily.done':(r)=>`・best ${r}`,
   'surv.best':(w)=>`Best: wave ${w}`,
   'best.line':(d,r)=>`${d}: ${r.char} ${r.kills} slain・${r.combo} combo・rank ${r.rank}`,
   'best.none':(d)=>`${d}: no record`,
   'best.surv':(r)=>`Endless Array: ${r.char} wave ${r.wave}・${r.kills} slain`,
   'best.survNone':'Endless Array: no record',
+  'best.rush':(r)=>`60-Second Rush: ${r.char} ${r.kills} slain`, 'best.rushNone':'60-Second Rush: no record',
   // --- 觸控 ---
   'tb.atk':'ATK','tb.skill':'C','tb.jump':'JMP','tb.musou':'MUSOU','tb.guard':'GRD','tb.mount':'MNT',
   'rotate':'Please rotate your device<br>to landscape for the best experience',
@@ -1386,9 +1401,10 @@ const I18N={
 // 中文原文表(en 查不到時的來源,也是 zh 模式的內容)
 I18N.zh={
   'title.logo':'積木無雙','title.sub':'虎 牢 關 之 戰','title.hint':'↑↓ 選擇 ・ Enter 確定',
-  'menu.quick':'快速出陣','menu.sortie':'出　　陣','menu.survival':'無盡之陣',
+  'menu.quick':'快速出陣','menu.sortie':'出　　陣','menu.survival':'無盡之陣','menu.rush':'60 秒挑戰',
   'menu.daily':'每日挑戰','menu.settings':'設　　定','menu.howto':'操作說明','menu.records':'戰　　績',
   'menu.selectHero':'選擇武將','menu.endless':'無限波次',
+  'menu.rushHint':(b)=>b? `最高 ${b} 擊破` : '60 秒內能擊破幾人?',
   'menu.resume':'繼續遊戲','menu.restart':'重新出陣','menu.toSelect':'返回選將','menu.toTitle':'回主選單',
   'menu.back':'返　　回',
   'set.title':'設　定','set.hint':'↑↓ 選擇 ・ ←→ 調整 ・ Esc 返回',
@@ -1420,16 +1436,19 @@ I18N.zh={
   'stage.chapter':'第 一 章 　 反董卓聯合軍','stage.name':'虎牢關之戰',
   'stage.sub':'討伐國賊董卓 ─ 陣前有飛將呂布擋道',
   'stage.who':(n,z)=>`${n} ${z} ── 出陣`,'stage.whoSurv':(n,z)=>`${n} ${z} ── 無盡之陣`,
+  'stage.whoRush':(n,z)=>`${n} ${z} ── 60 秒挑戰`,
   'stage.go':'討伐董卓!全軍突擊!',
+  'stage.goRush':'限時 60 秒!殺出一條血路!', 'ann.timeUp':'時間到!',
+  'stage.rush.chapter':'挑　　戰', 'stage.rush.name':'60 秒挑戰', 'stage.rush.sub':'六十秒內,擊破越多越好',
   'hud.musou':'無雙','hud.musouReady':'─ 無雙亂舞可發動(L 鍵)─',
-  'hud.kills':'擊破','hud.wave':'波','hud.morale':'士　氣','hud.combo':'連擊',
+  'hud.kills':'擊破','hud.wave':'波','hud.time':'秒','hud.morale':'士　氣','hud.combo':'連擊',
   'hud.comboT':(t)=>`連擊 ・ ${t}`,'hud.officer':'敵將','hud.flying':'飛將',
   'hud.hint':'<b>WASD</b>移動 <b>J</b>六段連擊 <b>K</b>蓄力C技(連段第N段後接CN) <b>空白</b>跳躍 <b>H/右鍵</b>格擋 <b>L</b>無雙 <b>Shift</b>疾走 <b>Esc</b>暫停',
   'hud.mute':'M 靜音','hud.pad':(n)=>`🎮 ${n} 已連線`,
   'credit':'積木零件幾何 © LDraw.org 零件庫 ・ CC BY 4.0 ・ 與 LEGO 集團無隸屬關係',
   'menu.achv':'戰　　功',
   'menu.board':'排 行 榜', 'lb.title':'排 行 榜', 'lb.hint':'← → 切換榜單 ・ Tab 切換難度 ・ Esc 返回',
-  'lb.daily':'每日挑戰', 'lb.surv':'無盡之陣', 'lb.nickPh':'暱稱(1–12 字)', 'lb.submit':'登錄排行榜',
+  'lb.daily':'每日挑戰', 'lb.surv':'無盡之陣', 'lb.rush':'60 秒挑戰', 'lb.nickPh':'暱稱(1–12 字)', 'lb.submit':'登錄排行榜',
   'lb.off':'排行榜尚未開放', 'lb.offHint':'尚未開放', 'lb.loading':'讀取中…',
   'lb.err':'連線失敗,請稍後再試', 'lb.empty':'尚無紀錄 ── 搶下第一名!',
   'lb.total':(n)=>`共 ${n} 人`, 'lb.dayN':(d)=>`第 ${d} 日`,
@@ -1437,6 +1456,7 @@ I18N.zh={
   'lb.rankN':(r)=>`已登錄 ── 第 ${r} 名!`, 'lb.notBetter':(r)=>`未超越你的最佳紀錄(目前第 ${r} 名)`,
   'lb.bad':'成績未通過伺服器檢查', 'lb.rate':'登錄太頻繁,請一分鐘後再試',
   'lb.surv.s':(w)=>`第 ${w} 陣`, 'lb.stage.d':(g,t)=>`${g||'─'} ・ ${t}`, 'lb.daily.d':(k)=>`${k} 擊破`,
+  'lb.rush.s':(k)=>`${k} 擊破`, 'lb.rush.d':(g,c)=>`${g||'─'} ・ 連擊 ${c}`,
   'ach.title':'戰　功',
   'ach.hint':'Esc / ○ 返回',
   'ach.sum':(n,t)=>`已達成 ${n} / ${t}`,
@@ -1612,13 +1632,13 @@ I18N.zh={
   'ann.imgCopied':'已複製圖片','ann.imgFail':'此瀏覽器不支援複製圖片',
   'ann.txtCopied':'已複製文字','ann.copyFail':'複製失敗',
   'ann.dailyN':(d)=>`每日挑戰 #${d}`,
-  'res.win':'勝利','res.lose':'敗北',
+  'res.win':'勝利','res.lose':'敗北','res.timeUp':'時間到',
   'res.winSub':'敵將呂布已被擊破 ─ 虎牢關大捷','res.loseSub':'將軍百戰身名裂……重整旗鼓,再舉義旗',
   'res.hero':'出陣武將','res.diff':'難度','res.kills':'擊破數','res.combo':'最大連擊',
   'res.offs':'討取敵將','res.time':'作戰時間','res.rank':'戰功評價',
   'res.best':' ── 最高戰績更新!','res.share':'分享戰績（S）','res.retry':'再次出陣（R）','res.back':'更換武將（Esc）',
   'res.daily':(d,st)=>`　每日挑戰 #${d}・連續 ${st} 天`,
-  'res.waveN':(w)=>`第 ${w} 波`,
+  'res.waveN':(w)=>`第 ${w} 波`, 'res.rushSub':(k)=>`60 秒擊破 ${k} 人`,
   'pause.title':'暫　停','pause.hint':'↑↓ 選擇 ・ Enter 確定 ・ Esc 繼續',
   'share.title':'分享戰績','share.x':'發到 X','share.now':'分　享','share.copyImg':'複製圖片','share.copyTxt':'複製文字',
   'share.dl':'下　載','share.close':'關　閉（Esc）','share.alt':'戰績卡',
@@ -1627,13 +1647,14 @@ I18N.zh={
   'share.line':(mode,bar,rank,hero,kills,combo,time)=>
     `積木無雙 ${mode}\n${bar} ${rank} ・ ${hero}\n擊破 ${kills} ・ 連擊 ${combo} ・ ${time}`,
   'mode.story':'虎牢關之戰','mode.daily':(d,m)=>`每日挑戰 #${d} ・ ${m}`,
-  'mode.survival':(w)=>`無盡之陣 ・ 第 ${w} 波`,
+  'mode.survival':(w)=>`無盡之陣 ・ 第 ${w} 波`, 'mode.rush':'60 秒挑戰',
   'daily.hint':(d,c,m)=>`#${d} ${c}・${m}`,'daily.done':(r)=>`・已達 ${r}`,
   'surv.best':(w)=>`最高 第 ${w} 波`,
   'best.line':(d,r)=>`${d}:${r.char} ${r.kills} 擊破・連擊 ${r.combo}・評價 ${r.rank}`,
   'best.none':(d)=>`${d}:尚無戰績`,
   'best.surv':(r)=>`無盡之陣:${r.char} 第 ${r.wave} 波・${r.kills} 擊破`,
   'best.survNone':'無盡之陣:尚無戰績',
+  'best.rush':(r)=>`60 秒挑戰:${r.char} ${r.kills} 擊破`, 'best.rushNone':'60 秒挑戰:尚無戰績',
   'tb.atk':'攻','tb.skill':'技','tb.jump':'跳','tb.musou':'無雙','tb.guard':'擋','tb.mount':'馬',
   'rotate':'請將裝置轉為橫向<br>以獲得最佳體驗',
 };
@@ -7762,6 +7783,7 @@ const director={
   // --- 事件 ---
   tryEvents(dt){
     for(const k in this.ev) this.ev[k]-=dt;
+    if(S.gameMode==='rush') return;                               // 60 秒挑戰:不出隨機伏兵 / 騎兵 / 箭雨,每場條件一致
     if(!player||!player.alive||S.cineLock) return;
     if(this.P>.75 && this.ev.flank<=0 && this.mobCount()<PERF.mobCap-6){
       this.ev.flank=rand(20,30);
@@ -7773,7 +7795,7 @@ const director={
     }
   },
   update(dt){
-    this.time+=dt;
+    if(!S.rushDone) this.time+=dt;                                 // 60 秒挑戰時間到就停錶(結算與分享顯示 1:00)
     this.updatePressure(dt);
     this.tryEvents(dt);
     if((this.retally-=dt)<=0){ this.retally=.8; this.retally_(); this.recycleFar(); }
@@ -7781,7 +7803,8 @@ const director={
     if(this.mercyT>0) this.tokensMax = Math.min(this.tokensMax, 3);   // 危急時同時進攻者砍到 2
     let base=lerp(45, PERF.mobCap, this.P);
     if(S.gameMode==='survival') base=Math.max(base, Math.min(45+6*(this.wave-1), PERF.mobCap));
-    const target=Math.round(base*DIFF.countMul*morale.enemyMul());
+    // 60 秒挑戰:同屏雜兵固定(不隨畫質檔 / 士氣變),不同裝置的擊破數才能放在同一張排行榜上比
+    const target= S.gameMode==='rush'? RUSH_MOBS : Math.round(base*DIFF.countMul*morale.enemyMul());
     this.spawnT-=dt;
     if(this.spawnT<=0){
       const cur=this.mobCount(), gap=target-cur;
@@ -7795,7 +7818,7 @@ const director={
     if(S.gameMode==='survival'){
       this.waveT+=dt;
       if(this.waveT>=40) this.nextWave();
-    }else{
+    }else if(S.gameMode!=='rush'){                               // 60 秒挑戰只有雜兵
       if(this.officerIdx<STAGE.officerList.length){
         const O=STAGE.officerList[this.officerIdx];
         if(O.trigger) this.officerIdx++;                       // 事件召喚的敵將不走時程
@@ -7815,7 +7838,7 @@ const director={
       if(player.mounted) ACH.bump('ride');
     }
     if(src && src.noCredit){ e.noCredit=1; }
-    const credit=!e.noCredit;
+    const credit=!e.noCredit && !S.rushDone;   // 60 秒挑戰:時間到之後的擊破不算
     if(e.isMob){
       if(credit){ this.kills++; this.krate+=1; baseKill(e);
         const r=Math.random();
@@ -8008,7 +8031,7 @@ const OBJ={
   list:[], ended:false,
   start(){
     this.ended=false;
-    const on = S.gameMode!=='survival';
+    const on = S.gameMode!=='survival' && S.gameMode!=='rush';
     this.list = on? (STAGE.objectives||[]).map(o=>({ ...o, state:o.after?'locked':'active', prog:0, hit:false })) : [];
     for(const o of this.list) if(o.escape && STAGE.bossStart)      // 董卓登場前先顯示起始距離
       o.prog=Math.round(Math.hypot(STAGE.exit.x-STAGE.bossStart.x, STAGE.exit.z-STAGE.bossStart.z));
@@ -8343,13 +8366,15 @@ function begin(){
   AUD.ensure();
   const id=HERO_ORDER[sel.idx];
   if(heroLocked(id)){ AUD.guard(); addShake(.05); announce(T('sel.locked'),'ui quick'); return; }
-  startBattle(id, {stage:S.pickStage||'hulao', brief:true});
+  if(S.selRush) startBattle(id, {rush:true});
+  else startBattle(id, {stage:S.pickStage||'hulao', brief:true});
 }
 // 戰績鍵:虎牢關沿用舊版的「難度」鍵,其他關卡為「關卡:難度」
 function bestKey(stage,diff){ return stage==='hulao'? diff : `${stage}:${diff}`; }
 // 重新出陣時沿用本場的模式與關卡
 function replayOpts(){
   if(S.gameMode==='survival') return {survival:true};
+  if(S.gameMode==='rush') return {rush:true};
   if(S.gameMode==='daily' && S.daily) return {daily:S.daily};
   return {stage:STAGE.id};
 }
@@ -8562,6 +8587,7 @@ const NET={
     // 可登錄的成績
     let board=null, score=0;
     if(S.gameMode==='survival'){ board='surv'; score=director.wave*10000+Math.min(kills,9999); }
+    else if(S.gameMode==='rush'){ board='rush'; score=kills; }
     else if(S.gameMode==='daily'){ board='daily:'+S.daily.day; score=Math.round(kills+combo*1.5+(win?400:0)); }
     else if(win && pts!=null){ board=`stage:${STAGE.id}:${DIFF.id}`; score=Math.max(0,Math.round(pts*10)); }
     this.res = board && t>=15 && player? { board, score, hero:S.currentChar, kills, combo, time:t, rank, wave:S.gameMode==='survival'? director.wave : 0 } : null;
@@ -8591,10 +8617,10 @@ addEventListener('pagehide',()=>{ if(NET.run && (S.mode==='play'||S.mode==='paus
 addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') NET.flush(true); });
 
 const BOARD={
-  TABS:['daily','surv','sishui','hulao','luoyang'],
+  TABS:['daily','surv','sishui','hulao','luoyang','rush'],
   tab:0, diff:'normal', seq:0, data:null,
-  key(){ const t=this.TABS[this.tab]; return t==='daily'? 'daily:'+DAILY.idx() : t==='surv'? 'surv' : `stage:${t}:${this.diff}`; },
-  label(t){ return t==='daily'? T('lb.daily') : t==='surv'? T('lb.surv') : T(`stage.${t}.name`); },
+  key(){ const t=this.TABS[this.tab]; return t==='daily'? 'daily:'+DAILY.idx() : t==='surv'? 'surv' : t==='rush'? 'rush' : `stage:${t}:${this.diff}`; },
+  label(t){ return t==='daily'? T('lb.daily') : t==='surv'? T('lb.surv') : t==='rush'? T('lb.rush') : T(`stage.${t}.name`); },
   open(){
     this.diff=BEST.lastDiff();
     $('title').classList.add('hidden'); $('board').classList.remove('hidden');
@@ -8614,7 +8640,7 @@ const BOARD={
   head(){
     const t=this.TABS[this.tab];
     $('lbtabs').innerHTML=this.TABS.map((x,i)=>`<span data-i="${i}" class="${i===this.tab?'on':''}">${this.label(x)}</span>`).join('');
-    $('lbdiffs').classList.toggle('hidden', t==='daily'||t==='surv');
+    $('lbdiffs').classList.toggle('hidden', t==='daily'||t==='surv'||t==='rush');
     $('lbdiffs').innerHTML=DIFF_ORDER.map(d=>`<span data-d="${d}" class="${d===this.diff?'on':''}">${LN(DIFFS[d],'label')}</span>`).join('');
     $('lbtabs').querySelectorAll('span').forEach(el=>el.onclick=()=>this.setTab(+el.dataset.i));
     $('lbdiffs').querySelectorAll('span').forEach(el=>el.onclick=()=>this.setDiff(el.dataset.d));
@@ -8637,8 +8663,8 @@ const BOARD={
     const tm=s=>`${Math.floor((s||0)/60)}:${String((s||0)%60).padStart(2,'0')}`;
     const row=x=>{
       const hero=CHARS[x.hero]? LN(CHARS[x.hero],'name') : '─';
-      const score= t==='surv'? T('lb.surv.s',Math.floor(x.score/10000)) : x.score;
-      const det= t==='surv'||t==='daily'? T('lb.daily.d',x.kills) : T('lb.stage.d',x.grade,tm(x.time));
+      const score= t==='surv'? T('lb.surv.s',Math.floor(x.score/10000)) : t==='rush'? T('lb.rush.s',x.score) : x.score;
+      const det= t==='rush'? T('lb.rush.d',x.grade,x.combo) : t==='surv'||t==='daily'? T('lb.daily.d',x.kills) : T('lb.stage.d',x.grade,tm(x.time));
       return `<tr class="${x.me?'me':''}"><td class="r">${x.rank}</td><td class="n">${esc(x.nick)}</td><td>${esc(hero)}</td><td class="d">${esc(det)}</td><td class="s">${score}</td></tr>`;
     };
     let h=`<table>${d.rows.map(row).join('')}`;
@@ -8706,6 +8732,10 @@ function buildAllMenus(){
       run:()=>{ setDiff(BEST.lastDiff()); AUD.ensure();
                 for(const id of ['title','select']) $(id).classList.add('hidden');
                 startBattle(lastChar(), {stage:lastStage()}); } },
+    { get lab(){ return T('menu.rush'); }, type:'action',
+      get hint(){ const r=BEST.get('rush'); return T('menu.rushHint', r? r.kills : 0); },
+      run:()=>{ AUD.ensure(); for(const id of ['title','select']) $(id).classList.add('hidden');
+                startBattle(lastChar(),{rush:true}); } },
     { get lab(){ return T('menu.sortie'); }, type:'action', get hint(){ return T('menu.selectStage'); }, run:()=>openCampaign() },
     { get lab(){ return T('menu.survival'); }, type:'action',
       get hint(){ const r=BEST.get('survival'); return r? T('surv.best',r.wave) : T('menu.endless'); },
@@ -8792,6 +8822,8 @@ function showBest(){
   });
   const sv=BEST.get('survival');
   lines.push(sv? T('best.surv',recL(sv)) : T('best.survNone'));
+  const rr=BEST.get('rush');
+  lines.push(rr? T('best.rush',recL(rr)) : T('best.rushNone'));
   announce(T('ann.records'),'ui', lines.join('　/　'));
 }
 function toTitle(){
@@ -8839,6 +8871,8 @@ function cleanupBattle(){
   input.vAx=[0,0]; input.vActive=false; input.vYaw=0;   // 清掉攻擊模式 bot / 觸控殘留的虛擬軸
   if(_rndOrig){ Math.random=_rndOrig; _rndOrig=null; }
   S.gameMode='story'; S.mut=null; S.daily=null;
+  if(S.rushDiffPrev){ DIFF=DIFFS[S.rushDiffPrev]; S.rushDiffPrev=null; }   // 60 秒挑戰結束:還原玩家原本選的難度
+  S.rushDone=false; document.body.classList.remove('rush');
   if(player){ if(player.mounted) player.dismount(); player.dispose(); player=null; }
   MOUNT.hide();
   for(const e of enemies) e.remove();
@@ -8876,8 +8910,9 @@ function cleanupBattle(){
 }
 // 開場卡 / 戰前簡報期間,先把本關會登場的敵將與 BOSS 建一次模:印刷貼圖與合併幾何進快取、貼圖先上傳 GPU,
 // 登場時就不用當場畫貼圖(手機上約一幀的停頓)。一次建一位、之間讓出主執行緒,不卡開場動畫;建好的模型直接丟掉
-function prewarmStage(survival){
-  const defs = survival? Object.values(OFFICER_DEFS) : [...STAGE.officerList];   // 無盡之陣輪流派出全部敵將
+function prewarmStage(){
+  if(S.gameMode==='rush') return;                                   // 60 秒挑戰只有雜兵
+  const defs = S.gameMode==='survival'? Object.values(OFFICER_DEFS) : [...STAGE.officerList];   // 無盡之陣輪流派出全部敵將
   if(STAGE.bossDef) defs.push(STAGE.bossDef);
   const token = prewarmStage.token = (prewarmStage.token||0)+1;
   const next=()=>{
@@ -8911,6 +8946,9 @@ function spawnAllies(playerId){
 let _rndOrig=null;
 function startBattle(charId, opt={}){
   cleanupBattle();
+  // 模式要在 OBJ.start 之前定好(原本在後面才設,無盡之陣會誤帶虎牢關的劇情目標)
+  S.gameMode = opt.daily? 'daily' : opt.survival? 'survival' : opt.rush? 'rush' : 'story';
+  if(opt.rush){ S.rushDiffPrev=DIFF.id; DIFF=DIFFS.normal; }   // 60 秒挑戰固定普通難度,分數才能公平比較
   loadStage(opt.stage || 'hulao');
   S.stageId=STAGE.id;
   S.dayT=STAGE.env.dusk.start; applyDayT(S.dayT);   // 每場從關卡的起始天色開始(原本會沿用上一場的夜色)
@@ -8918,9 +8956,8 @@ function startBattle(charId, opt={}){
   OBJ.start();
   // 開場卡文字依關卡
   for(const [sel,k] of [['.chapter','chapter'],['h1','name'],['.sub','sub']]){
-    const el=$('stagecard').querySelector(sel); el.dataset.t=`stage.${STAGE.id}.${k}`; el.textContent=T(el.dataset.t);
+    const el=$('stagecard').querySelector(sel); el.dataset.t= S.gameMode==='rush'? `stage.rush.${k}` : `stage.${STAGE.id}.${k}`; el.textContent=T(el.dataset.t);
   }
-  S.gameMode = opt.daily? 'daily' : (opt.survival? 'survival' : 'story');
   S.mut = opt.daily? opt.daily.mut.k : null;
   S.daily = opt.daily || null;
   if(opt.daily){   // 固定種子:同一天的生成序列完全一致
@@ -8951,14 +8988,18 @@ function startBattle(charId, opt={}){
     return;
   }
   try{ localStorage.setItem('musou.last', charId); if(S.gameMode==='story') localStorage.setItem('musou.lastStage', STAGE.id); }catch(e){}
-  prewarmStage(!!opt.survival);
+  prewarmStage();
   TOUCH.goFullscreen();
   const scEl=$('stagecard');
   if(opt.daily) announce(T('ann.dailyN',opt.daily.day),'ui', `${LN(opt.daily.mut,'n')} ── ${LN(opt.daily.mut,'d')}`);
   $('wavebox').classList.toggle('hidden', S.gameMode!=='survival');
   $('wavenum').textContent='1';
+  $('rushbox').classList.toggle('hidden', S.gameMode!=='rush');
+  document.body.classList.toggle('rush', S.gameMode==='rush');     // 60 秒挑戰的版面(倒數取代士氣條、獎章讓位)
+  $('rushnum').textContent=String(RUSH_SECS); $('rushnum').classList.remove('hurry');
   if(opt.brief && S.gameMode==='story'){ openBrief(); return; }
   if(opt.survival) $('stagewho').textContent=T('stage.whoSurv',LN(C,'name'),LN(C,'zi'));
+  if(opt.rush) $('stagewho').textContent=T('stage.whoRush',LN(C,'name'),LN(C,'zi'));
   scEl.classList.remove('hidden'); scEl.style.opacity=1;
   S.mode='intro'; S.introT=2.4;
   $('hud').classList.remove('hidden');
@@ -9007,6 +9048,7 @@ const ATTRACT={
   stop(){ input.vAx=[0,0]; input.vActive=false; },
 };
 function toSelect(){
+  S.selRush = S.gameMode==='rush';        // 從 60 秒挑戰來的:選好武將後回到挑戰
   cleanupBattle();
   $('title').classList.add('hidden');
   $('hud').classList.add('hidden');
@@ -9018,8 +9060,10 @@ function toSelect(){
   S.pickStage=S.pickStage||lastStage();
   refreshSelectLocks(); buildCards(); refreshWeaponUI(); setSelIdx(clamp(sel.idx,0,HERO_ORDER.length-1));
   const sub=$('seltitle').querySelector('.sub');
-  sub.dataset.t=`stage.${S.pickStage}.name`; sub.textContent=T(sub.dataset.t);
+  sub.dataset.t= S.selRush? 'stage.rush.name' : `stage.${S.pickStage}.name`; sub.textContent=T(sub.dataset.t);
   setDiff(DIFF.id);
+  $('diffrow').classList.toggle('hidden', !!S.selRush);           // 挑戰固定普通難度
+  if(S.selRush){ const r=BEST.get('rush'); $('bestline').textContent=T('menu.rushHint', r? r.kills : 0); }
   refreshWeaponUI();
   S.mode='select';
 }
@@ -9058,13 +9102,18 @@ function showResults(win){
     $('roffs').textContent=T('res.waveN',w);
     BEST.put('survival',{ cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t, wave:w });
   }
+  else if(S.gameMode==='rush'){
+    const k=director.kills;
+    rank = k>=RUSH_RANK.S?'S' : k>=RUSH_RANK.A?'A' : k>=RUSH_RANK.B?'B' : 'C';
+    $('ressub').textContent = T('res.rushSub',k);
+  }
   else if(win){
     pts=(director.kills+(player?player.maxCombo:0)*1.5+(player?player.hp/player.maxHp:0)*60-director.time/5
               + OBJ.optionalDone()*25)*DIFF.scoreMul;          // 每個次要目標 +25
     rank=pts>=190?'S':pts>=150?'A':pts>=110?'B':'C';
   }
   const rl=$('rankletter'); rl.textContent=rank; rl.className=rank==='S'?'S':'';
-  const isBest=BEST.put(bestKey(STAGE.id,DIFF.id),{cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t});
+  const isBest=BEST.put(S.gameMode==='rush'? 'rush' : bestKey(STAGE.id,DIFF.id),{cid:S.currentChar, char:C.name, kills:director.kills, combo:player?player.maxCombo:0, rank, time:t});
   $('ressub').textContent += isBest? T('res.best') : '';
   if(S.gameMode==='daily'){
     const score=director.kills+(player?player.maxCombo:0)*1.5+(win?400:0);
@@ -9099,7 +9148,7 @@ function showResults(win){
     const nx=CAMPAIGN.next(STAGE.id); showNext=!!(nx && CAMPAIGN.unlocked(nx));
   }
   $('btn-next').classList.toggle('hidden', !showNext);
-  $('resword').textContent = win? T('res.win') : T('res.lose');
+  $('resword').textContent = !win? T('res.lose') : S.gameMode==='rush'? T('res.timeUp') : T('res.win');
   $('rdiff').textContent = LN(DIFF,'label');
   $('results').classList.remove('hidden');
 }
@@ -9122,7 +9171,25 @@ function captureFrame(){
     _shareBG=cv;
   }catch(e){ _shareBG=null; }
 }
+// ---------- 60 秒挑戰 ----------
+const RUSH_SECS=60;
+const RUSH_MOBS=90;                               // 同屏雜兵數(固定;桌機 140 / 手機低畫質 60 會讓擊破數差 2 倍以上)
+const RUSH_RANK={ S:600, A:400, B:200 };          // 擊破數評價門檻(bot 實測:劉備約 550、關羽約 610、張飛 / 呂布約 800;站著放一次無雙約 220)
+function rushTick(){
+  if(S.rushDone || S.mode!=='play') return;
+  const left=Math.max(0, RUSH_SECS-director.time), s=Math.ceil(left);   // 用遊戲內時間:暫停 / 慢動作不吃秒數
+  const el=$('rushnum');
+  if(el.textContent!==String(s)){ el.textContent=s; el.classList.toggle('hurry', s<=10); }
+  if(s>=1 && s<=5 && s<S.rushTick){ S.rushTick=s; announce(String(s),'red big quick'); AUD.guard(); }
+  if(left<=0){
+    // 時間到:敵兵停手、玩家不再受傷(不會在結算前戰死),之後的擊破不算
+    S.rushDone=true; S.cineLock=true;
+    announce(T('ann.timeUp'),'red big'); AUD.gong(true); slowmo(.3,1.2);
+    S.resultTimer=2.2; S.resultWin=true;
+  }
+}
 function modeLabel(){
+  if(S.gameMode==='rush') return T('mode.rush');
   if(S.gameMode==='daily') return T('mode.daily',S.daily.day,LN(S.daily.mut,'n').replace(/\u3000/g,''));
   if(S.gameMode==='survival') return T('mode.survival',director.wave);
   return T(`stage.${STAGE.id}.name`);
@@ -9351,12 +9418,21 @@ function tick(rdtRaw){
       scEl.classList.add('hidden'); scEl.style.opacity=1;
       S.mode='play';
       NET.begin();
-      announce(T('stage.go'),'');
-    TUTOR.start();
-    DLG.say(S.currentChar==='lubu'? 'lubu' : (STAGE.id==='hulao'? 'zhangfei' : 'liubei'), `start.${STAGE.id}${S.currentChar==='lubu'?'.solo':''}`);
-      spawnAllies(S.currentChar);
-      director.prespawn();
-      if(STAGE.onStart) STAGE.onStart();
+      if(S.gameMode==='rush'){
+        // 60 秒挑戰:沒有友軍(擊破全算自己的)、沒有劇情台詞;開場無雙全滿,一開打就有爽點
+        announce(T('stage.goRush'),'');
+        TUTOR.start();
+        player.musou=100; HUD.setMus(100);
+        S.rushTick=6;
+        director.prespawn();
+      }else{
+        announce(T('stage.go'),'');
+        TUTOR.start();
+        DLG.say(S.currentChar==='lubu'? 'lubu' : (STAGE.id==='hulao'? 'zhangfei' : 'liubei'), `start.${STAGE.id}${S.currentChar==='lubu'?'.solo':''}`);
+        spawnAllies(S.currentChar);
+        director.prespawn();
+        if(STAGE.onStart) STAGE.onStart();
+      }
     }
   }
   else if(S.mode==='play'){
@@ -9387,6 +9463,7 @@ function tick(rdtRaw){
   if((S.mode==='play'||S.attract)&&player){
     director.update(dt);
     OBJ.update();
+    if(S.gameMode==='rush' && !S.attract) rushTick();
     HUD.setMus(player.musou);
     HUD.setHP(player.hp,player.maxHp);
     let bb=null;
@@ -9747,6 +9824,31 @@ const SELFTEST={
       SETTINGS.d.tutorial=0; localStorage.removeItem('musou.tut'); X.enterPlay('guanyu'); X.step(1.2);
       X.expect($('tutor').classList.contains('hidden'), '關閉教學後仍顯示提示');
       return {};
+    }],
+    ['60 秒挑戰:固定難度、只有雜兵、倒數計時、時間到結算', ()=>{ const X=SELFTEST;
+      localStorage.removeItem('musou.best'); BEST.load();
+      setDiff('shura');                                       // 選將畫面選修羅 → 挑戰仍固定普通
+      X.enterPlay('guanyu',{rush:true});
+      X.expect(S.gameMode==='rush' && DIFF.id==='normal', `應為 60 秒挑戰 + 普通難度:${S.gameMode} ${DIFF.id}`);
+      X.expect(!OBJ.list.length, `60 秒挑戰不應有關卡目標:${OBJ.list.map(o=>o.id)}`);
+      X.expect(!enemies.some(e=>e.kind==='ally'), '60 秒挑戰不應有友軍');
+      X.expect(player.musou>=100, `開場無雙應全滿:${player.musou}`);
+      X.expect(!$('rushbox').classList.contains('hidden') && $('wavebox').classList.contains('hidden'), '倒數計時未顯示');
+      X.stepSafe(8);                                          // 等兵海圍上來,放無雙(測試裡玩家不會自己攻擊)
+      input.pressed.add('KeyL'); X.stepSafe(22);
+      X.expect(!enemies.some(e=>e.alive && (e.kind==='officer'||e.kind==='boss')), '不應出現敵將 / BOSS');
+      const sec=Number($('rushnum').textContent);             // 倒數用遊戲內時間(無雙的慢動作會讓它比實際步數慢)
+      X.expect(sec===Math.ceil(RUSH_SECS-director.time) && sec<60, `倒數未更新:${sec}(遊戲時間 ${director.time.toFixed(1)})`);
+      for(let i=0;i<60 && S.mode!=='victory';i++) X.stepSafe(1);   // 跑到時間到 + 結算延遲
+      X.expect(S.mode==='victory', `時間到應進結算,實為 ${S.mode}`);
+      const k=director.kills;
+      X.expect(k>0 && NET.res && NET.res.board==='rush' && NET.res.score===k, `成績錯誤:${k} ${JSON.stringify(NET.res)}`);
+      X.expect(BEST.get('rush') && BEST.get('rush').kills===k, '未記錄 60 秒挑戰最佳成績');
+      X.expect($('resword').textContent===T('res.timeUp'), `結算標題應為「時間到」:${$('resword').textContent}`);
+      toSelect();
+      X.expect(DIFF.id==='shura', `挑戰結束後應還原原本的難度:${DIFF.id}`);
+      X.expect(S.selRush && $('diffrow').classList.contains('hidden'), '從挑戰回選將:應隱藏難度、選好武將後回到挑戰');
+      return { 擊破:k };
     }],
     ['無盡之陣:波次與重新出陣', ()=>{ const X=SELFTEST;
       X.enterPlay('guanyu',{survival:true});

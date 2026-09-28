@@ -84,6 +84,7 @@ down, they kneel for 25 s and then return. They never die permanently, but each 
 |---|---|
 | **Campaign** | The three battles above. |
 | **Quick Battle** | Jumps straight into your last battle with your last hero and difficulty. |
+| **60-Second Rush** | Cut down as many as you can in 60 seconds. Normal difficulty and a fixed crowd of 90 soldiers on every device, so scores are comparable; no officers, bosses or random events; musou starts full. Ranks S 600 / A 400 / B 200 KOs, with its own leaderboard. |
 | **Endless Array** | Infinite waves, one every 40 s. Each wave adds 7 % enemy HP and 5 % attack. An officer arrives every 3 waves, and Lu Bu returns every 6. Rank S at wave 12. |
 | **Daily Challenge** | Seeded by the date: **everyone in the world gets the same hero, difficulty and mutation** that day, plus the same opening formation of 48 soldiers. Tracks your streak. |
 
@@ -203,7 +204,7 @@ Combo titles appear at 10/30/60/120, and KO medals pop at 50/100/200/300/500/100
 
 ## Leaderboards & analytics
 
-- **Boards**: Daily (one per day), Endless (wave first, then KOs), and each battle × difficulty.
+- **Boards**: Daily (one per day), Endless (wave first, then KOs), 60-Second Rush (KOs), and each battle × difficulty.
   Scores are sent **only when you press "Submit Score"** on the results screen. Each device keeps its best
   score per board, and renaming yourself carries it over.
 - **Server checks**: clear time 15–3600 s, caps on KOs, combo and waves relative to time, and 12 submissions per IP per

@@ -60,9 +60,10 @@ export function cleanNick(s) {
 }
 export const cleanCid = s => (/^[a-z0-9]{8,24}$/.test(String(s || '')) ? String(s) : null);
 
-// 排行榜鍵:stage:<關卡>:<難度> / surv / daily:<日>
+// 排行榜鍵:stage:<關卡>:<難度> / surv / rush / daily:<日>
 export function boardKey(board) {
   if (board === 'surv') return 'lb:surv';
+  if (board === 'rush') return 'lb:rush';
   let m = /^daily:(\d{1,5})$/.exec(board || '');
   if (m) return `lb:daily:${m[1]}`;
   m = /^stage:([a-z]+):([a-z]+)$/.exec(board || '');
@@ -71,10 +72,12 @@ export function boardKey(board) {
 }
 
 // 合理性檢查:純前端遊戲無法根本防作弊,只擋明顯不可能的數字
-export function plausible(r) {
+// 60 秒挑戰的兵海密度與無雙頻率高得多(實測每秒可達 20 擊破),所以每秒上限另外放寬
+export function plausible(r, key = '') {
   const t = Number(r.time), k = Number(r.kills), c = Number(r.combo), w = Number(r.wave || 0);
+  const kps = key === 'lb:rush' ? 30 : 12;
   if (!Number.isFinite(t) || t < 15 || t > 3600) return 'time';
-  if (!Number.isInteger(k) || k < 0 || k > t * 12 + 200) return 'kills';
+  if (!Number.isInteger(k) || k < 0 || k > t * kps + 200) return 'kills';
   if (!Number.isInteger(c) || c < 0 || c > k * 6 + 300) return 'combo';
   if (w && (!Number.isInteger(w) || w > t / 35 + 2)) return 'wave';
   if (!HEROES.includes(r.hero)) return 'hero';
@@ -88,6 +91,7 @@ const OPTIONAL_MAX = 4;                                     // 每關次要目�
 export function scoreCap(key, r) {
   const k = Number(r.kills), c = Number(r.combo), t = Number(r.time), w = Number(r.wave || 0);
   if (key === 'lb:surv') return w >= 1 ? w * 10000 + Math.min(k, 9999) : -1;           // 波數 × 10000 + 擊破
+  if (key === 'lb:rush') return t <= 62 ? k : -1;                                        // 60 秒挑戰:分數 = 擊破數
   if (key.startsWith('lb:daily:')) return Math.ceil(k + c * 1.5 + 400) + 1;            // 擊破 + 連擊 × 1.5 + 勝利 400
   const m = /^lb:stage:[a-z]+:([a-z]+)$/.exec(key);                                    // 戰功 × 10
   if (m) return Math.ceil((k + c * 1.5 + 60 + OPTIONAL_MAX * 25 - t / 5) * (SCORE_MUL[m[1]] || 1) * 10) + 2;

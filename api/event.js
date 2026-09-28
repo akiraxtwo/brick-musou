@@ -2,7 +2,7 @@ import { enabled, json, redis, rateLimited, STAGES, DIFFS, HEROES } from './_lib
 
 // POST /api/event {events:[{n:'session'|'start'|'end'|'quit'|'share', ...}]}
 // 只做每日彙總計數(ev:YYYY-MM-DD 雜湊),不儲存任何個別玩家資料
-const MODES = ['story', 'survival', 'daily'];
+const MODES = ['story', 'survival', 'daily', 'rush'];
 const ok = (v, list) => (list.includes(v) ? v : 'x');
 
 export default {

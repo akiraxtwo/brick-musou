@@ -48,7 +48,7 @@ async function submit(request) {
   try { b = await request.json(); } catch (e) { return json({ error: 'json' }, 400); }
   const key = boardKey(b.board), nick = cleanNick(b.nick), cid = cleanCid(b.cid);
   if (!key || !nick || !cid) return json({ error: 'fields' }, 400);
-  const bad = plausible(b);
+  const bad = plausible(b, key);
   if (bad) return json({ error: 'implausible', field: bad }, 422);
   const score = Math.round(Number(b.score));
   if (!Number.isFinite(score) || score < 0 || score > 1e9) return json({ error: 'score' }, 400);
