@@ -1,4 +1,4 @@
-import { enabled, disabled, json, redis, rateLimited, boardKey, plausible, cleanNick, cleanCid } from './_lib.js';
+import { enabled, disabled, json, redis, rateLimited, boardKey, plausible, scoreCap, cleanNick, cleanCid } from './_lib.js';
 
 // GET  /api/score?board=stage:hulao:normal&cid=xxx → 前 20 名 + 自己的名次
 // POST /api/score {board, cid, nick, hero, score, kills, combo, time, rank, wave}
@@ -52,6 +52,7 @@ async function submit(request) {
   if (bad) return json({ error: 'implausible', field: bad }, 422);
   const score = Math.round(Number(b.score));
   if (!Number.isFinite(score) || score < 0 || score > 1e9) return json({ error: 'score' }, 400);
+  if (score > scoreCap(key, b)) return json({ error: 'implausible', field: 'score' }, 422);
 
   const member = `${nick}#${cid}`;
   const [oldMember] = await redis([['HGET', `lbc:${key}`, cid]]);

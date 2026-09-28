@@ -80,3 +80,16 @@ export function plausible(r) {
   if (!HEROES.includes(r.hero)) return 'hero';
   return null;
 }
+
+// 分數上限:依前端的計分公式,用登錄上來的擊破 / 連擊 / 時間 / 波數算出「最多能拿幾分」,
+// 擋掉「數據合理、分數亂填」的直接 POST(只設上限:改名重送較低的分數仍合法)
+const SCORE_MUL = { easy: 0.8, normal: 1, shura: 1.3 };   // 與前端 DIFFS.scoreMul 一致
+const OPTIONAL_MAX = 4;                                     // 每關次要目標數上限(目前最多 3,每個 +25)
+export function scoreCap(key, r) {
+  const k = Number(r.kills), c = Number(r.combo), t = Number(r.time), w = Number(r.wave || 0);
+  if (key === 'lb:surv') return w >= 1 ? w * 10000 + Math.min(k, 9999) : -1;           // 波數 × 10000 + 擊破
+  if (key.startsWith('lb:daily:')) return Math.ceil(k + c * 1.5 + 400) + 1;            // 擊破 + 連擊 × 1.5 + 勝利 400
+  const m = /^lb:stage:[a-z]+:([a-z]+)$/.exec(key);                                    // 戰功 × 10
+  if (m) return Math.ceil((k + c * 1.5 + 60 + OPTIONAL_MAX * 25 - t / 5) * (SCORE_MUL[m[1]] || 1) * 10) + 2;
+  return -1;
+}

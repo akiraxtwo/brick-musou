@@ -427,6 +427,7 @@ body.touch .cn-name{font-size:18px}
 #share{background:rgba(4,3,2,.9); backdrop-filter:blur(4px); z-index:50}
 #shareimg{display:block; width:min(560px,84vw); border:1px solid rgba(217,185,110,.5); margin:0 auto 10px}
 #sharetext{font-size:12px; letter-spacing:.08em; color:rgba(232,220,192,.66); margin-bottom:10px; text-align:center}
+#btn-sharex{background:rgba(217,185,110,.2); border-color:var(--gold2)}   /* 主要動作:發到 X */
 #resmode{font-size:13px; letter-spacing:.32em; padding-left:.32em; color:var(--gold); margin-bottom:6px; min-height:15px}
 
 /* ---------- 觸控操作層 ---------- */
@@ -739,6 +740,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
     <img id="shareimg" alt="">
     <div id="sharetext"></div>
     <div class="btnrow">
+      <button class="btn small" id="btn-sharex" data-t="share.x">發到 X</button>
       <button class="btn small" id="btn-sharenow" data-t="share.now">分　享</button>
       <button class="btn small" id="btn-sharecopy" data-t="share.copyImg">複製圖片</button>
       <button class="btn small" id="btn-sharetxt" data-t="share.copyTxt">複製文字</button>
@@ -1359,7 +1361,7 @@ const I18N={
   'res.waveN':(w)=>`Wave ${w}`,
   'pause.title':'PAUSED','pause.hint':'↑↓ Select ・ Enter Confirm ・ Esc Resume',
   // --- 分享 ---
-  'share.title':'SHARE','share.now':'Share','share.copyImg':'Copy Image',
+  'share.title':'SHARE','share.x':'Post on X','share.now':'Share','share.copyImg':'Copy Image',
   'share.copyTxt':'Copy Text','share.dl':'Download','share.close':'Close (Esc)',
   'share.alt':'Battle record card',
   'share.game':'BRICK MUSOU','share.tag':'Battle of Hulao Gate ・ Dynasty action in one HTML file',
@@ -1618,7 +1620,7 @@ I18N.zh={
   'res.daily':(d,st)=>`　每日挑戰 #${d}・連續 ${st} 天`,
   'res.waveN':(w)=>`第 ${w} 波`,
   'pause.title':'暫　停','pause.hint':'↑↓ 選擇 ・ Enter 確定 ・ Esc 繼續',
-  'share.title':'分享戰績','share.now':'分　享','share.copyImg':'複製圖片','share.copyTxt':'複製文字',
+  'share.title':'分享戰績','share.x':'發到 X','share.now':'分　享','share.copyImg':'複製圖片','share.copyTxt':'複製文字',
   'share.dl':'下　載','share.close':'關　閉（Esc）','share.alt':'戰績卡',
   'share.game':'積木無雙','share.tag':'虎牢關之戰 ・ 一個 HTML 檔的三國無雙','share.rank':'戰功評價',
   'share.file':(n,k)=>`積木無雙_${n}_${k}擊破.png`,
@@ -8289,6 +8291,7 @@ function bindButtons(){
   $('btn-back').addEventListener('click',toSelect);
   $('btn-share').addEventListener('click',()=>openShare(S.lastWin,S.lastRank));
   $('btn-lb').addEventListener('click',()=>NET.submit());
+  $('btn-sharex').addEventListener('click',shareToX);
   $('btn-sharenow').addEventListener('click',shareNow);
   $('btn-sharecopy').addEventListener('click',shareCopyImg);
   $('btn-sharetxt').addEventListener('click',shareCopyTxt);
@@ -9222,8 +9225,19 @@ function closeShare(){
   $('share').classList.add('hidden');
   S.mode = S.prevShare || 'victory';
 }
+// 發到 X:開 X 的發文頁,預填戰績、遊戲連結與 hashtag。網頁發文連結不能附圖 ——
+// 要附戰績卡請用「分享」(手機系統分享選 X App 會帶圖)
+function shareToX(){
+  if(!_shareLine) return;
+  const body=_shareLine.replace(/\n?https?:\/\/\S+\s*$/,'');
+  const u='https://twitter.com/intent/tweet?text='+encodeURIComponent(body)
+    +'&url='+encodeURIComponent('https://brick.akiraxclaw.com')+'&hashtags=BRICKMUSOU';
+  NET.track({ n:'share', ch:'x' }); NET.flush(true);
+  window.open(u,'_blank','noopener');
+}
 async function shareNow(){
   if(!_shareBlob) return;
+  NET.track({ n:'share', ch:'native' });
   try{
     const f=new File([_shareBlob],'musou.png',{type:'image/png'});
     if(navigator.canShare && navigator.canShare({files:[f]})) await navigator.share({files:[f], text:_shareLine});
@@ -9234,11 +9248,12 @@ async function shareCopyImg(){
   try{
     if(!_shareBlob || !navigator.clipboard || !window.ClipboardItem) throw 0;
     await navigator.clipboard.write([new ClipboardItem({'image/png':_shareBlob})]);
+    NET.track({ n:'share', ch:'img' });
     announce(T('ann.imgCopied'),'quick ui');
   }catch(e){ announce(T('ann.imgFail'),'quick ui'); }
 }
 async function shareCopyTxt(){
-  try{ await navigator.clipboard.writeText(_shareLine); announce(T('ann.txtCopied'),'quick ui'); }
+  try{ await navigator.clipboard.writeText(_shareLine); NET.track({ n:'share', ch:'txt' }); announce(T('ann.txtCopied'),'quick ui'); }
   catch(e){ announce(T('ann.copyFail'),'quick ui'); }
 }
 function shareDownload(){
@@ -9246,6 +9261,7 @@ function shareDownload(){
   a.href=$('shareimg').src;
   a.download=T('share.file', LN(CHARS[S.currentChar],'name'), director.kills);
   document.body.appendChild(a); a.click(); a.remove();
+  NET.track({ n:'share', ch:'dl' });
 }
 
 // ============================================================
@@ -9302,6 +9318,7 @@ function tick(rdtRaw){
   }
   if(S.mode==='share'){
     if(input.take('Escape')||input.take('MenuBack')||input.take('KeyS')) closeShare();
+    else if(input.take('KeyX')) shareToX();
     present(scene,camera);
     input.endFrame();
     return;
@@ -10108,7 +10125,15 @@ window.GAME={
 clearTimeout(window.__bootWatch);
 if(!/[?&]selftest\b/.test(location.search)){
   NET.probe();
-  NET.track({ n:'session', lang:LANG, touch:IS_TOUCH, pad:!!(navigator.getGamepads && Array.from(navigator.getGamepads()).some(g=>g&&g.connected)) });
+  // 來源:從 X 點進來(t.co / x.com / twitter.com,或網址帶 utm_source=x)、其他網站、直接開啟
+  const ref=(()=>{ try{
+    const q=new URLSearchParams(location.search).get('utm_source')||'';
+    if(/^(x|twitter)$/i.test(q)) return 'x';
+    if(!document.referrer) return 'direct';
+    const h=new URL(document.referrer).hostname;
+    return /(^|\.)(t\.co|x\.com|twitter\.com)$/.test(h)? 'x' : h===location.hostname? 'direct' : 'other';
+  }catch(e){ return 'other'; } })();
+  NET.track({ n:'session', lang:LANG.cur, ref, touch:IS_TOUCH, pad:!!(navigator.getGamepads && Array.from(navigator.getGamepads()).some(g=>g&&g.connected)) });
   setTimeout(()=>NET.flush(),4000);
 }
 if(/[?&]selftest\b/.test(location.search)) setTimeout(()=>SELFTEST.run({overlay:true}),400);

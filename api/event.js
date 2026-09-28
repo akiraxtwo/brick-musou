@@ -1,6 +1,6 @@
 import { enabled, json, redis, rateLimited, STAGES, DIFFS, HEROES } from './_lib.js';
 
-// POST /api/event {events:[{n:'session'|'start'|'end'|'quit', ...}]}
+// POST /api/event {events:[{n:'session'|'start'|'end'|'quit'|'share', ...}]}
 // 只做每日彙總計數(ev:YYYY-MM-DD 雜湊),不儲存任何個別玩家資料
 const MODES = ['story', 'survival', 'daily'];
 const ok = (v, list) => (list.includes(v) ? v : 'x');
@@ -20,7 +20,7 @@ export default {
         if (!e || typeof e !== 'object') continue;
         const mode = ok(e.mode, MODES), stage = ok(e.stage, STAGES), diff = ok(e.diff, DIFFS), hero = ok(e.hero, HEROES);
         if (e.n === 'session') {
-          inc('session'); inc(`lang:${e.lang === 'en' ? 'en' : 'zh'}`);
+          inc('session'); inc(`lang:${e.lang === 'en' ? 'en' : 'zh'}`); inc(`ref:${ok(e.ref, ['x', 'other', 'direct'])}`);
           inc(e.touch ? 'dev:touch' : 'dev:desktop'); if (e.pad) inc('dev:pad');
         } else if (e.n === 'start') {
           inc(`start:${mode}:${stage}:${diff}`); inc(`hero:${hero}`);
@@ -33,6 +33,8 @@ export default {
           if (mode === 'survival') inc(`wave:${Math.min(40, Number(e.wave) || 0)}`);
         } else if (e.n === 'quit') {
           inc(`quit:${mode}:${stage}:${diff}`);
+        } else if (e.n === 'share') {
+          inc(`share:${ok(e.ch, ['x', 'native', 'img', 'txt', 'dl'])}`);
         }
       }
       if (cmds.length) { cmds.push(['EXPIRE', key, String(120 * 86400)]); await redis(cmds); }
