@@ -7,3 +7,6 @@ x_article.md
 
 # 除錯截圖
 assets/debug_*
+
+# 環境變數檔(可能含資料庫密碼):不進版本庫
+.env*

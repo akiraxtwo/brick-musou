@@ -7,3 +7,5 @@ x_article.md
 README.md
 .DS_Store
 README.*.md
+# 環境變數檔(可能含資料庫密碼):絕不能部署成公開檔案
+.env*
