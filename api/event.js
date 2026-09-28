@@ -1,6 +1,6 @@
 import { enabled, json, redis, rateLimited, STAGES, DIFFS, HEROES } from './_lib.js';
 
-// POST /api/event {events:[{n:'session'|'start'|'end'|'quit'|'share', ...}]}
+// POST /api/event {events:[{n:'session'|'start'|'end'|'quit'|'share'|'clip', ...}]}
 // 只做每日彙總計數(ev:YYYY-MM-DD 雜湊),不儲存任何個別玩家資料
 const MODES = ['story', 'survival', 'daily', 'rush'];
 const ok = (v, list) => (list.includes(v) ? v : 'x');
@@ -22,6 +22,7 @@ export default {
         if (e.n === 'session') {
           inc('session'); inc(`lang:${e.lang === 'en' ? 'en' : 'zh'}`); inc(`ref:${ok(e.ref, ['x', 'other', 'direct'])}`);
           inc(e.touch ? 'dev:touch' : 'dev:desktop'); if (e.pad) inc('dev:pad');
+          if (e.clip) inc('dev:clip');                         // 瀏覽器能錄精彩片段(MP4)
         } else if (e.n === 'start') {
           inc(`start:${mode}:${stage}:${diff}`); inc(`hero:${hero}`);
         } else if (e.n === 'end') {
@@ -34,7 +35,9 @@ export default {
         } else if (e.n === 'quit') {
           inc(`quit:${mode}:${stage}:${diff}`);
         } else if (e.n === 'share') {
-          inc(`share:${ok(e.ch, ['x', 'native', 'img', 'txt', 'dl'])}`);
+          inc(`share:${ok(e.ch, ['x', 'native', 'img', 'txt', 'dl', 'clipx', 'clipdl'])}`);
+        } else if (e.n === 'clip') {
+          inc('clip:made');                                    // 結算時有錄到精彩片段的場次
         }
       }
       if (cmds.length) { cmds.push(['EXPIRE', key, String(120 * 86400)]); await redis(cmds); }

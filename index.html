@@ -435,6 +435,27 @@ body.touch .cn-name{font-size:18px}
 #share{background:rgba(4,3,2,.9); backdrop-filter:blur(4px); z-index:50}
 #shareimg{display:block; width:min(560px,84vw); border:1px solid rgba(217,185,110,.5); margin:0 auto 10px}
 #sharetext{font-size:12px; letter-spacing:.08em; color:rgba(232,220,192,.66); margin-bottom:10px; text-align:center}
+/* 精彩片段:分享面板的「影片 / 戰績卡」切換,與結算面板上的提示 */
+#sharetabs{display:flex; justify-content:center; gap:8px; margin:-4px 0 10px}
+#sharetabs .stab{font-family:inherit; font-size:13px; letter-spacing:.14em; color:rgba(232,220,192,.72); background:transparent;
+  border:1px solid rgba(217,185,110,.35); padding:4px 14px; cursor:pointer}
+#sharetabs .stab.on{color:var(--gold2); border-color:var(--gold2); background:rgba(217,185,110,.16)}
+#shareclip{display:block; width:min(560px,84vw); aspect-ratio:16/9; background:#000; border:1px solid rgba(217,185,110,.5); margin:0 auto 6px}
+#clipcap{font-size:13px; letter-spacing:.1em; color:var(--gold2); text-align:center; margin-bottom:8px; min-height:1.2em}
+#share:not(.clipv) #shareclip, #share:not(.clipv) #clipcap, #share:not(.clipv) #btn-clipdl,
+#share.clipv #shareimg, #share.clipv #btn-sharenow, #share.clipv #btn-sharecopy, #share.clipv #btn-sharedl{display:none}
+#clipnote{margin:8px 0 0; font-size:14px; letter-spacing:.1em; color:var(--gold2); text-align:center; cursor:pointer}
+#clipnote:hover{text-decoration:underline}
+@media (max-height:520px){   /* 手機橫向:分享面板整個塞進一個畫面 */
+  #share .panel{padding:8px 18px 8px}
+  #share .ptitle{font-size:18px; margin:0 0 6px}
+  #shareimg, #shareclip{width:min(560px,84vw,calc((100vh - 150px)*1.78))}
+  #sharetabs{margin:0 0 6px} #sharetabs .stab{font-size:12px; padding:2px 10px}
+  #sharetext{margin-bottom:4px; font-size:11px} #clipcap{font-size:11.5px; margin-bottom:2px}
+  #share .btnrow{margin-top:4px; flex-wrap:wrap; gap:6px 8px}
+  #share .btn.small{font-size:13px; padding:5px 14px 5px calc(14px + .42em)}
+  #clipnote{margin:2px 0 0; font-size:12px}
+}
 #btn-sharex{background:rgba(217,185,110,.2); border-color:var(--gold2)}   /* 主要動作:發到 X */
 #resmode{font-size:13px; letter-spacing:.32em; padding-left:.32em; color:var(--gold); margin-bottom:6px; min-height:15px}
 
@@ -734,6 +755,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
       <button class="btn small" id="btn-lb" data-t="lb.submit">登錄排行榜</button>
       <div id="lbmsg"></div>
     </div>
+    <div id="clipnote" class="hidden"></div>
     <div class="btnrow">
       <button class="btn small hidden" id="btn-next" data-t="res.next">下一戰（N）</button>
       <button class="btn small" id="btn-share" data-t="res.share">分享戰績（S）</button>
@@ -746,7 +768,13 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
 <div id="share" class="screen hidden">
   <div class="panel">
     <h2 class="ptitle" data-t="share.title">分享戰績</h2>
+    <div id="sharetabs" class="hidden">
+      <button class="stab" id="stab-clip" data-t="share.tabClip">🎬 精彩片段</button>
+      <button class="stab" id="stab-card" data-t="share.tabCard">戰績卡</button>
+    </div>
     <img id="shareimg" alt="">
+    <video id="shareclip" muted loop playsinline preload="auto"></video>
+    <div id="clipcap"></div>
     <div id="sharetext"></div>
     <div class="btnrow">
       <button class="btn small" id="btn-sharex" data-t="share.x">發到 X</button>
@@ -754,6 +782,7 @@ html[lang="en"] #selhint, html[lang="en"] .mhint{ letter-spacing:.04em }
       <button class="btn small" id="btn-sharecopy" data-t="share.copyImg">複製圖片</button>
       <button class="btn small" id="btn-sharetxt" data-t="share.copyTxt">複製文字</button>
       <button class="btn small" id="btn-sharedl" data-t="share.dl">下　載</button>
+      <button class="btn small" id="btn-clipdl" data-t="share.dlClip">下載影片</button>
       <button class="btn small" id="btn-shareclose" data-t="share.close">關　閉（Esc）</button>
     </div>
   </div>
@@ -973,7 +1002,7 @@ const AUD = {
 const IS_TOUCH = matchMedia('(pointer:coarse)').matches || ('ontouchstart' in window);
 const SETTINGS={
   d:{ master:.55, bgm:.34, sfx:.9, quality:'auto', camSens:1, camInvert:0,
-      shake:1, rumble:1, dmgnum:1, padDead:.22, tutorial:1,
+      shake:1, rumble:1, dmgnum:1, padDead:.22, tutorial:1, clip:1,
       touchUI:'auto', touchSize:1, touchAlpha:.72,
       lang:'en' },
   load(){ try{ Object.assign(this.d, JSON.parse(localStorage.getItem('musou.settings')||'{}')); }catch(e){}
@@ -1380,6 +1409,14 @@ const I18N={
   'share.alt':'Battle record card',
   'share.game':'BRICK MUSOU','share.tag':'Battle of Hulao Gate ・ Dynasty action in one HTML file',
   'share.rank':'RANK','share.file':(n,k)=>`BrickWarriors_${n}_${k}kills.png`,
+  // --- 精彩片段 ---
+  'share.tabClip':'🎬 Highlight','share.tabCard':'Score Card','share.dlClip':'Download Video',
+  'clip.cap':(hero,mus,k,s)=>`${hero} ・ ${mus} ・ ${k} KOs ・ ${s}s`,
+  'clip.line':(hero,mus,k)=>`${hero}'s Musou "${mus}": ${k} KOs in one go!`,
+  'clip.proc':'🎬 Saving highlight…','clip.note':(k)=>`🎬 Highlight saved: ${k} KOs in one Musou ▶ Share`,
+  'clip.ko':'KO','clip.play':'Free to play in your browser',
+  'clip.file':(id,k)=>`BRICK_MUSOU_${id}_${k}KO.mp4`,
+  'ann.clipDl':'Video saved — attach it to your post on X','set.clip':'Highlight Clips',
   'share.line':(mode,bar,rank,hero,kills,combo,time)=>
     `BRICK MUSOU ${mode}\n${bar} ${rank} ・ ${hero}\n${kills} slain ・ ${combo} combo ・ ${time}`,
   // --- 模式 ---
@@ -1644,6 +1681,13 @@ I18N.zh={
   'share.dl':'下　載','share.close':'關　閉（Esc）','share.alt':'戰績卡',
   'share.game':'積木無雙','share.tag':'虎牢關之戰 ・ 一個 HTML 檔的三國無雙','share.rank':'戰功評價',
   'share.file':(n,k)=>`積木無雙_${n}_${k}擊破.png`,
+  'share.tabClip':'🎬 精彩片段','share.tabCard':'戰績卡','share.dlClip':'下載影片',
+  'clip.cap':(hero,mus,k,s)=>`${hero}・${mus}・擊破 ${k}・${s} 秒`,
+  'clip.line':(hero,mus,k)=>`${hero}的無雙「${mus}」一口氣擊破 ${k} 人!`,
+  'clip.proc':'🎬 精彩片段存檔中…','clip.note':(k)=>`🎬 已錄下精彩片段:一次無雙擊破 ${k} 人 ▶ 分享`,
+  'clip.ko':'擊破','clip.play':'瀏覽器免費遊玩',
+  'clip.file':(id,k)=>`BRICK_MUSOU_${id}_${k}KO.mp4`,
+  'ann.clipDl':'影片已下載,在 X 發文時把它附上','set.clip':'精彩片段錄影',
   'share.line':(mode,bar,rank,hero,kills,combo,time)=>
     `積木無雙 ${mode}\n${bar} ${rank} ・ ${hero}\n擊破 ${kills} ・ 連擊 ${combo} ・ ${time}`,
   'mode.story':'虎牢關之戰','mode.daily':(d,m)=>`每日挑戰 #${d} ・ ${m}`,
@@ -5647,6 +5691,299 @@ let hurtGlow=0, musGlow=0;
 function hurtFlash(){ if(!S.attract) hurtGlow=1; }
 function musouFlashFx(){ if(!S.attract) musGlow=1; }
 
+// ============================================================
+// 精彩片段:放無雙時自動錄下「無雙 → 終結技 → 收尾」(遊戲畫面 + 聲音),一場只留擊破最多的一段,
+// 結算時可以直接發到 X。canvas.captureStream + MediaRecorder,只錄 MP4(H.264 + AAC;X 不收 WebM)。
+// 畫面上的 HUD 是 DOM、錄不到,所以無雙名字卡、擊破數、網址浮水印與片尾字卡直接畫進錄影畫布
+// ============================================================
+const CLIP_FONT='"Songti TC","Noto Serif TC","PMingLiU",serif', CLIP_URL='brick.akiraxclaw.com';
+const CLIP={
+  W:IS_TOUCH?960:1280, H:IS_TOUCH?540:720, FPS:30, TAIL:1.5, MAX:14,
+  mime:null, cv:null, c:null, stream:null, adest:null, rec:null, meta:null,
+  on:false, paused:false, t:0, tail:-1, acc:0, cut:0, k0:0, pop:0, nPrev:0,
+  best:null, busy:0, gen:0,
+  init(){
+    try{
+      if(!window.MediaRecorder || !HTMLCanvasElement.prototype.captureStream) return;
+      this.mime=['video/mp4;codecs=avc1.42E01E,mp4a.40.2','video/mp4;codecs=avc1,mp4a.40.2',
+                 'video/mp4;codecs=avc1.42E01E','video/mp4;codecs=avc1','video/mp4'].find(m=>MediaRecorder.isTypeSupported(m))||null;
+    }catch(e){ this.mime=null; }
+  },
+  can(){ return !!this.mime && SETTINGS.d.clip!==0 && !S.attract && !S.noRender; },   // 同步快轉(自我測試)不錄
+  // 放無雙:開始錄;收尾中又放一次就接著錄同一段
+  start(p){
+    if(!this.can()) return;
+    if(this.on){ this.tail=-1; this.cut=this.t; return; }
+    try{
+      if(!this.cv){ this.cv=document.createElement('canvas'); this.cv.width=this.W; this.cv.height=this.H; this.c=this.cv.getContext('2d',{alpha:false}); }
+      this.c.fillStyle='#000'; this.c.fillRect(0,0,this.W,this.H);   // 不留上一段的片尾字卡
+      const st=this.stream=this.cv.captureStream(this.FPS);
+      if(/mp4a/.test(this.mime) && AUD.ctx && AUD.master){
+        this.adest=AUD.ctx.createMediaStreamDestination();
+        AUD.master.connect(this.adest);
+        for(const tr of this.adest.stream.getAudioTracks()) st.addTrack(tr);
+      }
+      const rec=new MediaRecorder(st,{ mimeType:this.mime, videoBitsPerSecond:IS_TOUCH?3.5e6:6e6, audioBitsPerSecond:128000 });
+      const chunks=[], gen=this.gen;
+      const meta={ hero:p.id, name:T('musou.'+p.id), sub:`${LN(p.char,'name')} ${LN(p.char,'zi')}`, kills:0, dur:0 };
+      rec.ondataavailable=e=>{ if(e.data && e.data.size) chunks.push(e.data); };
+      rec.onstop=()=>this.finish(chunks,meta,gen);
+      rec.onerror=()=>{ if(this.rec===rec) this.abort(); };
+      // 還不 start:等下一次 frame()(present 之後)畫好第一格遊戲畫面才開錄 ——
+      // 這裡還沒渲染、WebGL 畫布內容不可靠,而且 X 常拿第一格當縮圖,不能是黑畫面
+      Object.assign(this,{ rec, meta, on:true, paused:false, fresh:true, t:0, last:performance.now(), tail:-1, acc:1, cut:0, k0:director.kills, pop:0, nPrev:0 });
+    }catch(e){ this.abort(); }
+  },
+  fin(){ if(this.on) this.tail=this.TAIL; },            // 終結技:再錄一小段收尾(含片尾字卡)就停
+  // 每幀在 present() 之後呼叫(同一個 task 內 WebGL 畫布內容還在);錄影畫布以 30fps 更新。
+  // 計時一律用真實時間(錄影的時間軸就是真實時間;慢手機掉到 20fps 以下時遊戲時間會變慢,片段會被拉長)
+  frame(){
+    if(!this.on || this.paused || S.noRender) return;   // 沒有渲染的幀,畫布上不是這一幀的畫面
+    const now=performance.now(), d=Math.min(.25,(now-this.last)/1000); this.last=now;
+    this.t+=d;
+    const n=Math.max(0,director.kills-this.k0);
+    if(n>this.nPrev){ this.pop=1; this.nPrev=n; }
+    this.meta.kills=n;
+    if(this.tail<0 && this.t>=this.MAX-this.TAIL) this.tail=this.TAIL;   // 太長就收尾(仍然帶片尾字卡)
+    if(this.tail>=0 && (this.tail-=d)<=0){ this.stop(); return; }
+    this.acc+=d;
+    if(this.acc>=1/this.FPS-.004){
+      this.acc=Math.min(this.acc-1/this.FPS,1/this.FPS); this.draw();
+      if(this.fresh){ this.fresh=false; try{ this.rec.start(); }catch(e){ this.abort(); return; } }
+    }
+    this.pop=Math.max(0,this.pop-d*5);
+  },
+  draw(){
+    const src=renderer.domElement, c=this.c, W=this.W, H=this.H, k=H/720, F=CLIP_FONT;
+    if(!src.width || !src.height) return;
+    const s=Math.max(W/src.width,H/src.height), dw=src.width*s, dh=src.height*s;
+    c.globalAlpha=1; c.shadowBlur=0;
+    c.drawImage(src,(W-dw)/2,(H-dh)/2,dw,dh);          // 遊戲畫面 cover 裁成 16:9
+    if(musGlow>0){                                       // 無雙閃光在畫面上是 DOM 疊層,錄影裡自己補
+      const g=c.createRadialGradient(W/2,H/2,0,W/2,H/2,W*.62);
+      g.addColorStop(0,`rgba(255,225,140,${.42*musGlow})`); g.addColorStop(1,'rgba(255,200,80,0)');
+      c.fillStyle=g; c.fillRect(0,0,W,H);
+    }
+    c.textBaseline='alphabetic'; c.lineJoin='round';
+    // 無雙名字卡(開頭 1.6 秒;第一格就完整顯示,當縮圖用)
+    const ct=this.t-this.cut;
+    if(ct<1.6){
+      const a= ct>1.25? Math.max(0,(1.6-ct)/.35) : 1, slide=(1-Math.min(1,ct/.25))**2*40*k;
+      c.globalAlpha=a;
+      const g=c.createLinearGradient(0,0,W,0);
+      g.addColorStop(0,'rgba(12,9,6,0)'); g.addColorStop(.18,'rgba(12,9,6,.82)'); g.addColorStop(.82,'rgba(12,9,6,.82)'); g.addColorStop(1,'rgba(12,9,6,0)');
+      c.fillStyle=g; c.fillRect(0,H*.36,W,H*.26);
+      c.fillStyle='rgba(246,226,164,.8)'; c.fillRect(W*.12,H*.36,W*.76,2*k); c.fillRect(W*.12,H*.62-2*k,W*.76,2*k);
+      c.textAlign='center';
+      c.font=`700 ${Math.round(74*k)}px ${F}`; c.fillStyle='#f6e2a4';
+      c.shadowColor='rgba(217,185,110,.6)'; c.shadowBlur=18*k;
+      c.fillText(this.meta.name,W/2-slide,H*.515,W*.84);
+      c.shadowBlur=0;
+      c.font=`${Math.round(24*k)}px ${F}`; c.fillStyle='#e8dcc0';
+      c.fillText(this.meta.sub,W/2+slide,H*.585,W*.84);
+      c.globalAlpha=1;
+    }
+    // 擊破數(左下,每多一個跳一下)
+    const n=this.meta.kills;
+    if(n>0){
+      const sc=1+this.pop*.18, num=String(n), lab=T('clip.ko');
+      c.save(); c.translate(40*k,H-44*k); c.scale(sc,sc);
+      c.textAlign='left'; c.lineWidth=6*k; c.strokeStyle='rgba(8,6,5,.85)';
+      c.font=`700 ${Math.round(86*k)}px ${F}`;
+      c.strokeText(num,0,0); c.fillStyle='#ffe066'; c.fillText(num,0,0);
+      const w=c.measureText(num).width+10*k;
+      c.font=`700 ${Math.round(30*k)}px ${F}`;
+      c.strokeText(lab,w,0); c.fillStyle='#f6e2a4'; c.fillText(lab,w,0);
+      c.restore();
+    }
+    // 浮水印(右下):遊戲名 + 網址,看到影片的人才找得到
+    c.textAlign='right'; c.lineWidth=4*k; c.strokeStyle='rgba(8,6,5,.7)';
+    c.font=`700 ${Math.round(28*k)}px ${F}`;
+    c.strokeText('BRICK MUSOU',W-34*k,H-58*k); c.fillStyle='rgba(246,226,164,.94)'; c.fillText('BRICK MUSOU',W-34*k,H-58*k);
+    c.font=`${Math.round(21*k)}px ${F}`;
+    c.strokeText(CLIP_URL,W-34*k,H-30*k); c.fillStyle='rgba(232,220,192,.9)'; c.fillText(CLIP_URL,W-34*k,H-30*k);
+    // 片尾字卡(最後 0.9 秒)
+    if(this.tail>=0 && this.tail<.9){
+      const a=Math.min(1,(.9-this.tail)/.3);
+      c.fillStyle=`rgba(8,6,5,${.72*a})`; c.fillRect(0,0,W,H);
+      c.globalAlpha=a; c.textAlign='center';
+      c.font=`700 ${Math.round(84*k)}px ${F}`; c.fillStyle='#f6e2a4';
+      c.shadowColor='rgba(217,185,110,.5)'; c.shadowBlur=24*k;
+      c.fillText(T('share.game'),W/2,H*.45); c.shadowBlur=0;
+      c.font=`700 ${Math.round(36*k)}px ${F}`; c.fillStyle='#ffe066';
+      c.fillText(CLIP_URL,W/2,H*.58);
+      c.font=`${Math.round(22*k)}px ${F}`; c.fillStyle='#e8dcc0';
+      c.fillText(T('clip.play'),W/2,H*.66);
+      c.globalAlpha=1;
+    }
+  },
+  stop(){
+    if(!this.on) return;
+    this.on=false; this.meta.dur=this.t;
+    const rec=this.rec; this.rec=null;
+    this.busy++;
+    try{ if(rec && rec.state!=='inactive') rec.stop(); else this.busy--; }catch(e){ this.busy--; }
+    this.release();
+    refreshClipUI();
+  },
+  pause(on){
+    if(!this.on || !this.rec) return;
+    try{
+      if(on && this.rec.state==='recording'){ this.rec.pause(); this.paused=true; }
+      else if(!on && this.rec.state==='paused'){ this.rec.resume(); this.paused=false; this.last=performance.now(); }
+    }catch(e){}
+  },
+  release(){
+    try{ if(this.adest && AUD.master) AUD.master.disconnect(this.adest); }catch(e){}
+    try{ if(this.stream) for(const tr of this.stream.getTracks()) tr.stop(); }catch(e){}
+    this.adest=null; this.stream=null;
+  },
+  // 不存檔直接停(換場 / 錄影出錯)
+  abort(){
+    const rec=this.rec; this.rec=null; this.on=false; this.paused=false;
+    if(rec){ rec.onstop=null; rec.ondataavailable=null; try{ if(rec.state!=='inactive') rec.stop(); }catch(e){} }
+    this.release();
+  },
+  async finish(chunks,meta,gen){
+    try{
+      if(gen!==this.gen || !chunks.length || meta.dur<1.5) return;
+      const raw=new Uint8Array(await new Blob(chunks).arrayBuffer());
+      let out=null;
+      try{ out=fmp4ToMp4(raw); }catch(e){ out=null; }
+      if(gen!==this.gen || (this.best && meta.kills<this.best.kills)) return;
+      const blob=new Blob([out||raw],{type:'video/mp4'});
+      if(this.best) URL.revokeObjectURL(this.best.url);
+      this.best=Object.assign({ blob, url:URL.createObjectURL(blob) }, meta);
+    }catch(e){}
+    finally{ if(gen===this.gen) this.busy=Math.max(0,this.busy-1); refreshClipUI(); }
+  },
+  // 換場:停掉錄影、丟掉這一場的片段
+  reset(){
+    this.abort(); this.gen++; this.busy=0;
+    if(this.best) URL.revokeObjectURL(this.best.url);
+    this.best=null;
+  },
+};
+CLIP.init();
+
+// 分段式 MP4(MediaRecorder 的輸出:moov + moof/mdat 片段)→ 一般 MP4(moov 在前、單一 mdat、完整樣本表)。
+// 不重新編碼,只重寫樣本表、重排資料;影格時間對齊 30fps。輸入不是分段式時回傳 null(原檔直接用)
+function fmp4ToMp4(u8){
+  const dv=new DataView(u8.buffer,u8.byteOffset,u8.byteLength);
+  const U32=p=>dv.getUint32(p), U64=p=>Number(dv.getBigUint64(p));
+  const list=(s,e)=>{ const out=[]; let p=s;
+    while(p+8<=e){ let sz=U32(p), h=8; if(sz===1){ sz=U64(p+8); h=16; } else if(sz===0) sz=e-p;
+      if(sz<h || p+sz>e) break;
+      out.push({ t:String.fromCharCode(u8[p+4],u8[p+5],u8[p+6],u8[p+7]), s:p, e:p+sz, d:p+h }); p+=sz; }
+    return out; };
+  const kids=b=>list(b.d,b.e), one=(l,t)=>l.find(b=>b.t===t);
+  const top=list(0,u8.length), moov=one(top,'moov');
+  if(!moov || !one(top,'moof')) return null;
+  const mk=kids(moov), mvhd=one(mk,'mvhd');
+  const MTS= u8[mvhd.d]===1? U32(mvhd.d+20) : U32(mvhd.d+12);
+  const trex={}, mvex=one(mk,'mvex');
+  if(mvex) for(const b of kids(mvex)) if(b.t==='trex') trex[U32(b.d+4)]={ dur:U32(b.d+12), size:U32(b.d+16), flags:U32(b.d+20) };
+  const TR={}, order=[];
+  for(const tb of mk.filter(b=>b.t==='trak')){
+    const tk=kids(tb), tkhd=one(tk,'tkhd'), mdia=one(tk,'mdia'), md=kids(mdia);
+    const mdhd=one(md,'mdhd'), hdlr=one(md,'hdlr'), minf=one(md,'minf'), stbl=one(kids(minf),'stbl');
+    const v1=u8[mdhd.d]===1;
+    const id= u8[tkhd.d]===1? U32(tkhd.d+20) : U32(tkhd.d+12);
+    TR[id]={ id, tkhd, hdlr, minf, stsd:one(kids(stbl),'stsd'),
+      ts: v1? U32(mdhd.d+20) : U32(mdhd.d+12), lang: dv.getUint16(v1? mdhd.d+32 : mdhd.d+20),
+      audio: String.fromCharCode(...u8.subarray(hdlr.d+8,hdlr.d+12))==='soun', smp:[], dts0:null };
+    order.push(id);
+  }
+  // 逐片段收集樣本:位置 / 大小 / 時長 / 是否關鍵幀 / 顯示時間偏移
+  for(const mf of top.filter(b=>b.t==='moof')){
+    for(const tf of kids(mf).filter(b=>b.t==='traf')){
+      const tk=kids(tf), tfhd=one(tk,'tfhd'), fl=U32(tfhd.d)&0xffffff;
+      let p=tfhd.d+4; const id=U32(p); p+=4;
+      const tr=TR[id]; if(!tr) continue;
+      const X=trex[id]||{dur:0,size:0,flags:0};
+      let base=mf.s, dDur=X.dur, dSize=X.size, dFlags=X.flags;
+      if(fl&1){ base=U64(p); p+=8; }
+      if(fl&2) p+=4;
+      if(fl&8){ dDur=U32(p); p+=4; }
+      if(fl&0x10){ dSize=U32(p); p+=4; }
+      if(fl&0x20){ dFlags=U32(p); p+=4; }
+      const tfdt=one(tk,'tfdt');
+      if(tfdt && tr.dts0===null) tr.dts0= u8[tfdt.d]===1? U64(tfdt.d+4) : U32(tfdt.d+4);
+      let off=base;
+      for(const run of tk.filter(b=>b.t==='trun')){
+        const ver=u8[run.d], rf=U32(run.d)&0xffffff; let q=run.d+4;
+        const n=U32(q); q+=4;
+        if(rf&1){ off=base+dv.getInt32(q); q+=4; }
+        let f0=null; if(rf&4){ f0=U32(q); q+=4; }
+        for(let i=0;i<n;i++){
+          const dur= rf&0x100? U32(q) : dDur; if(rf&0x100) q+=4;
+          const sz = rf&0x200? U32(q) : dSize; if(rf&0x200) q+=4;
+          let sf  = rf&0x400? U32(q) : dFlags; if(rf&0x400) q+=4;
+          if(i===0 && f0!==null) sf=f0;
+          let cto=0; if(rf&0x800){ cto= ver? dv.getInt32(q) : U32(q); q+=4; }
+          tr.smp.push({ o:off, sz, dur, sync:!(sf&0x10000), cto });
+          off+=sz;
+        }
+      }
+    }
+  }
+  // 影格時間對齊 30fps 格線:每格時長都是 1/30 秒的整數倍(音畫誤差不到半格),
+  // 各家平台都會當成固定 30fps;原始的擷取間隔忽快忽慢,不對齊的話偵測出來的幀率會很怪
+  for(const id of order){
+    const tr=TR[id];
+    if(tr.audio || !tr.smp.length || tr.ts%30 || tr.smp.some(s=>s.cto)) continue;
+    const G=tr.ts/30; let t=0, prev=-G;
+    const q=tr.smp.map(s=>{ const v=Math.max(Math.round(t/G)*G, prev+G); t+=s.dur; prev=v; return v; });
+    tr.smp.forEach((s,i)=>{ s.dur= i+1<q.length? q[i+1]-q[i] : Math.max(G, Math.round(s.dur/G)*G); });
+  }
+  // ---- 寫出 ----
+  const cat=parts=>{ let n=0; for(const x of parts) n+=x.length; const o=new Uint8Array(n); let p=0; for(const x of parts){ o.set(x,p); p+=x.length; } return o; };
+  const box=(t,...parts)=>{ const b=cat(parts), o=new Uint8Array(8+b.length); new DataView(o.buffer).setUint32(0,o.length);
+    for(let i=0;i<4;i++) o[4+i]=t.charCodeAt(i); o.set(b,8); return o; };
+  const w32=a=>{ const o=new Uint8Array(a.length*4), d=new DataView(o.buffer); a.forEach((v,i)=>d.setUint32(i*4,v>>>0)); return o; };
+  const full=(t,ver,flags,...parts)=>box(t,w32([(ver<<24|flags)>>>0]),...parts);
+  const copy=b=>u8.subarray(b.s,b.e);
+  const MATRIX=w32([0x10000,0,0,0,0x10000,0,0,0,0x40000000]);
+  const ids=order.filter(id=>TR[id].smp.length);
+  const rle=(arr,key)=>{ const out=[]; for(const s of arr){ const v=s[key]; if(out.length && out[out.length-1][1]===v) out[out.length-1][0]++; else out.push([1,v]); } return out; };
+  for(const id of ids){
+    const tr=TR[id];
+    tr.durM=tr.smp.reduce((a,s)=>a+s.dur,0);
+    tr.lead=Math.round((tr.dts0||0)*MTS/tr.ts);                      // 開頭空白(片段的起始解碼時間)
+    tr.durMv=Math.round(tr.durM*MTS/tr.ts);
+    tr.bytes=tr.smp.reduce((a,s)=>a+s.sz,0);
+  }
+  const buildMoov=offs=>{
+    const traks=ids.map((id,k)=>{
+      const tr=TR[id], SM=tr.smp, n=SM.length;
+      const stts=rle(SM,'dur'), anyCto=SM.some(s=>s.cto), negCto=SM.some(s=>s.cto<0);
+      const tabs=[copy(tr.stsd), full('stts',0,0,w32([stts.length, ...stts.flat()]))];
+      if(anyCto){ const c=rle(SM,'cto'); tabs.push(full('ctts',negCto?1:0,0,w32([c.length, ...c.flat()]))); }
+      if(SM.some(s=>!s.sync)){ const k2=[]; SM.forEach((s,i)=>{ if(s.sync) k2.push(i+1); }); tabs.push(full('stss',0,0,w32([k2.length, ...k2]))); }
+      tabs.push(full('stsc',0,0,w32([1,1,n,1])), full('stsz',0,0,w32([0,n,...SM.map(s=>s.sz)])), full('stco',0,0,w32([1,offs[k]])));
+      const minf=box('minf', ...kids(tr.minf).filter(b=>b.t!=='stbl').map(copy), box('stbl',...tabs));
+      const mdia=box('mdia', full('mdhd',0,0,w32([0,0,tr.ts,tr.durM,(tr.lang<<16)>>>0])), copy(tr.hdlr), minf);
+      const mt0= anyCto? Math.max(0,Math.min(...SM.map(s=>s.cto))) : 0;
+      const edits=[];
+      if(tr.lead>0) edits.push(tr.lead,0xFFFFFFFF,0x10000);
+      if(tr.lead>0 || mt0>0) edits.push(tr.durMv,mt0,0x10000);
+      const tkhd=full('tkhd',0,3,w32([0,0,id,0,tr.lead+tr.durMv,0,0,0,tr.audio?0x01000000:0]),MATRIX,u8.subarray(tr.tkhd.e-8,tr.tkhd.e));
+      return box('trak', tkhd, ...(edits.length? [box('edts',full('elst',0,0,w32([edits.length/3,...edits])))] : []), mdia);
+    });
+    const dur=Math.max(...ids.map(id=>TR[id].lead+TR[id].durMv));
+    const mvhd2=full('mvhd',0,0,w32([0,0,MTS,dur,0x10000,0x01000000,0,0]),MATRIX,w32([0,0,0,0,0,0,Math.max(...order)+1]));
+    return box('moov',mvhd2,...traks);
+  };
+  const ftyp=box('ftyp',new TextEncoder().encode('isom'),w32([0x200]),new TextEncoder().encode('isomiso2avc1mp41'));
+  const moovLen=buildMoov(ids.map(()=>0)).length;
+  const offs=[]; let at=ftyp.length+moovLen+8;
+  for(const id of ids){ offs.push(at); at+=TR[id].bytes; }
+  const moov2=buildMoov(offs);
+  const data=[]; for(const id of ids) for(const s of TR[id].smp) data.push(u8.subarray(s.o,s.o+s.sz));
+  const mdatHdr=new Uint8Array(8); new DataView(mdatHdr.buffer).setUint32(0,8+ids.reduce((a,id)=>a+TR[id].bytes,0)); mdatHdr.set([109,100,97,116],4);
+  return cat([ftyp,moov2,mdatHdr,...data]);
+}
+
 // ---------- 遊戲內排程(受暫停/慢動作影響)----------
 const timers=[];
 function schedule(delay,fn){ timers.push({t:delay,fn}); }
@@ -6877,6 +7214,7 @@ class Player{
     showCutin(T('musou.'+this.id), `${LN(this.char,'name')} ${LN(this.char,'zi')} ・ ${LN(this.char,'weapon')}`);
     shockRing(this.pos,this.char.musouTint,4.5,.5);
     this.musLight.intensity=46;
+    CLIP.start(this);
   }
   // 攻擊力 = 基礎 × 等級 × 武器等級 × 背水(撿武器匣時也走這裡,不會洗掉等級與變異加成)
   recalcPow(){
@@ -7027,6 +7365,7 @@ class Player{
           dust(this.pos,14,2);
           AUD.boom(); musouFlashFx(); slowmo(.25,.45); addShake(D.fin.shake);
           camPunch(1); S.hitstop=Math.max(S.hitstop,.1);
+          CLIP.fin();
           this.musou=0; HUD.setMus(0);
           this.musLight.intensity=0;
         }
@@ -8513,6 +8852,10 @@ function bindButtons(){
   $('btn-sharetxt').addEventListener('click',shareCopyTxt);
   $('btn-sharedl').addEventListener('click',shareDownload);
   $('btn-shareclose').addEventListener('click',closeShare);
+  $('btn-clipdl').addEventListener('click',shareClipDl);
+  $('stab-clip').addEventListener('click',()=>setShareView('clip'));
+  $('stab-card').addEventListener('click',()=>setShareView('card'));
+  $('clipnote').addEventListener('click',()=>{ if(S.mode==='victory'||S.mode==='defeat') openShare(S.lastWin,S.lastRank); });
   $('btn-brief-go').addEventListener('click',confirmBrief);
   $('btn-brief-back').addEventListener('click',()=>{ $('brief').classList.add('hidden'); toSelect(); });
 }
@@ -8808,6 +9151,8 @@ const NET={
 };
 addEventListener('pagehide',()=>{ if(NET.run && (S.mode==='play'||S.mode==='pause')) NET.track(Object.assign({n:'quit'},NET.run)); NET.run=null; NET.flush(true); });
 addEventListener('visibilitychange',()=>{ if(document.visibilityState==='hidden') NET.flush(true); });
+// 切到背景時畫面停了,錄影也要暫停(不然片段裡會有一段定格)
+addEventListener('visibilitychange',()=>{ CLIP.pause(document.visibilityState==='hidden' || S.mode==='pause'); });
 
 const BOARD={
   TABS:['daily','surv','sishui','hulao','luoyang','rush'],
@@ -8961,6 +9306,7 @@ function buildAllMenus(){
     { get lab(){ return T('set.rumble'); }, type:'toggle', get:()=>!!S_.d.rumble, set:v=>S_.set('rumble',v?1:0) },
     { get lab(){ return T('set.deadzone'); }, type:'slider', min:.05, max:.45, step:.02, get:()=>S_.d.padDead, set:v=>S_.set('padDead',v) },
     { get lab(){ return T('set.dmgnum'); }, type:'toggle', get:()=>!!S_.d.dmgnum, set:v=>S_.set('dmgnum',v?1:0) },
+    ...(CLIP.mime? [{ get lab(){ return T('set.clip'); }, type:'toggle', get:()=>!!S_.d.clip, set:v=>{ S_.set('clip',v?1:0); if(!v) CLIP.abort(); } }] : []),
     { get lab(){ return T('set.tutorial'); }, type:'toggle', get:()=>!!S_.d.tutorial, set:v=>S_.set('tutorial',v?1:0) },
     { get lab(){ return T('set.tutReset'); }, type:'action', get hint(){ return T('set.tutResetHint'); },
       run:()=>{ TUTOR.reset(); S_.set('tutorial',1); announce(T('ann.tutReset'),'quick ui'); } },
@@ -9090,6 +9436,7 @@ function cleanupBattle(){
   for(const r of ringPool) r.m.visible=false;
   for(const d of dustPool) d.m.visible=false;
   FX.sparks.data.length=0; FX.shakes=0; FX.punch=FX.punchV=0; setCamFov(CAM_FOV);
+  CLIP.reset(); refreshClipUI();
   annQ.length=0; annBusy=0; $('announce').innerHTML='';
   director.reset();
   morale.reset();
@@ -9269,8 +9616,9 @@ function setPause(on){
   if(on && S.mode==='play'){
     S.mode='pause'; $('pause').classList.remove('hidden');
     MENU.cur=MENUS.pause; MENUS.pause.idx=0; renderMenu(MENUS.pause);
+    CLIP.pause(true);
   }
-  else if(!on && S.mode==='pause'){ S.mode='play'; $('pause').classList.add('hidden'); MENU.cur=null; }
+  else if(!on && S.mode==='pause'){ S.mode='play'; $('pause').classList.add('hidden'); MENU.cur=null; CLIP.pause(false); }
 }
 function showResults(win){
   captureFrame();
@@ -9317,6 +9665,8 @@ function showResults(win){
   }
   S.lastWin=win; S.lastRank=rank;
   NET.finish(win, rank, S.gameMode==='story'&&win? pts : null);
+  if(CLIP.best || CLIP.busy || CLIP.on) NET.track({ n:'clip' });   // 這一場有錄到精彩片段
+  refreshClipUI();
   if(win && S.gameMode==='story' && player){
     ACH.grant(STAGE.id);
     if(DIFF.id==='shura') ACH.grant('shura');
@@ -9473,23 +9823,76 @@ function shareLine(win,rank){
            LN(CHARS[S.currentChar],'name'), director.kills, player?player.maxCombo:0, time) + '\nhttps://brick.akiraxclaw.com';
 }
 function openShare(win,rank){
+  if(CLIP.on) CLIP.stop();                   // 還在錄收尾就直接收掉,片段馬上可用
   const cv=makeShareCard(win,rank);
   _shareLine=shareLine(win,rank);
   $('shareimg').src=cv.toDataURL('image/png');
-  $('sharetext').textContent=_shareLine.replace(/\n/g,'　');
   cv.toBlob(b=>{ _shareBlob=b; },'image/png');
   const canShare = !!(navigator.canShare && navigator.share);
   $('btn-sharenow').classList.toggle('hidden', !canShare);
   $('share').classList.remove('hidden');
   S.prevShare=S.mode; S.mode='share';
+  S.shareClipWait = !CLIP.best && CLIP.busy>0;   // 片段還在存檔:好了就自動切過去
+  refreshClipUI();
+  setShareView(CLIP.best? 'clip' : 'card');
 }
 function closeShare(){
   $('share').classList.add('hidden');
+  $('shareclip').pause();
   S.mode = S.prevShare || 'victory';
+}
+// 分享面板:精彩片段 / 戰績卡 兩個分頁(沒有片段就只有戰績卡)
+function setShareView(v){
+  S.shareView = v==='clip' && CLIP.best? 'clip' : 'card';
+  const clip=S.shareView==='clip', vid=$('shareclip');
+  $('share').classList.toggle('clipv', clip);
+  $('stab-clip').classList.toggle('on', clip); $('stab-card').classList.toggle('on', !clip);
+  if(clip){ try{ vid.currentTime=0; }catch(e){} vid.play().catch(()=>{}); } else vid.pause();
+  $('sharetext').textContent=(clip? clipShareText(CLIP.best) : _shareLine).replace(/\n/g,'　');
+}
+// 結算面板的片段提示 + 分享面板的影片(片段錄好 / 換場時呼叫)
+function refreshClipUI(){
+  const b=CLIP.best, note=$('clipnote'), vid=$('shareclip');
+  const inRes=S.mode==='victory'||S.mode==='defeat'||S.mode==='share';
+  note.classList.toggle('hidden', !(inRes && (b || CLIP.busy || CLIP.on)));
+  note.textContent= b? T('clip.note',b.kills) : T('clip.proc');
+  $('sharetabs').classList.toggle('hidden', !b);
+  if(b){
+    if(vid.dataset.url!==b.url){ vid.src=b.url; vid.dataset.url=b.url; }
+    $('clipcap').textContent=T('clip.cap', LN(CHARS[b.hero],'name'), b.name, b.kills, b.dur.toFixed(1));
+  }else if(vid.dataset.url){ vid.removeAttribute('src'); delete vid.dataset.url; vid.load(); }
+  if(S.mode==='share'){
+    if(b && S.shareClipWait){ S.shareClipWait=false; setShareView('clip'); }
+    else if(!b && S.shareView==='clip') setShareView('card');
+  }
+}
+function clipShareText(b){ return T('clip.line', LN(CHARS[b.hero],'name'), b.name, b.kills); }
+function saveClip(b){
+  const a=document.createElement('a');
+  a.href=b.url; a.download=T('clip.file',b.hero,b.kills);
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function shareClipDl(){ if(!CLIP.best) return; saveClip(CLIP.best); NET.track({ n:'share', ch:'clipdl' }); }
+// 片段發到 X:手機用系統分享直接帶影片(選 X App 就是一則附影片的貼文);
+// 桌機的 X 網頁發文連結不能附檔 → 先把影片存下來,再開發文頁,請玩家把影片附上
+function shareClipX(){
+  const b=CLIP.best, txt=clipShareText(b);
+  NET.track({ n:'share', ch:'clipx' });
+  const file=new File([b.blob], T('clip.file',b.hero,b.kills), {type:'video/mp4'});
+  if(IS_TOUCH && navigator.canShare && navigator.share && navigator.canShare({files:[file]})){
+    navigator.share({ files:[file], text:`${txt}\n#BRICKMUSOU https://brick.akiraxclaw.com` }).catch(()=>{});
+    return;
+  }
+  saveClip(b);
+  NET.flush(true);
+  announce(T('ann.clipDl'),'ui');
+  window.open('https://twitter.com/intent/tweet?text='+encodeURIComponent(txt)
+    +'&url='+encodeURIComponent('https://brick.akiraxclaw.com')+'&hashtags=BRICKMUSOU','_blank','noopener');
 }
 // 發到 X:開 X 的發文頁,預填戰績、遊戲連結與 hashtag。網頁發文連結不能附圖 ——
 // 要附戰績卡請用「分享」(手機系統分享選 X App 會帶圖)
 function shareToX(){
+  if(S.shareView==='clip' && CLIP.best) return shareClipX();
   if(!_shareLine) return;
   const body=_shareLine.replace(/\n?https?:\/\/\S+\s*$/,'');
   const u='https://twitter.com/intent/tweet?text='+encodeURIComponent(body)
@@ -9582,6 +9985,7 @@ function tick(rdtRaw){
   if(S.mode==='share'){
     if(input.take('Escape')||input.take('MenuBack')||input.take('KeyS')) closeShare();
     else if(input.take('KeyX')) shareToX();
+    else if(input.take('ArrowLeft')||input.take('ArrowRight')) setShareView(S.shareView==='clip'?'card':'clip');
     present(scene,camera);
     input.endFrame();
     return;
@@ -9698,6 +10102,7 @@ function tick(rdtRaw){
   $('hurtflash').style.opacity=hurtGlow; hurtGlow=Math.max(0,hurtGlow-2.6*rdt);
   $('musouflash').style.opacity=musGlow; musGlow=Math.max(0,musGlow-2.2*rdt);
   present(scene,camera);
+  CLIP.frame();                             // 精彩片段:要在 present 之後、同一個 task 內取像
   input.endFrame();
 }
 
@@ -10338,6 +10743,53 @@ const SELFTEST={
         return { 移動:+moved.toFixed(2) };
       }finally{ delete navigator.getGamepads; X.step(1/60); }
     }],
+    ['精彩片段:無雙自動錄影 → 一般 MP4 → 結算提示 → 分享影片', async ()=>{ const X=SELFTEST;
+      if(!CLIP.mime) return { 狀態:'此瀏覽器不支援 MP4 錄影,略過' };
+      if(!renderer.domElement.width) return { 狀態:'畫布大小為 0(頁面不可見),略過' };
+      X.enterPlay('guanyu',{rush:true});
+      X.stepSafe(2.5);                                   // 等敵兵靠近
+      // 錄影的時間軸是真實時間:改成照真實經過的時間一幀一幀走並渲染(跟主迴圈一樣);
+      // 期間擋住頁面自己的 rAF 迴圈,免得一幀走兩次
+      const raf=window.requestAnimationFrame; let held=null;
+      window.requestAnimationFrame=cb=>{ held=cb; return 0; };
+      let last=performance.now();
+      const rt=async sec=>{ const t0=performance.now();
+        while(performance.now()-t0<sec*1000){
+          const now=performance.now();
+          if(now-last>=1000/60-1){ const d=(now-last)/1000; last=now; if(player) player.hp=player.maxHp; tick(d); }
+          await new Promise(r=>{ const m=new MessageChannel(); m.port1.onmessage=()=>r(); m.port2.postMessage(0); });
+        } };
+      let recSec=0;
+      try{
+        player.musou=100; input.pressed.add('KeyL');
+        await rt(.2);
+        X.expect(CLIP.on, '放無雙沒有開始錄影');
+        const t0=performance.now();
+        for(let i=0;i<80 && CLIP.on;i++) await rt(.25);
+        recSec=(performance.now()-t0)/1000+.2;
+        X.expect(!CLIP.on, '錄影沒有自己停');
+      }finally{ window.requestAnimationFrame=raf; if(held) raf(held); }
+      for(let i=0;i<60 && CLIP.busy;i++) await new Promise(r=>setTimeout(r,50));
+      const b=CLIP.best;
+      X.expect(b && b.kills>0 && b.blob.size>20000, `沒有留下片段:${JSON.stringify(b && {k:b.kills, size:b.blob.size})}`);
+      // 一般 MP4:ftyp → moov → mdat,沒有 moof 片段(X 等平台才收)
+      const u8=new Uint8Array(await b.blob.arrayBuffer()), dv=new DataView(u8.buffer), boxes=[];
+      for(let p=0;p+8<=u8.length;){ const sz=dv.getUint32(p); boxes.push(String.fromCharCode(...u8.subarray(p+4,p+8))); if(sz<8) break; p+=sz; }
+      X.expect(boxes.join()==='ftyp,moov,mdat', `MP4 結構不對:${boxes.join()}`);
+      const v=document.createElement('video'); v.muted=true; v.src=b.url;
+      const m=await new Promise(r=>{ v.onloadedmetadata=()=>r({ d:v.duration, w:v.videoWidth }); v.onerror=()=>r({ err:1 }); setTimeout(()=>r({ timeout:1 }),4000); });
+      X.expect(m.w===CLIP.W && m.d>2 && Math.abs(m.d-recSec)<1.5, `影片讀不出來或長度不對:${JSON.stringify(m)},實際錄了 ${recSec.toFixed(1)} 秒`);
+      // 結算面板提示 → 點提示開分享面板,預設影片分頁
+      showResults(true);
+      X.expect(!$('clipnote').classList.contains('hidden') && $('clipnote').textContent.includes(String(b.kills)), '結算面板沒有片段提示');
+      $('clipnote').click();
+      X.expect(S.mode==='share' && S.shareView==='clip' && $('share').classList.contains('clipv'), '分享面板沒有切到影片');
+      X.expect($('shareclip').dataset.url===b.url, '分享面板放的不是這段影片');
+      setShareView('card');
+      X.expect(!$('share').classList.contains('clipv') && S.shareView==='card', '切回戰績卡失敗');
+      closeShare();
+      return { 擊破:b.kills, 秒:+m.d.toFixed(1), KB:Math.round(b.blob.size/1024) };
+    }],
   ],
 
   async run(opt={}){
@@ -10417,6 +10869,7 @@ window.GAME={
   arrowRain:()=>arrowRain(), cavalry:()=>cavalryCharge(), flank:()=>flankAmbush(),
   fps:()=>Math.round(fps),
   calls:()=>renderer.info.render.calls,
+  CLIP, fmp4ToMp4, openShare,
   selftest:(o)=>SELFTEST.run(o), world, ARENA, STAGES, get STAGE(){ return STAGE; }, loadStage, OBJ, openGate, OFFICER_DEFS, BOSS_DEFS, CAMPAIGN, openCampaign, UNLOCK, HERO_ORDER, LEVELS, ACH, ACH_DEFS, COSTUME, COSTUMES, openAchv, DLG, BGM_THEMES, TUTOR, openBrief, confirmBrief, NET, BOARD,
   step(sec=1,opt={}){ const n=Math.ceil(sec*60); const old=S.noRender; if(opt.render===false) S.noRender=true; for(let i=0;i<n;i++) tick(1/60); S.noRender=old; }, // 除錯:手動快轉
 };
@@ -10431,7 +10884,7 @@ if(!/[?&]selftest\b/.test(location.search)){
     const h=new URL(document.referrer).hostname;
     return /(^|\.)(t\.co|x\.com|twitter\.com)$/.test(h)? 'x' : h===location.hostname? 'direct' : 'other';
   }catch(e){ return 'other'; } })();
-  NET.track({ n:'session', lang:LANG.cur, ref, touch:IS_TOUCH, pad:!!(navigator.getGamepads && Array.from(navigator.getGamepads()).some(g=>g&&g.connected)) });
+  NET.track({ n:'session', lang:LANG.cur, ref, touch:IS_TOUCH, clip:!!CLIP.mime, pad:!!(navigator.getGamepads && Array.from(navigator.getGamepads()).some(g=>g&&g.connected)) });
   setTimeout(()=>NET.flush(),4000);
 }
 if(/[?&]selftest\b/.test(location.search)) setTimeout(()=>SELFTEST.run({overlay:true}),400);

@@ -66,7 +66,7 @@ http.createServer(async (req, res) => {
   // 開發用:讓頁面把產生的圖寫進 assets/(只允許安全檔名,只寫這個資料夾)
   if (req.method === 'POST' && p === '/__save') {
     const name = path.basename(u.searchParams.get('name') || '');
-    if (!/^[A-Za-z0-9_.-]+\.(png|jpg|webp|json|txt)$/.test(name)) {
+    if (!/^[A-Za-z0-9_.-]+\.(png|jpg|webp|json|txt|mp4)$/.test(name)) {
       res.writeHead(400); return res.end('bad name');
     }
     const chunks = [];

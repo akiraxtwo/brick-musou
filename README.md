@@ -203,6 +203,11 @@ Combo titles appear at 10/30/60/120, and KO medals pop at 50/100/200/300/500/100
 - **Share card** (`S` on the results screen): a 1200×630 card built from the current battlefield frame, with portrait,
   mode, rank, KOs, combo and time. Share it (Web Share on mobile), copy the image, download it, or copy a one-line text
   summary that includes the game link.
+- **Highlight clips**: every Musou is recorded automatically, from the Musou name card to the finisher and its slow motion
+  (about 6–10 s, game sound included). Each battle keeps the one with the most KOs, and the results screen offers it.
+  The clip carries the Musou name card, a live KO counter, a `brick.akiraxclaw.com` watermark and an end card with the link.
+  **Post on X** opens the phone's share sheet with the video attached; on desktop it saves the MP4 and opens the X
+  composer so you can attach it. It can be turned off in settings (browsers that can't record MP4, e.g. Firefox, skip it).
 
 ## Leaderboards & analytics
 
@@ -230,7 +235,7 @@ Saves from older versions switch to English once, and a later choice of Chinese 
 Every name, title, weapon, officer, base, difficulty, element, combo title and medal is translated.
 
 Settings (saved in `localStorage`): master / music / SFX volume · quality (auto by FPS / high / mid / low) ·
-camera sensitivity & invert · screen shake 0–150 % · gamepad rumble & dead zone · damage numbers (officers and bosses only; soldiers show none) · tutorial ·
+camera sensitivity & invert · screen shake 0–150 % · gamepad rumble & dead zone · damage numbers (officers and bosses only; soldiers show none) · highlight clips · tutorial ·
 touch buttons (auto / on / off), size & opacity · reset save data.
 
 ## Self-test
@@ -249,6 +254,8 @@ console. The page fast-forwards the game with `tick()` through **31 scenarios** 
 - **Online**: leaderboard detection, submit row shown or hidden, typing a nickname doesn't trigger game keys,
   board navigation, and the server rejecting impossible scores. Locally, with the mock database, it also submits,
   renames, reads back and checks analytics. On production it is read-only and never writes to the boards.
+- **Highlight clip**: a real Musou recorded in real time, then checked as a plain MP4 (`ftyp → moov → mdat`) whose length
+  matches the recording; the results note and the share panel's video tab follow.
 - **Balance regressions**: a simulated player, using real inputs only, must capture a camp within 60 s and must catch
   Dong Zhuo on Normal. Both checks have caught real soft-lock bugs.
 
@@ -288,6 +295,11 @@ The suite was checked by deliberately breaking the game and confirming the tests
   4× MSAA half-float targets. Verlet cloth for capes and skirts. Web Audio synthesizes all music and sound.
 - **Share capture**: the renderer doesn't use `preserveDrawingBuffer`. The results screen renders and then calls
   `drawImage` in the same task, so screenshots cost nothing during play.
+- **Highlight recording**: after each render the frame is copied into a 1280×720 (touch: 960×540) canvas at 30 fps,
+  overlays are drawn on top, and `captureStream` + `MediaRecorder` encode it as H.264 + AAC MP4 (X doesn't accept WebM).
+  Game sound comes from the Web Audio master bus. Recording starts only after the first real frame, so the thumbnail is
+  the Musou name card, not black. Chrome writes fragmented MP4, so `fmp4ToMp4()` rewrites the sample tables into a plain
+  MP4 with the `moov` first and frame times snapped to 30 fps, without re-encoding (a few ms).
 
 ### Debug console
 
