@@ -274,6 +274,9 @@ The suite was checked by deliberately breaking the game and confirming the tests
   canvas at load time, and headgear, beards and pauldrons are sculpted in code. Each hero, officer and Dong Zhuo is one
   entry in the `V2` table, and static parts under the same joint are merged. Mobs share one muted enemy color on purpose,
   so the heroes stand out. Add **`?v1`** to the URL to see the older plain models.
+  On touch devices the prints are drawn at half resolution (a quarter of the texture memory, with no visible
+  difference on a phone screen). A stage's officers and boss are built during the stage intro, so they don't
+  stutter when they first appear.
 - **Crowd density**: enemies spawn in a ring 13–23 units around the player instead of at the gate. Far soldiers move
   faster to catch up, stragglers are recycled, and they circle inside your attack range. The pressure system limits
   how many attack at once, never how many are present.

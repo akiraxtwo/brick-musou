@@ -2345,13 +2345,16 @@ function studGeo(r,h){ return new THREE.CylinderGeometry(r,r,h,10); }
 
 // ---------- 樂高小人臉(印刷在圓柱頭上)----------
 const LFACE=new Map();
-function makeLegoFace(cfg){
+// 手機(觸控)的印刷貼圖(臉 / 軀幹 / 腿 / 披風)用半解析度:在手機螢幕上看不出差別,貼圖記憶體少 3/4。
+// 對白頭像與戰績卡會把臉放大,呼叫時傳 res=1 另外畫一張全解析度的
+const PRINT_RES = IS_TOUCH? .5 : 1;
+function makeLegoFace(cfg, res=PRINT_RES){
   const face=cfg.face||'plain';
   const skin=cfg.headColor||LEGO.skin;
-  const key=`${face}|${skin}|${cfg.beard||''}|${cfg.mood||''}`;
+  const key=`${face}|${skin}|${cfg.beard||''}|${cfg.mood||''}|${res}`;
   if(LFACE.has(key)) return LFACE.get(key);
-  const W=512,H=256, cv=document.createElement('canvas'); cv.width=W; cv.height=H;
-  const c=cv.getContext('2d');
+  const W=512,H=256, cv=document.createElement('canvas'); cv.width=W*res; cv.height=H*res;
+  const c=cv.getContext('2d'); c.scale(res,res);        // 之後一律用 512×256 的邏輯座標作畫
   const hex=v=>'#'+v.toString(16).padStart(6,'0');
   c.fillStyle=hex(skin); c.fillRect(0,0,W,H);
   const face2 = { liu2:liuFace, guan2:guanFace, zhang2:zhangFace, lu2:luFace, off2:offFace, dong2:dongFace }[face];   // v2 臉
@@ -2643,6 +2646,7 @@ function ldPrintGeo(name){
 const LPRINT=new Map();
 function ldPrintTex(key, name, base, draw, W=1024, H=512){
   if(LPRINT.has(key)) return LPRINT.get(key);
+  W*=PRINT_RES; H*=PRINT_RES;                             // 作畫座標由 W / H 換算,解析度改了圖案比例不變
   const bb=ldPrintGeo(name).boundingBox;
   const B={ x0:bb.min.x/LDU, x1:bb.max.x/LDU, y0:bb.min.y/LDU, y1:bb.max.y/LDU, z0:bb.min.z/LDU, z1:bb.max.z/LDU };
   const cv=document.createElement('canvas'); cv.width=W; cv.height=H;
@@ -2877,7 +2881,8 @@ function lflame(c,x,y,s,col){
 function v2CapeTex(C, style='cloud', crest=''){
   const key=`cape|${style}|${crest}|${C.cape}|${C.cloth2}`;
   if(LPRINT.has(key)) return LPRINT.get(key);
-  const W=256,H=384, cv=document.createElement('canvas'); cv.width=W; cv.height=H; const c=cv.getContext('2d');
+  const W=256,H=384, cv=document.createElement('canvas'); cv.width=W*PRINT_RES; cv.height=H*PRINT_RES; const c=cv.getContext('2d');
+  c.scale(PRINT_RES,PRINT_RES);                           // 之後用 256×384 的邏輯座標作畫
   c.fillStyle=lhex(C.cape); c.fillRect(0,0,W,H);
   c.lineCap='round';
   if(style==='flame'){
@@ -7921,7 +7926,7 @@ const DLG={
     if(this.faces.has(who)) return this.faces.get(who);
     let url='';
     try{
-      const img=makeLegoFace(this.rigOf(who)).image, c=document.createElement('canvas'); c.width=c.height=96;
+      const img=makeLegoFace(this.rigOf(who),1).image, c=document.createElement('canvas'); c.width=c.height=96;
       c.getContext('2d').drawImage(img, 256-66, 40, 132, 132, 0, 0, 96, 96);
       url=c.toDataURL('image/png');
     }catch(e){}
@@ -8827,6 +8832,23 @@ function cleanupBattle(){
   AUD.intensity=0;
   hurtGlow=0; musGlow=0;
 }
+// 開場卡 / 戰前簡報期間,先把本關會登場的敵將與 BOSS 建一次模:印刷貼圖與合併幾何進快取、貼圖先上傳 GPU,
+// 登場時就不用當場畫貼圖(手機上約一幀的停頓)。一次建一位、之間讓出主執行緒,不卡開場動畫;建好的模型直接丟掉
+function prewarmStage(survival){
+  const defs = survival? Object.values(OFFICER_DEFS) : [...STAGE.officerList];   // 無盡之陣輪流派出全部敵將
+  if(STAGE.bossDef) defs.push(STAGE.bossDef);
+  const token = prewarmStage.token = (prewarmStage.token||0)+1;
+  const next=()=>{
+    if(token!==prewarmStage.token || !defs.length) return;   // 期間又開了新的一場就停
+    const d=defs.shift();
+    try{
+      const R=makeHuman(Object.assign({},d.rig,{weapon:d.weapon,scale:d.scale,pads:true,ldraw:true}));   // 與 Enemy 建構子同一組設定
+      R.root.traverse(o=>{ if(o.material && o.material.map) renderer.initTexture(o.material.map); });
+    }catch(e){}
+    setTimeout(next,0);
+  };
+  setTimeout(next,0);
+}
 // 友軍武將(未選用的另外兩位)
 function allyDefFor(id){
   const C=CHARS[id];
@@ -8887,6 +8909,7 @@ function startBattle(charId, opt={}){
     return;
   }
   try{ localStorage.setItem('musou.last', charId); if(S.gameMode==='story') localStorage.setItem('musou.lastStage', STAGE.id); }catch(e){}
+  prewarmStage(!!opt.survival);
   TOUCH.goFullscreen();
   const scEl=$('stagecard');
   if(opt.daily) announce(T('ann.dailyN',opt.daily.day),'ui', `${LN(opt.daily.mut,'n')} ── ${LN(opt.daily.mut,'d')}`);
@@ -9089,7 +9112,7 @@ function makeShareCard(win,rank){
   // 頭像:直接裁切積木印刷臉貼圖的正面弧段
   const cx=205, cy=250, R=105;
   try{
-    const tex=makeLegoFace(v2FaceRig(C.rig)), img=tex.image;
+    const tex=makeLegoFace(v2FaceRig(C.rig),1), img=tex.image;
     c.save(); c.beginPath(); c.arc(cx,cy,R,0,Math.PI*2); c.clip();
     c.drawImage(img, 256-74, 34, 148, 200, cx-R, cy-R*1.06, R*2, R*2.12);
     c.restore();
@@ -9650,7 +9673,8 @@ const SELFTEST={
     ['情境式教學:依裝置顯示提示 → 完成動作即關閉且不再出現', ()=>{ const X=SELFTEST;
       localStorage.removeItem('musou.tut'); SETTINGS.d.tutorial=1;
       X.enterPlay('guanyu'); X.step(1);
-      X.expect(!$('tutor').classList.contains('hidden') && $('tutortext').textContent.includes('WASD'), `開場應提示鍵盤移動:${$('tutortext').textContent}`);
+      X.expect(!$('tutor').classList.contains('hidden') && TUTOR.cur && TUTOR.cur.id==='move'
+        && (TUTOR.device()!=='kb' || $('tutortext').textContent.includes('WASD')), `開場應提示移動(${TUTOR.device()}):${$('tutortext').textContent}`);   // 觸控 / 手把顯示各自的操作說明
       player.pos.z+=12; X.step(.3);
       X.expect(TUTOR.load().move, '移動後未記錄已看過移動教學');
       X.step(1.5);
