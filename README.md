@@ -270,6 +270,10 @@ The suite was checked by deliberately breaking the game and confirming the tests
 - **Crowd rendering**: background armies (4 InstancedMesh × 200), interactive soldiers (cap 60 / 100 / 140 by
   performance tier) and an instanced corpse pool. Each soldier's parts are vertex-color baked into one mesh per joint
   (21 → 10 draw calls). 160 soldiers cost about 4.6 ms per frame.
+- **Hero models**: heads, torsos, arms and legs are LDraw parts. Armor, faces and capes are printed onto them with
+  canvas at load time, and headgear, beards and pauldrons are sculpted in code. Each hero, officer and Dong Zhuo is one
+  entry in the `V2` table, and static parts under the same joint are merged. Mobs share one muted enemy color on purpose,
+  so the heroes stand out. Add **`?v1`** to the URL to see the older plain models.
 - **Crowd density**: enemies spawn in a ring 13–23 units around the player instead of at the gate. Far soldiers move
   faster to catch up, stragglers are recycled, and they circle inside your attack range. The pressure system limits
   how many attack at once, never how many are present.
