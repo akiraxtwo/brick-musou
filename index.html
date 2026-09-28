@@ -470,6 +470,41 @@ body.touch #combo{transform:scale(.82); transform-origin:right bottom}
   .btn{font-size:16px; padding:9px 26px 9px calc(26px + .42em)}
   #selhint{font-size:11px}
 }
+/* 手機橫向(矮畫面):選將卡片壓成精簡條(名字 + 等級 + 2×2 能力值),難度與出陣並排,
+   把畫面中間讓給 3D 武將(原本卡片 + 按鈕疊起來約 330px 高,手機只有 390px,整排武將都被蓋住)。
+   選擇器前面加 #select,才蓋得過後面英文排版的覆寫 */
+@media (max-height:520px){
+  #seltitle{margin-top:6px}
+  #seltitle h1{font-size:26px}
+  #seltitle .sub{font-size:11px; margin-top:2px; letter-spacing:.3em}
+  #seltitle .subline{display:none}
+  #selbottom{flex-direction:row; flex-wrap:wrap; justify-content:center; column-gap:14px; row-gap:5px; bottom:18px}   /* 18px:讓開右下角的授權聲明 */
+  #cards{flex-basis:100%; gap:8px}
+  #diffrow{order:2; gap:6px}
+  #startbtn{order:3}
+  #bestline{order:4; flex-basis:100%; text-align:center; font-size:10px; min-height:0}
+  #selhint{order:5; flex-basis:100%; text-align:center}
+  #select .card{width:min(196px,23vw); padding:5px 9px 6px; display:grid; grid-template-columns:1fr 1fr; column-gap:10px; align-content:start}
+  #select .card>*:not(.statrow){grid-column:1/-1}
+  #select .card h2{font-size:16px; letter-spacing:.08em}
+  #select .card h2 small{font-size:10.5px; margin-left:5px}
+  #select .card .wpn, #select .card .wlv{display:none}
+  #select .card.lock .wpn{display:block; font-size:10px; margin:2px 0 0}
+  #select .card .clv{font-size:10px; margin:1px 0 3px}
+  #select .card .cos{font-size:10px; margin:0 0 3px}
+  #select .card .key{top:4px; right:7px; font-size:10px}
+  #select .statrow{font-size:9px; letter-spacing:.1em; margin:1px 0}
+  #select .statrow .pips{gap:2px}
+  #select .pip{width:8px; height:5px}
+  #select .card:hover{transform:none}
+  #select .card.sel{transform:translateY(-4px)}
+  #select #diffrow .dlab{font-size:10px; letter-spacing:.2em; padding-right:2px}
+  #select .dbtn{font-size:12px; padding:3px 10px}
+  #select .dbtn small{font-size:8.5px}
+  #select #startbtn{font-size:14px; padding:7px 20px}
+}
+/* 觸控裝置用不到鍵盤操作說明(← → / Tab / Enter)與卡片上的數字鍵 */
+body.touch #selhint, body.touch .card .key{display:none}
 /* 結算面板:視窗不夠高時壓縮(多了排行榜登錄列) */
 #results{overflow:auto; justify-content:safe center}
 @media (max-height:900px){
@@ -8148,6 +8183,7 @@ function updateCamera(dt,rdt){
 // ============================================================
 const sel={ scene:new THREE.Scene(), cam:new THREE.PerspectiveCamera(40,innerWidth/innerHeight,.1,120), rigs:[], ids:[], idx:1, t:0, ring:null, lights:[] };
 const selX=i=>(i-(HERO_ORDER.length-1)/2)*2.95;
+const SEL_COMPACT=matchMedia('(max-height:520px)');   // 與 CSS 的手機橫向版面同一個條件
 const SIL_MAT=new THREE.MeshBasicMaterial({ color:0x0b0910 });
 // 未解鎖的武將顯示成剪影
 function refreshSelectLocks(){
@@ -8206,9 +8242,12 @@ function updateSelect(rdt){
   for(const L of sel.lights) L.intensity=24+Math.sin(sel.t*12+L.position.x)*5+rand(-2,2);
   // 鏡頭跟著選取的武將平移;窄畫面(4:3、直立平板)拉遠一點,四人才放得下
   const asp=sel.cam.aspect, back=asp<1.5? 10.4 : 9.2;
+  // 手機橫向:選單壓到下方一條 → 鏡頭放低、看向較低處,武將落在標題與選單之間
+  const low=SEL_COMPACT.matches;
   sel.cam.position.x=damp(sel.cam.position.x,tx*.62,4,rdt);
+  sel.cam.position.y=damp(sel.cam.position.y,low? 1.9 : 2.5,4,rdt);
   sel.cam.position.z=damp(sel.cam.position.z,back,4,rdt);
-  sel.cam.lookAt(sel.cam.position.x*.95,1.45,0);
+  sel.cam.lookAt(sel.cam.position.x*.95,low? .7 : 1.45,0);
 }
 function setSelIdx(i){
   if(sel.idx!==i){ AUD.ensure(); AUD.guard(); }
