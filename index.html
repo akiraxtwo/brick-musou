@@ -4962,6 +4962,7 @@ function propKit(P, rng){
   const ground=(G,rep=3.4)=>{
     const gtex=makeGroundTexture(G);
     gtex.wrapS=gtex.wrapT=THREE.RepeatWrapping; gtex.repeat.set(rep,rep);
+    gtex.offset.x=(.5-rep*.5)%1;          // 大道畫在貼圖正中央:位移讓它對準 x=0(城門),原本偏在 x≈-23.5
     const g=new THREE.Mesh(new THREE.PlaneGeometry(400,400), new THREE.MeshLambertMaterial({ map:gtex }));
     g.rotation.x=-Math.PI/2; g.receiveShadow=true; P.add(g);
   };
@@ -5059,6 +5060,171 @@ function buildHulao(P, rng){
   // 遠山:階梯積木山
   mountains();
   scatter();
+  hulaoExtras(P, rng);
+}
+// ---------- 虎牢關加料:小河與木橋、營寨柵欄、望樓、補給、投石車、破車、插地長槍、岩石群、樹林 ----------
+// 全部是靜態裝飾(不擋路,和原本的道具一樣)。依「區塊 × 顏色 × 投不投影」合併:
+// 場地切成 3×3 區塊,鏡頭與陰影看不到的區塊整塊略過;小道具(箱、桶、槍、蘆葦、岸石)不投影
+function hulaoExtras(P, rng){
+  const { mkBanner }=propKit(P,rng);
+  const BK=new Map();                                     // 區塊|顏色|投影 → 幾何清單(最後合併)
+  const _m=new THREE.Matrix4(), _q=new THREE.Quaternion(), _e=new THREE.Euler(), _p=new THREE.Vector3(), _s=new THREE.Vector3(1,1,1);
+  const put=(g,key,x,y,z,ry,rx,rz,sh)=>{
+    _e.set(rx,ry,rz,'YXZ'); _q.setFromEuler(_e); _m.compose(_p.set(x,y,z),_q,_s); g.applyMatrix4(_m);
+    const k=`${(x<-31?0:x>31?2:1)+3*(z<-30?0:z>30?2:1)}|${key}|${sh?1:0}`;
+    if(!BK.has(k)) BK.set(k,[]); BK.get(k).push(g);
+  };
+  // 物件座標系:原點 (ox,oz)、朝向 ory,零件用區域座標擺;sh = 投不投影
+  const at=(ox,oz,ory=0,sh=true)=>{
+    const c=Math.cos(ory), sn=Math.sin(ory);
+    const W=(lx,lz)=>[ox+lx*c+lz*sn, oz-lx*sn+lz*c];
+    return {
+      box(w,h,d,lx,ly,lz,key,ry=0,rx=0,rz=0){ const [x,z]=W(lx,lz); put(new THREE.BoxGeometry(w,h,d),key,x,ly,z,ory+ry,rx,rz,sh); },
+      cyl(rt,rb,h,lx,ly,lz,key,seg=8,rx=0,rz=0){ const [x,z]=W(lx,lz); put(new THREE.CylinderGeometry(rt,rb,h,seg),key,x,ly,z,ory,rx,rz,sh); },
+      cone(r,h,lx,ly,lz,key,seg=4,ry=0){ const [x,z]=W(lx,lz); put(new THREE.ConeGeometry(r,h,seg),key,x,ly,z,ory+ry,0,0,sh); },
+    };
+  };
+  const WOOD=0x583927, WOOD2=0x6e4a2f, DARK=0x33281e, STONE=0x9BA19D, STONE2=0x6D6E6C, TAN=0xDEC69C, RED=0xC4281C, DRED=0x720E0F, GOLD=0xAA7F2E;
+  const LEAF=0x237841, LEAF2=0x184632, REED=0x5a8f3c, REED2=0x3f6b2c;
+  // ---- 零件 ----
+  const tent=(x,z,ry,s,roof)=>{ const o=at(x,z,ry);
+    o.cone(2.1*s,2.0*s,0,1.9*s,0,roof,4,Math.PI/4); o.cyl(1.55*s,1.75*s,1.0*s,0,.5*s,0,DRED,4);
+    o.box(.07,3.4*s,.07,0,1.7*s,0,WOOD); };
+  const tower=(x,z,ry=0)=>{ const o=at(x,z,ry);
+    for(const sx of [-1,1]) for(const sz of [-1,1]) o.box(.2,5.4,.2,sx*.85,2.7,sz*.85,WOOD,0,-sz*.05,-sx*.05);
+    o.box(2.4,.2,2.4,0,5.4,0,WOOD);
+    o.box(2.6,.7,.14,0,5.85,1.2,WOOD2); o.box(2.6,.7,.14,0,5.85,-1.2,WOOD2); o.box(.14,.7,2.6,1.2,5.85,0,WOOD2); o.box(.14,.7,2.6,-1.2,5.85,0,WOOD2);
+    o.box(1.6,.12,.12,0,2.2,.85,WOOD2,0,0,.55); o.box(1.6,.12,.12,0,2.2,-.85,WOOD2,0,0,-.55);   // 斜撐
+    o.cone(2.2,1.3,0,6.8,0,0x5a4432,4,Math.PI/4); };
+  const crate=(x,z,ry,sz=1.1,y=0)=>{ const o=at(x,z,ry,false);
+    o.box(sz,sz,sz,0,y+sz/2,0,WOOD2); o.box(sz*1.02,sz*.14,sz*1.02,0,y+sz*.12,0,DARK); o.box(sz*1.02,sz*.14,sz*1.02,0,y+sz*.88,0,DARK); };
+  const barrel=(x,z)=>{ const o=at(x,z,0,false);
+    o.cyl(.42,.42,1.1,0,.55,0,WOOD,10); o.cyl(.45,.45,.1,0,.22,0,DARK,10); o.cyl(.45,.45,.1,0,.88,0,DARK,10); };
+  const rack=(x,z,ry)=>{ const o=at(x,z,ry,false);
+    o.box(.16,1.5,.16,-1.1,.75,0,WOOD); o.box(.16,1.5,.16,1.1,.75,0,WOOD); o.box(2.5,.12,.12,0,1.4,0,WOOD);
+    for(let i=0;i<5;i++){ const lx=-.9+i*.45; o.box(.07,2.6,.07,lx,1.25,.25,DARK,0,-.18,0); o.cone(.09,.34,lx,2.6,.49,STONE,4); } };
+  const brazier=(x,z)=>{ const o=at(x,z,0,false);
+    o.cyl(.72,.48,.5,0,1.15,0,DARK,10);
+    for(let i=0;i<3;i++){ const a=i*TAU/3; o.box(.09,1.0,.09,Math.sin(a)*.4,.5,Math.cos(a)*.4,0x241c14); }
+    o.box(.8,.7,.8,0,1.65,0,'f0'); o.box(.55,1.0,.55,.05,1.8,-.04,'f1'); o.box(.3,1.2,.3,-.05,1.95,.05,'f2'); };
+  const stake=(x,z,h,lean)=>{ const o=at(x,z,rng()*TAU);
+    o.box(.34,h,.34,0,h/2,0,rng()<.5? WOOD : WOOD2,0,lean,0); o.cone(.26,.5,0,h+.22,Math.sin(lean)*h*.5,WOOD,4); };
+  const rocks=(x,z,n,scale)=>{ const o=at(x,z,rng()*TAU);
+    let y=0;
+    for(let k=0;k<n;k++){
+      const w=(1.2+rng()*1.8)*scale*(1-k*.13), h=(.6+rng()*.5)*scale, lx=(rng()-.5)*1.6*scale, lz=(rng()-.5)*1.6*scale;
+      const col = rng()<.55? STONE : STONE2;
+      o.box(w,h,w*.8,lx,y+h/2,lz,col,rng()*.6);
+      o.cyl(.16*scale,.16*scale,.12,lx,y+h+.06,lz,col,8);
+      y+=h*.82;
+    } };
+  const tree=(x,z,s)=>{ const o=at(x,z,rng()*TAU), lm= rng()<.5? LEAF : LEAF2;
+    o.cyl(.2*s,.24*s,2*s,0,1*s,0,WOOD,8);
+    o.cyl(1.55*s,1.55*s,.55*s,0,2.3*s,0,lm,12); o.cyl(1.18*s,1.18*s,.52*s,0,2.95*s,0,lm,12);
+    o.cyl(.72*s,.72*s,.48*s,0,3.55*s,0,lm,12); o.cyl(.2*s,.2*s,.13*s,0,3.85*s,0,lm,10); };
+  const cart=(x,z,ry,broken)=>{ const o=at(x,z,ry,false);
+    o.box(1.9,.18,3.2,0,.95,0,WOOD2, 0, broken? .12:0, broken? .18:0);
+    o.box(.12,.5,3.2,.95,1.25,0,WOOD,0,0,broken? .18:0); o.box(.12,.5,3.2,-.95,1.25,0,WOOD,0,0,broken? .18:0);
+    o.box(.12,.12,2.4,0,.8,2.6,WOOD);                        // 車轅
+    o.cyl(.62,.62,.16,1.12,.62,-.4,DARK,12,0,Math.PI/2);
+    if(!broken) o.cyl(.62,.62,.16,-1.12,.62,-.4,DARK,12,0,Math.PI/2);
+    else o.cyl(.62,.62,.16,-1.9,.08,.9,DARK,12,0,0);          // 掉下來的輪子
+    crate(x+Math.cos(ry)*.2, z-Math.sin(ry)*.2, ry, .8, 1.05); };
+  const catapult=(x,z,ry)=>{ const o=at(x,z,ry);
+    o.box(2.4,.3,4.2,0,.55,0,WOOD);                          // 底座
+    for(const sx of [-1,1]){ o.box(.25,2.4,.25,sx*1.0,1.8,.4,WOOD2,0,-.25,0); o.box(.25,2.4,.25,sx*1.0,1.8,-.6,WOOD2,0,.25,0); }
+    o.box(2.3,.25,.25,0,2.9,-.1,WOOD);                        // 橫軸
+    o.box(.28,.28,4.4,0,2.3,.9,WOOD2,0,-.55,0);               // 拋臂
+    o.cyl(.45,.35,.4,0,3.4,2.6,DARK,8);                       // 拋斗
+    for(const sx of [-1,1]) for(const sz of [-1.6,1.6]) o.cyl(.5,.5,.2,sx*1.3,.5,sz,DARK,12,0,Math.PI/2); };
+  // ---- 1. 小河(東西向,蜿蜒):水面 + 淺灘 + 岸石 + 蘆葦,三座木橋 ----
+  const zc=x=>10+4*Math.sin(x/23)+2*Math.sin(x/9+1.3);
+  const bridges=[0,-60,60];
+  const ribbon=(half,y)=>{
+    const pos=[], idx=[];
+    for(let x=-104,i=0;x<=104;x+=2,i++){
+      const z=zc(x), dz=zc(x+.5)-zc(x-.5), L=Math.hypot(dz,1), nx=-dz/L, nz=1/L;
+      pos.push(x+nx*half,y,z+nz*half, x-nx*half,y,z-nz*half);
+      if(i) idx.push((i-1)*2,(i-1)*2+1,i*2, (i-1)*2+1,i*2+1,i*2);
+    }
+    const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); g.setIndex(idx); g.computeVertexNormals();
+    return g;
+  };
+  const waterM=new THREE.MeshPhongMaterial({ color:0x2f7fc4, emissive:0x0a2238, shininess:110, specular:0x9cc8ee, transparent:true, opacity:.9, side:THREE.DoubleSide });
+  const shoalM=new THREE.MeshLambertMaterial({ color:0x8fb9c9, side:THREE.DoubleSide });
+  const water=new THREE.Mesh(ribbon(2.9,.045), waterM); water.receiveShadow=true; P.add(water);
+  const shoal=new THREE.Mesh(ribbon(3.6,.03), shoalM); shoal.receiveShadow=true; P.add(shoal);
+  for(let x=-102;x<=102;x+=2.3){
+    if(bridges.some(b=>Math.abs(x-b)<4)) continue;
+    const z=zc(x), dz=zc(x+.5)-zc(x-.5), L=Math.hypot(dz,1), nx=-dz/L, nz=1/L;
+    for(const side of [-1,1]){
+      const d=3.9+rng()*.5, w=.7+rng()*.7, h=.22+rng()*.3;
+      at(x+nx*d*side, z+nz*d*side, rng()*TAU, false).box(w,h,w*.8,0,h/2,0, rng()<.6? STONE : STONE2);
+      if(rng()<.28){ const o=at(x+nx*(d+.9)*side+rng()*1.2, z+nz*(d+.9)*side, 0, false);
+        for(let k=0;k<4;k++) o.box(.07,.8+rng()*.7,.07,(rng()-.5)*.8,.55,(rng()-.5)*.8, rng()<.5? REED : REED2,0,(rng()-.5)*.3,(rng()-.5)*.3); }
+    }
+  }
+  for(const bx of bridges){                                  // 木橋:沿 z 跨過河(橋面很低,單位走過去只會淹到腳底)
+    const z0=zc(bx), len=10.5;
+    for(let k=0;k<17;k++){ const lz=-len/2+.31+k*.62; at(bx,z0,0).box(5.2,.12,.56,0,.09,lz, k%2? WOOD : WOOD2); }
+    for(const sx of [-1,1]){
+      for(let k=0;k<5;k++){ const lz=-len/2+.3+k*(len-.6)/4; at(bx,z0,0).box(.22,1.1,.22,sx*2.55,.6,lz,WOOD); }
+      at(bx,z0,0).box(.14,.14,len,sx*2.55,1.08,0,WOOD2); at(bx,z0,0).box(.12,.12,len,sx*2.55,.62,0,WOOD2);
+    }
+  }
+  // ---- 2. 四座營寨:柵欄圈(留兩個出入口)+ 營帳 + 望樓 + 補給 + 兵器架 + 火盆 + 旗 ----
+  for(const b of STAGE.bases){
+    const aIn=Math.atan2(-b.x,0), R=13.5;                   // 出入口朝戰場中央與外側
+    for(let a=0;a<TAU;a+=1.3/R){
+      const d1=Math.abs(((a-aIn+Math.PI)%TAU+TAU)%TAU-Math.PI), d2=Math.abs(((a-aIn)%TAU+TAU)%TAU-Math.PI);
+      if(d1<.3 || d2<.22) continue;
+      stake(b.x+Math.sin(a)*R, b.z+Math.cos(a)*R, 2.0+rng()*.45, (rng()-.5)*.12);
+    }
+    const roofs=[TAN,RED,TAN];
+    [1.15,2.6,4.2].forEach((da,i)=>{ const a=aIn+da; tent(b.x+Math.sin(a)*10.4, b.z+Math.cos(a)*10.4, rng()*.6, .9, roofs[i]); });
+    { const a=aIn+Math.PI+.55; tower(b.x+Math.sin(a)*11, b.z+Math.cos(a)*11, a); }
+    { const a=aIn+1.9; for(let k=0;k<4;k++) crate(b.x+Math.sin(a)*10.6+(k%2)*1.2, b.z+Math.cos(a)*10.6+(k>>1)*1.2, rng()*.4, 1.05, 0);
+      crate(b.x+Math.sin(a)*10.6+.6, b.z+Math.cos(a)*10.6+.6, rng(), .9, 1.05); }
+    { const a=aIn+3.4; for(let k=0;k<3;k++) barrel(b.x+Math.sin(a)*10.8+k*.95, b.z+Math.cos(a)*10.8); }
+    { const a=aIn+5.3; rack(b.x+Math.sin(a)*10.2, b.z+Math.cos(a)*10.2, a); }
+    for(const s of [-1,1]){ const a=aIn+s*.4; brazier(b.x+Math.sin(a)*15, b.z+Math.cos(a)*15); }
+    { const a=aIn-.55; mkBanner(b.x+Math.sin(a)*15.5, b.z+Math.cos(a)*15.5, '董','#7a1f1f','#e8cf8a'); }
+  }
+  // ---- 3. 城牆前:望樓 + 補給堆 ----
+  for(const [x,z] of [[-34,70],[35,71],[-70,73],[71,72]]) tower(x,z,rng()*.3);
+  for(const sx of [-1,1]){
+    const x0=sx*26, z0=73.5;
+    for(let k=0;k<6;k++) crate(x0+(k%3)*1.2*sx, z0+((k/3)|0)*1.2, rng()*.3, 1.1, 0);
+    crate(x0+.6*sx, z0+.6, rng(), 1, 1.1); crate(x0+1.8*sx, z0+.6, rng(), 1, 1.1);
+    for(let k=0;k<4;k++) barrel(x0+sx*(4+k*.95), z0+.2);
+    rack(x0+sx*6.5, z0-2.2, 0);
+  }
+  // ---- 4. 聯軍陣地(南):投石車兩台 ----
+  catapult(-50,-80,0); catapult(50,-82,0);
+  // ---- 5. 戰場上的破車與插地長槍 ----
+  cart(-18,-36,.7,true); cart(14,58,-.5,true); cart(-70,-6,2.2,false);
+  for(let i=0;i<46;i++){
+    const x=-82+rng()*164, z=-56+rng()*118;
+    if(Math.abs(x)<7) continue;
+    const o=at(x,z,rng()*TAU,false), tilt=.25+rng()*.45;
+    o.box(.07,2.3,.07,0,.95,0,DARK,0,tilt,0); o.cone(.09,.34,0,2.05*Math.cos(tilt),1.1*Math.sin(tilt)+.05,STONE,4);
+  }
+  // ---- 6. 岩石群(邊緣的地標)與河畔 / 邊緣樹林 ----
+  for(const [x,z,n,sc] of [[-82,-52,5,1.35],[84,-46,4,1.2],[-86,54,5,1.4],[82,60,4,1.25],[-68,28,3,1],[70,26,3,1.05],[-60,-66,3,.9],[62,-70,3,.95]]) rocks(x,z,n,sc);
+  for(let i=0;i<22;i++){
+    const side= i%2? 1 : -1;
+    const x=side*(72+rng()*20), z=-80+rng()*150;
+    if(Math.abs(z-zc(x))<6) continue;
+    tree(x,z,.8+rng()*.6);
+  }
+  for(const x of [-84,-40,-24,24,44,86]){ const z=zc(x)+(rng()<.5? -7.5 : 7.5); tree(x,z,.75+rng()*.4); }
+  // ---- 合併 ----
+  for(const [k,arr] of BK){
+    const g=mergeGeometries(arr); arr.forEach(x=>x.dispose());
+    const [, key, sh]=k.split('|'), flame=key[0]==='f';
+    const m=new THREE.Mesh(g, flame? FLAME_MATS[+key.slice(1)] : mat(+key));
+    m.castShadow=!flame && sh==='1'; m.receiveShadow=!flame; P.add(m);
+  }
 }
 // ============================================================
 // 背景軍團(InstancedMesh,純視覺)
